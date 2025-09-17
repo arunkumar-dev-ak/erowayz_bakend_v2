@@ -1,0 +1,116 @@
+enum OrderPaymentType {
+  COINS
+  JUSPAY
+  CASH
+}
+
+enum OrderStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  PENDING
+  DELIVERED
+}
+
+enum OrderPaymentStatus {
+  NOT_STARTED
+  INITIATED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model Order {
+  id                          String             @id @default(uuid())
+  preferredPaymentMethod      PaymentMethod      @default(CASH)
+  userId                      String
+  declineType                 DeclineByType?
+  declinedBy                  String?
+  bannerId                    String?
+  bannerOfferType             OfferType?
+  bannerOfferValue            Float?
+  bannerTitle                 String?
+  expiryAt                    DateTime
+  finalPayableAmount           Float
+  totalPrice                  Float
+  orderId                     String              @unique
+  orderStatus                 OrderStatus         @default(PENDING)
+
+  createdAt                   DateTime           @default(now())
+  updatedAt                   DateTime           @updatedAt
+
+  declinedUser          User?              @relation("DeclinedUser", fields: [declinedBy], references: [id])
+  orderedUser           User               @relation("OrderedUser", fields: [userId], references: [id])
+  orderItems            OrderItem[]
+  orderPayment          OrderPayment?
+
+  // @@index([orderStatus])
+  // @@index([orderStatus, expiryAt, id])
+}
+
+model OrderPayment {
+  id             String             @id @default(uuid())
+  orderId        String   @unique
+  paymentId      String?  @unique
+  walletTransactionId String? @unique
+  type           OrderPaymentType
+  paidedAmount   Float              @default(0)
+  status         OrderPaymentStatus @default(COMPLETED)
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  order          Order              @relation(fields: [orderId], references: [id])
+
+  payment           Payment?           @relation(fields: [paymentId], references: [id])
+  walletTransaction WalletTransaction?  @relation(fields: [walletTransactionId], references: [id])
+
+  @@index([orderId])
+}
+
+model OrderItem {
+  id                    String              @id @default(uuid())
+  orderId               String
+  itemId                String
+  quantityUnit          QuantityUnit?
+  quantity              Float
+  price                 Float
+  discountPrice         Float?
+  review                Review?
+
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  orderItemVendorServiceOption  OrderItemVendorServiceOption[]
+  item                  Item                @relation(fields: [itemId], references: [id])
+  order                 Order               @relation(fields: [orderId], references: [id])
+
+  @@unique([itemId, orderId])
+}
+
+model OrderItemVendorServiceOption {
+  id                    String              @id @default(uuid())
+  cartItemId            String
+  vendorServiceOptionId String
+
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  vendorServiceOption   VendorServiceOption @relation(fields: [vendorServiceOptionId], references: [id])
+  orderItem             OrderItem            @relation(fields: [cartItemId], references: [id])
+
+  @@unique([cartItemId,vendorServiceOptionId])
+}
+
+enum PaymentMethod {
+  CASH
+  JUSPAY
+  COINS
+}
+
+enum DeclineByType {
+  VENDOR
+  CUSTOMER
+  SYSTEM
+  STAFF
+}

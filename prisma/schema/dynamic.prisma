@@ -1,0 +1,40 @@
+enum DynamicContext {
+  BLOOD_DETAIL
+  BLOOD_REQUEST
+}
+
+enum FieldType {
+  TEXT
+  TEXTAREA
+  NUMBER
+  SINGLE_SELECT
+  MULTI_SELECT
+  EMAIL
+  PHONE
+}
+
+model DynamicField {
+  id          String                    @id @default(uuid())
+  label       String
+  type        FieldType
+  isRequired  Boolean                   @default(false)
+  pattern        String?
+  errorMessage   String?
+  context     DynamicContext
+  status      Status
+
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+
+  selectOptions DynamicSelectOption[]
+
+  @@unique([label,context])
+}
+
+model DynamicSelectOption {
+  id            String        @id @default(uuid())
+  fieldId        String
+  value         String        
+  label         String
+  field          DynamicField  @relation(fields: [fieldId], references: [id])
+}

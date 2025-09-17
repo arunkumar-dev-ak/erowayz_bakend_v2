@@ -1,0 +1,39 @@
+enum KeyWordType {
+    BANNER
+    VENDOR_TYPE
+}
+
+model keyWord {
+    id                      String              @id @default(uuid())
+    name                    String
+    vendorTypeId            String
+    keyWordType             KeyWordType
+    status                  Status  @default(ACTIVE)
+
+    createdAt               DateTime            @default(now())
+    updatedAt               DateTime            @updatedAt
+
+    serviceVendorKeyword    ServiceVendorKeyword[]
+    keyWordBanner           KeywordBanner[]
+
+    vendorType              VendorType    @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
+
+    @@unique([vendorTypeId,name])
+    @@index([vendorTypeId,name,keyWordType])
+    @@index([id,vendorTypeId])
+    @@index([name])
+}
+
+model ServiceVendorKeyword {
+    id                      String              @id @default(uuid())
+    keywordId               String
+    vendorId                String
+
+    createdAt               DateTime            @default(now())
+    updatedAt               DateTime            @updatedAt
+
+    keyword                 keyWord             @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+    vendor                  Vendor              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+    @@unique([keywordId,vendorId])
+}

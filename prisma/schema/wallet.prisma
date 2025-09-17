@@ -1,0 +1,50 @@
+enum WalletTransactionType {
+  ADMIN_TO_VENDOR
+  VENDOR_TO_CUSTOMER
+  CUSTOMER_TO_VENDOR_ORDER
+  VENDOR_TO_ADMIN_REFUND
+}
+
+model Wallet {
+    id        String   @id @default(uuid())
+    userId    String   @unique
+    balance   Int      @default(0)
+    locked    Boolean  @default(false)
+    lockedBalance Int  @default(0)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    user      User     @relation(fields: [userId], references: [id])
+    transactionsSent     WalletTransaction[] @relation("SenderWallet")
+    transactionsReceived WalletTransaction[] @relation("ReceiverWallet")
+}
+
+model WalletTransaction {
+    id                      String   @id @default(uuid())
+    senderWalletId          String? 
+    receiverWalletId        String? 
+    amount                  Float
+    transactionType         WalletTransactionType
+    reason                  String?
+    metadata                Json?
+
+    orderPayment        OrderPayment?
+
+    senderWallet        Wallet?      @relation("SenderWallet", fields: [senderWalletId], references: [id])
+    receiverWallet      Wallet?      @relation("ReceiverWallet", fields: [receiverWalletId], references: [id])
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model AdminVendorCredit {
+  id            String   @id @default(uuid())
+  vendorId      String   @unique
+  totalGiven    Float    @default(0)
+  totalRefunded Float    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendor       Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,57 @@
+model Booking {
+  id             String           @id @default(uuid())
+  bookedId       String           @unique
+  userId         String
+  bookingStatus  OrderStatus      @default(PENDING)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  declineType    DeclineByType?
+  declinedBy     String?
+  declinedReason String?
+  bannerBooking  BannerBooking?
+  declinedUser   User?            @relation("declinedUser", fields: [declinedBy], references: [id])
+  bookedUser     User             @relation("bookedUser", fields: [userId], references: [id])
+  serviceBooking ServiceBooking[]
+
+  @@index([id, userId])
+}
+
+model ServiceBooking {
+  id                 String                  @id @default(uuid())
+  bookingId          String
+  latitude           Float
+  longitude          Float
+  price              Float
+  vendorSubServiceId String
+
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  booking            Booking                 @relation(fields: [bookingId], references: [id])
+  vendorSubService   VendorSubService        @relation(fields: [vendorSubServiceId], references: [id])
+
+  @@unique([bookingId, vendorSubServiceId])
+  @@index([bookingId])
+}
+
+model BannerBooking {
+  id            String    @id @default(uuid())
+  bookingId     String    @unique
+  bannerId      String
+  vendorId      String
+  arrivalTime   DateTime
+  bannerName    String
+  offerType     OfferType
+  offerValue    Float
+  minApplyValue Float
+  startDateTime DateTime
+  endDateTime   DateTime
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  bgImageRef    String?
+  fgImageRef    String?
+  booking       Booking   @relation(fields: [bookingId], references: [id])
+  vendor        Vendor    @relation(fields: [vendorId], references: [id])
+
+  @@index([vendorId])
+}

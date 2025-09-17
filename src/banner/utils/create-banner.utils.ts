@@ -1,0 +1,149 @@
+import {
+  MultipleFileUploadInterface,
+  VendorService,
+} from 'src/vendor/vendor.service';
+import { BannerService } from '../banner.service';
+import { checkFieldsForBanner, getBannerType } from './bannerhelper';
+import { BadRequestException } from '@nestjs/common';
+import { CreateBannerDto } from '../dto/create-banner.dto';
+import { BannerType, KeyWordType, Prisma } from '@prisma/client';
+import { KeywordService } from 'src/keyword/keyword.service';
+
+export const CreateBannerValidation = async ({
+  bannerService,
+  vendorService,
+  keywordService,
+  body,
+  vendorId,
+}: {
+  bannerService: BannerService;
+  vendorService: VendorService;
+  keywordService: KeywordService;
+  body: CreateBannerDto;
+  vendorId: string;
+}) => {
+  //unique name
+  if (await bannerService.checkBannerByName({ vendorId, name: body.name })) {
+    throw new BadRequestException('Banner name must be unique');
+  }
+
+  //get vendor
+  const vendor = await vendorService.findVendorById({ id: vendorId });
+  if (!vendor) {
+    throw new BadRequestException('Invalid vendorId');
+  }
+
+  //check vendorType and set banner type
+  const bannerType = getBannerType(vendor.vendorType.type);
+  if (!bannerType)
+    throw new BadRequestException(
+      'Invalid vendor type, Vendor Type should be in Product or Banner type',
+    );
+
+  //check banner fields
+  checkFieldsForBanner({ bannerType, body, vendorType: vendor.vendorType });
+
+  //check keyword ids
+  const keywordsCount = await keywordService.checkKeyWordCountForRegistration(
+    body.keyWordIds,
+    vendor.vendorTypeId,
+    KeyWordType.BANNER,
+  );
+  if (keywordsCount !== body.keyWordIds.length) {
+    throw new BadRequestException(
+      `Aplogies for the eason,Some of the Keywords is not associated with ${vendor.vendorType.name}`,
+    );
+  }
+
+  return { bannerType };
+};
+
+export function createBannerItemImages(
+  bannerProductImage: MultipleFileUploadInterface,
+) {
+  return {
+    create: bannerProductImage.filePaths.map((file) => ({
+      imageRef: file.imageUrl,
+      relativeUrl: file.relativePath,
+    })),
+  };
+}
+
+export const buildCreateBannerData = ({
+  vendorId,
+  bannerType,
+  body,
+  bgImageRef,
+  bgImageRelativeUrl,
+  fgImageRef,
+  fgImageRelativeUrl,
+  bannerProductImage,
+}: {
+  vendorId: string;
+  bannerType: BannerType;
+  body: CreateBannerDto;
+  bgImageRef?: string | undefined;
+  bgImageRelativeUrl?: string | undefined;
+  fgImageRef?: string | undefined;
+  fgImageRelativeUrl?: string | undefined;
+  bannerProductImage: MultipleFileUploadInterface | undefined;
+}): Prisma.BannerCreateInput => {
+  const {
+    name,
+    description,
+    textColor,
+    startDateTime,
+    endDateTime,
+    bgColor,
+    fgImagePosition,
+    minApplyValue,
+    offerType,
+    offerValue,
+    status,
+    originalPricePerUnit,
+    qty,
+    qtyUnit,
+    keyWordIds,
+    title,
+    subHeading,
+    subTitle,
+  } = body;
+
+  const createData: Prisma.BannerCreateInput = {
+    name,
+    vendor: { connect: { id: vendorId } },
+    bannerType,
+    startDateTime,
+    endDateTime,
+    offerType,
+    offerValue,
+    minApplyValue,
+    status: status ?? 'ACTIVE',
+    ...(title && { title }),
+    ...(subHeading && { subHeading }),
+    ...(description && { description }),
+    ...(textColor && { textColor }),
+    ...(bgColor && { bgColor }),
+    ...(bgImageRef && { bgImageRef }),
+    ...(bgImageRelativeUrl && { bgImageRelativeUrl }),
+    ...(fgImageRef && { fgImageRef }),
+    ...(fgImageRelativeUrl && { fgImageRelativeUrl }),
+    ...(fgImagePosition && { fgImagePosition }),
+    ...(originalPricePerUnit && { originalPricePerUnit }),
+    ...(qty && { qty }),
+    ...(qtyUnit && { qtyUnit }),
+    ...(subTitle && { subTitle }),
+    bannerItemImages: bannerProductImage
+      ? createBannerItemImages(bannerProductImage)
+      : {},
+    keyWordBanner: {
+      createMany: {
+        data: keyWordIds.map((keywordId) => ({
+          keywordId,
+        })),
+      },
+    },
+  };
+
+  return createData;
+};

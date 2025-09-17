@@ -1,0 +1,113 @@
+model Category {
+  id           String        @id @default(uuid())
+  name         String
+  imageRef     String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  relativeUrl  String
+  vendorTypeId String
+  vendorType   VendorType    @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
+  item         Item[]
+  subCategory  SubCategory[]
+
+  @@unique([name, vendorTypeId])
+  @@index([name, vendorTypeId, id])
+  @@index([name, vendorTypeId])
+  @@index([id, vendorTypeId])
+}
+
+model SubCategory {
+  id          String   @id @default(uuid())
+  name        String
+  imageRef    String
+  relativeUrl String
+  categoryId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  item        Item[]
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([name, categoryId])
+  @@index([name, categoryId, id])
+  @@index([id, categoryId])
+  @@index([categoryId])
+}
+
+model Item {
+  id                String        @id @default(uuid())
+  name              String
+  nameTamil         String?
+  description       String
+  descriptionTamil  String?
+  price             Float
+  discountPrice     Float?
+  minSellingQty     Float         @default(1)
+  vendorId          String
+  categoryId        String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  subCategoryId     String
+  quantityUnit      QuantityUnit?  @default(GENERAL)  //need to delete
+  productUnitId     String?                           //need to remove ?
+  dailyTotalQty     Float
+  remainingQty      Float
+  productstatus     ProductStatus @default(OUT_OF_STOCK)
+  status            Status        @default(ACTIVE)
+  totalQtyEditCount Int           @default(0)
+
+  category          Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subCategory       SubCategory   @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+  vendor            Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  productUnit       ProductUnit?   @relation(fields: [productUnitId], references: [id], onDelete: Cascade)
+
+  cartItem          CartItem[]
+  itemImage         ItemImage[]
+  orderItems        OrderItem[]
+  expiryDate        DateTime?
+
+  @@unique([name,vendorId])
+  @@index([vendorId])
+  @@index([categoryId])
+  @@index([subCategoryId])
+  @@index([name])
+  @@index([vendorId, categoryId, subCategoryId])
+  @@index([categoryId, subCategoryId, name])
+  @@index([vendorId, name])
+  @@index([id, vendorId])
+  @@index([vendorId, categoryId])
+  @@index([vendorId, status])
+  @@index([productstatus])
+  @@index([remainingQty])
+  @@index([dailyTotalQty])
+}
+
+model ItemImage {
+  id          String   @id @default(uuid())
+  relativeUrl String   @unique
+  absoluteUrl String   @unique
+  itemId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  item        Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+}
+
+/// ----- Vendors -----
+enum QuantityUnit {
+  GENERAL
+  KG
+  GRAM
+  BOX
+  SET
+  PIECE
+  LITRE
+  MILLILITRE
+  UNIT
+  SERVE
+}
+
+enum ProductStatus {
+  AVAILABLE
+  OUT_OF_STOCK
+}

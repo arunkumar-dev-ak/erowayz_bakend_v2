@@ -1,0 +1,234 @@
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model Vendor {
+  id                  String                @id @default(uuid())
+  userId              String                @unique
+  vendorTypeId        String
+  paymentMethod       PaymentMethod[]
+
+  orderSettlement     OrderSettlement[]
+  banner              Banner[]
+  bannerBooking       BannerBooking[]
+  cart                Cart[]
+  item                Item[]
+  shopInfo            ShopInfo?
+  adminVendorCredit   AdminVendorCredit?
+  staff               Staff[]
+  vendorServiceOption   VendorServiceOption[]
+  serviceVendorKeyword  ServiceVendorKeyword[]
+  review                Review[]
+  bannerVendorItem      BannerVendorItem[]
+  vendorSubscription    VendorSubscription[]
+  service               Service[]
+  favouriteCustomerForVendor  FavouriteCustomerForVendor[]
+  favouriteVendorForCustomer  FavouriteVendorForCustomer[]
+  referralsMade     VendorReferral[] @relation("VendorReferralsMade")
+  referralsReceived VendorReferral[] @relation("VendorReferralsReceived")
+  bankDetail          BankDetail?
+
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  User                User                  @relation(fields: [userId], references: [id])
+  vendorType          VendorType            @relation(fields: [vendorTypeId], references: [id])
+
+}
+
+model VendorReferral {
+  id          String   @id @default(uuid())
+  referrerId  String   // the vendor who refers
+  refereeId   String   // the vendor being referred
+  createdAt   DateTime @default(now())
+
+  // relations
+  referrer Vendor @relation("VendorReferralsMade", fields: [referrerId], references: [id])
+  referee  Vendor @relation("VendorReferralsReceived", fields: [refereeId], references: [id])
+}
+
+model VendorType {
+  id                String             @id @default(uuid())
+  name              String             @unique
+  imageRef          String?
+  shopDynamicFields Json?
+  type              VendorCategoryType
+  creatorId         String
+  relativeUrl       String?
+
+  category          Category[]
+  serviceOptions    ServiceOption[]
+  vendor            Vendor[]
+  keyword           keyWord[]
+  subscriptionPlan  SubscriptionPlan[]
+  shopCategory      ShopCategory[]
+
+  user              User               @relation(fields: [creatorId], references: [id])
+
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model ServiceOption {
+  id                  String                @id @default(uuid())
+  name                String
+  vendorTypeId        String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  description         String?
+  relativeUrl         String?
+  serviceOptImageRef  String?
+  vendorType          VendorType            @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
+  vendorServiceOption VendorServiceOption[]
+  service             Service[]
+}
+
+/// ----- Staffs -----
+model Staff {
+  id        String   @id @default(uuid())
+  vendorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendor    Vendor   @relation(fields: [vendorId], references: [id])
+
+  @@unique([userId, vendorId])
+  @@index([id, vendorId])
+}
+
+enum ShopType {
+  CART
+  SHOP
+}
+
+model ShopInfo {
+  id              String   @id @default(uuid())
+  vendorId        String   @unique
+  name            String
+  nameTamil       String?
+  address         String
+  addressTamil    String?
+  city            String? //need to delete
+  shopCityId      String? //need to remove ?
+  pincode         String
+  shopImageRef    String?
+  relativeUrl     String?
+  shopType        ShopType? //need to delete
+  shopCategoryId  String?   //need to remove ?
+  istermsAccepted Boolean  @default(false)
+  latitude        Float
+  longitude       Float
+  dynamicValues   Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  isShopOpen      Boolean  @default(false)
+  location        Unsupported("geography(Point,4326)")?
+
+  license         License?
+  shopWorkingHour ShopWorkingHour[]
+  vendor          Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  shopCategory    ShopCategory?   @relation(fields: [shopCategoryId], references: [id], onDelete: Cascade)
+  shopCity        ShopCity?   @relation(fields: [shopCityId], references: [id], onDelete: Cascade)
+
+  @@index([location], name: "shopinfo_location_idx", type: Gist)
+  @@index([name])
+
+}
+
+model ShopWorkingHour {
+  id         String     @id @default(uuid())
+  shopId     String
+  area       String?
+  dayOfWeek  DayOfWeek
+  openTime   DateTime?
+  closeTime  DateTime?
+  isClosed   Boolean    @default(false)
+
+  shop       ShopInfo   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, dayOfWeek])
+}
+
+enum LicenseType {
+  FISSAI
+  UDYAM
+  AADHAR
+  DRIVING_LICENSE
+}
+
+model License {
+  id                String   @id @default(uuid())
+  licenseNo         String   @unique
+  expiryDate        DateTime
+  relativeUrl       String?
+  image             String?
+  licenseType       LicenseType?  //need to delete
+  licenseCategoryId String?       //newly added need to remove ?
+  shopInfoId        String   @unique
+  isLicenseApproved Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  shopInfo          ShopInfo @relation(fields: [shopInfoId], references: [id], onDelete: Cascade)
+
+  licenseCategory   LicenseCategory? @relation(fields: [licenseCategoryId],references: [id] ,onDelete: Cascade )
+}
+
+/// ----- VendorType -----
+enum VendorCategoryType {
+  SERVICE
+  PRODUCT
+  BANNER
+}
+
+enum FormFieldType {
+  TEXT
+  RADIO
+  CHECKBOX
+  TEXTAREA
+  NUMBER
+  DROPDOWN
+}
+
+enum AccountType {
+  SAVINGS
+  CURRENT
+}
+
+enum BankPlatformType {
+  AMAZON_PAY
+  GOOGLE_PAY
+  PHONE_PAY
+  PAYTM
+}
+
+model BankDetail {
+  id                 String   @id @default(uuid())
+  accountHolderName  String
+  accountNumber      String
+  ifscCode           String
+  bankName           String?  //need to delete
+  bankNameId         String?  //need to remove ?
+  branchName         String
+  accountType        AccountType
+  bankPlatformType   BankPlatformType?
+  bankPaymentTypeId  String?
+  linkedPhoneNumber  String?
+  upiId              String?
+  isVerified          Boolean   @default(false)
+  vendorId           String    @unique
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  vendor             Vendor     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  bankNameRel        BankName?  @relation(fields: [bankNameId], references: [id], onDelete: Cascade)
+  bankPaymentRel     BankPaymentType?  @relation(fields: [bankPaymentTypeId], references: [id], onDelete: Cascade)
+  @@index([upiId])
+}

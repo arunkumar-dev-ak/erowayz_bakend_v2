@@ -1,0 +1,179 @@
+model SubscriptionPlan {
+  id              String           @id @default(uuid())
+  name            String
+  price           Int
+  billingPeriod   BillingPeriod
+  discountPrice   Int?
+  vendorTypeId    String
+  features        Json
+  gradientStart   String?
+  gradientEnd     String?
+  status          Status            @default(INACTIVE)
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  vendorSubscription  VendorSubscription[]
+
+  vendorType      VendorType       @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([name,vendorTypeId,billingPeriod])
+
+  @@index([vendorTypeId])
+  @@index([billingPeriod])
+  @@index([status])
+  @@index([name])
+}
+
+enum BillingPeriod {
+  WEEKLY
+  MONTHLY
+}
+
+enum PaymentStatus {
+  CHARGED
+  PENDING
+  PROCESSING
+  FAILED
+}
+
+enum PaymentPurpose {
+  SUBSCRIPTION_PURCHASE
+  PRODUCT_PURCHASE
+  COIN_PURCHASE
+}
+
+/*----- Payment gateway -----*/
+model Payment {
+  // ✅ Primary IDs
+  id                String   @id @default(uuid())
+  juspayOrderId     String   @unique                      // From session response: id (e.g., "ordeh_...")
+  orderId           String   @unique                      // From session response: order_id (your internal order ID)
+
+  /// --- Payment Information ---
+  amount            Int                                   // From session request
+  purpose           PaymentPurpose                        // Your internal enum (e.g., FOOD, PLAN, etc.)
+  referenceId       String                                // Maps to reference entity like order, subscription, etc.
+  status            PaymentStatus  @default(PENDING)      // You maintain this: PENDING / CHARGED / FAILED
+  userId            String                                // Foreign key to User
+
+  /// --- Juspay Session Metadata ---
+  paymentPageExpiry DateTime                              // From session.payment_links.expiry (used only if using web link)
+  paymentLinkWeb    String                                // From session.payment_links.web (skip if using plugin only)
+
+  /// --- Gateway Transaction Metadata (From SDK / Webhook) ---
+  juspayTxnId       String?                               // From SDK/webhook: txn.txn_id
+  gatewayTxnUuid    String?                               // From SDK/webhook: txn.gateway_reference_id
+  gatewayId         Int?                                  // From SDK/webhook: txn.gateway_id
+  gateway           String?                               // From SDK/webhook: txn.gateway
+
+  status_id         String?                               // From SDK/webhook: txn.status_id (e.g., CHARGED, AUTHORIZED)
+  auth_type         String?                               // From SDK/webhook: txn.auth_type (e.g., preauth, finalauth)
+  paymentMethod     String?                               // From SDK/webhook: txn.payment_method_type (CARD / UPI / NB)
+
+  /// --- Card Details (from webhook or Juspay plugin callback) ---
+  cardLast4         String?                               // From txn.card.last_four_digits
+  cardType          String?                               // From txn.card.card_type (CREDIT / DEBIT)
+  cardBrand         String?                               // From txn.card.card_brand (VISA / MASTERCARD)
+  cardIssuerCountry String?                               // From txn.card.issuer_country
+
+  /// --- Refund Info ---
+  refunds             Refund[]
+  manualRefund        ManualRefund[]
+
+  vendorSubscription  VendorSubscription?
+  orderPayment        OrderPayment?
+
+  /// --- Timestamp Metadata ---
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  /// --- Relations ---
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@index([purpose, referenceId])
+  @@index([paymentPageExpiry])
+  @@index([purpose,userId,status])
+}
+
+model Refund {
+  id               String   @id @default(uuid())
+  amount           Int                                  // From refund.amount
+  status           String                               // From refund.status (PENDING, SUCCESS, etc.)
+  uniqueRequestId  String   @unique                     // From refund.unique_request_id
+  initiatedBy      String?                              // From refund.initiated_by (API / SYSTEM)
+  refundType       String?                              // From refund.refund_type (STANDARD / INSTANT)
+  refundSource     String?                              // From refund.refund_source
+  sentToGateway    Boolean?                             // From refund.sent_to_gateway
+  errorCode        String?                              // From refund.error_code
+  errorMessage     String?                              // From refund.error_message
+  createdAt        DateTime                             // From refund.created
+  updatedAt        DateTime                             // From refund.last_updated
+
+  // FK to Payment
+  paymentId        String
+  payment          Payment  @relation(fields: [paymentId], references: [id])
+}
+
+enum RefundStatus {
+  PENDING
+  CANCELLED
+  COMPLETED
+}
+
+model ManualRefund {
+  id               String   @id @default(uuid())
+  paymentId        String?
+  status           RefundStatus
+  amount           Float
+  userId           String
+  attachment       String?
+  reason           String?
+  notes            String?
+  metaData         Json?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  payment          Payment?  @relation(fields: [paymentId] ,references: [id], onDelete: Cascade)
+  user             User      @relation(fields: [userId], references: [id],onDelete: Cascade)
+
+  @@index([paymentId])
+}
+
+model VendorSubscription {
+  id                 String   @id @default(uuid())
+  vendorId           String
+  paymentId          String   @unique
+
+  // Snapshot of the plan details at the time of subscription
+  planId             String?
+  planName           String
+  planFeatures       Json
+  planBillingPeriod  BillingPeriod
+  planPrice          Int
+  planDiscountPrice  Int?
+
+  startDate          DateTime
+  endDate            DateTime
+  isActive           Boolean   @default(true)
+
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  // Relations
+  vendor             Vendor   @relation(fields: [vendorId], references: [id])
+  payment            Payment  @relation(fields: [paymentId], references: [id])
+  plan               SubscriptionPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+}
+
+model PaymentErrorLog {
+  id              String   @id @default(uuid())
+  referenceId     String
+  vendorUserId    String
+  purpose         PaymentPurpose?
+  customerUserId  String?
+  errorType       String
+  message         String
+  metaData        Json?
+  createdAt       DateTime @default(now())
+}

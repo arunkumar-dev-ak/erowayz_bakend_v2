@@ -1,0 +1,158 @@
+model User {
+  id               String             @id @default(uuid())
+  imageRef         String?
+  relativeUrl      String?
+  name             String
+  nameTamil        String?
+  countryCode      String             @default("+91")
+  mobile           String?            @unique
+  role             Role               @default(CUSTOMER)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  status           Boolean            @default(true)
+  salt             String             @default(uuid())
+  email            String?            @unique
+  password         String?
+  referralCode     String?            @unique
+  bloodDetails     BloodDetails?
+  declinedBooking  Booking[]          @relation("declinedUser")
+  placedBooking    Booking[]          @relation("bookedUser")
+  cart             Cart[]
+  declinedOrders   Order[]            @relation("DeclinedUser")
+  placedOrders     Order[]            @relation("OrderedUser")
+  preDefinedBanner PreDefinedBanner[]
+  refreshToken     RefreshToken[]
+  staff            Staff[]
+  vendor           Vendor?
+  vendorType       VendorType[]
+  review           Review[]
+  bloodRequestUser  BloodRequest[]    @relation("requester")
+  bloodRequest      BloodRequest[]    @relation("donor")
+  payment         Payment[]
+  fcmToken        FCMToken[]
+  wallet          Wallet?
+  otp             OTP[]
+  manualRefund    ManualRefund[]
+
+  favouriteCustomerForVendor  FavouriteCustomerForVendor[]
+  favouriteVendorForCustomer  FavouriteVendorForCustomer[]
+
+  @@index([status])
+}
+
+enum OTPStatus {
+  PENDING
+  VERIFIED
+}
+
+model OTP {
+  id        String   @id @default(uuid())
+  sessionId String
+  userId    String
+  fcmToken  String?
+  role      Role
+  expiresAt DateTime
+  status    OTPStatus
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TempRegister {
+  id        String   @id @default(uuid())
+  cacheKey  String   @unique
+  role      Role
+  sessionId String
+  expiresAt DateTime
+  fcmToken  String?
+  status    OTPStatus @default(PENDING)
+  licenseRelPath  String?
+  licenseAbsPath  String?
+  profileRelPath    String?
+  profileAbsPath    String?
+  shopRelPath     String?
+  shopAbsPath     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FCMToken {
+  id        String   @id @default(uuid())
+  userId    String
+  deviceId  String?
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique @db.VarChar(2048)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([id])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model BloodDetails {
+  id         String      @id @default(uuid())
+  userId     String      @unique
+  bloodGroup BloodGroups
+  isDonor    Boolean     @default(false)
+  city       String
+  area       String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  User       User        @relation(fields: [userId], references: [id])
+}
+
+model BloodRequest {
+  id                  String         @id @default(uuid())
+  userId              String
+  donorId             String
+  patientName         String
+  hospitalName        String
+  patientMobileNumber String
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  user                User           @relation("requester", fields: [userId], references: [id])
+  donor               User           @relation("donor", fields: [donorId], references: [id])
+  dynamicFieldData    Json?
+
+  @@index([userId, donorId])
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+  VENDOR
+  STAFF
+}
+
+enum BloodGroups {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+}

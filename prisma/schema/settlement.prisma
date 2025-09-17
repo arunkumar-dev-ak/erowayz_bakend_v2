@@ -1,0 +1,20 @@
+model OrderSettlement {
+  id         String   @id @default(uuid())
+  vendorId   String
+  date       DateTime
+  amount     Float
+  status     SettlementStatus @default(UNPAID)
+  proofImage String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  vendor     Vendor   @relation(fields: [vendorId], references: [id])
+
+  @@unique([vendorId, date])
+}
+
+enum SettlementStatus {
+  PAID
+  UNPAID
+}
