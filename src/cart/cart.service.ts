@@ -92,7 +92,7 @@ export class CartService {
             description: true,
             price: true,
             discountPrice: true,
-            quantityUnit: true,
+            productUnit: true,
             remainingQty: true,
             minSellingQty: true,
             productstatus: true,
@@ -170,7 +170,8 @@ export class CartService {
                 id: true,
                 name: true,
                 address: true,
-                city: true,
+                shopCategory: true,
+                shopCity: true,
                 shopImageRef: true,
                 isShopOpen: true,
                 latitude: true,
@@ -530,7 +531,12 @@ export class CartService {
       include: {
         vendor: {
           include: {
-            shopInfo: true,
+            shopInfo: {
+              include: {
+                shopCategory: true,
+                shopCity: true,
+              },
+            },
             User: true,
           },
         },
@@ -546,7 +552,12 @@ export class CartService {
       include: {
         vendor: {
           include: {
-            shopInfo: true,
+            shopInfo: {
+              include: {
+                shopCategory: true,
+                shopCity: true,
+              },
+            },
           },
         },
       },

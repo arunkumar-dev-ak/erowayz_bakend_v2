@@ -53,10 +53,10 @@ export const UpdateItemVerification = async ({
   if (
     item.orderItems &&
     item.orderItems.length > 0 &&
-    (body.name || body.quantityUnit || body.categoryId || body.subCategoryId)
+    (body.name || body.productUnitId || body.categoryId || body.subCategoryId)
   ) {
     throw new BadRequestException(
-      'Name and Quantity Unit cannot be updated while item has active orders',
+      'Name and Product Unit cannot be updated while item has active orders',
     );
   }
 

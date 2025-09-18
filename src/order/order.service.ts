@@ -255,7 +255,12 @@ export class OrderService {
                 itemImage: true,
                 vendor: {
                   include: {
-                    shopInfo: true,
+                    shopInfo: {
+                      include: {
+                        shopCategory: true,
+                        shopCity: true,
+                      },
+                    },
                   },
                 },
               },
@@ -342,7 +347,12 @@ export class OrderService {
                 itemImage: true,
                 vendor: {
                   include: {
-                    shopInfo: true,
+                    shopInfo: {
+                      include: {
+                        shopCategory: true,
+                        shopCity: true,
+                      },
+                    },
                     User: {
                       select: {
                         name: true,
@@ -580,7 +590,6 @@ export class OrderService {
             create: {
               itemId,
               quantity: totalQty,
-              quantityUnit: item.quantityUnit,
               price: item.price,
               discountPrice: item.discountPrice,
               orderItemVendorServiceOption: {

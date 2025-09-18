@@ -10,9 +10,12 @@ import { ResponseService } from 'src/response/response.service';
 import { ShopOpenCloseDto, ShopStatus } from './dto/shopopenclose-dto';
 import { UpdateShopInfoUtils } from './utils/update-shop-info.utils';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
-import { VendorCategoryType } from '@prisma/client';
+import { Status, VendorCategoryType } from '@prisma/client';
 import { UpdateLicenseInfo } from './dto/updateLicenseInfo.dto';
 import { ApprovedOrPendingMap } from 'src/vendor/dto/get-vendor-admin-query.dto';
+import { LicenseCategoryService } from 'src/license-category/license-category.service';
+import { ShopCategoryService } from 'src/shop-category/shop-category.service';
+import { CityService } from 'src/city/city.service';
 // import { UpdateLicenseInfo } from './dto/updateLicenseInfo.dto';
 
 @Injectable()
@@ -21,6 +24,9 @@ export class ShopInfoService {
     private readonly prisma: PrismaService,
     private readonly response: ResponseService,
     private readonly fileUploadService: FileUploadService,
+    private readonly licenseCategoryService: LicenseCategoryService,
+    private readonly shopCategoryService: ShopCategoryService,
+    private readonly shopCityService: CityService,
   ) {}
 
   async getShopInfoByVendorId({ res, id }: { res: Response; id: string }) {
@@ -69,7 +75,7 @@ export class ShopInfoService {
       throw new BadRequestException('No valid fields provided for update');
     }
 
-    if (body.shopType) {
+    if (body.shopCategoryId) {
       const vendorCategoryType = existingShop.vendor.vendorType.type;
       if (vendorCategoryType !== VendorCategoryType.PRODUCT) {
         throw new BadRequestException(
@@ -79,22 +85,43 @@ export class ShopInfoService {
     }
 
     //checking shopType
-    if (
-      existingShop.vendor.vendorType.type !== VendorCategoryType.PRODUCT &&
-      body.shopType
-    ) {
-      throw new BadRequestException(
-        'Shop type is required only when the vendor category is Street Food,',
-      );
+    if (body.shopCategoryId) {
+      if (existingShop.vendor.vendorType.type !== VendorCategoryType.PRODUCT) {
+        throw new BadRequestException(
+          'Shop type is required only when the vendor category is Street Food,',
+        );
+      }
+      const existingShopCategory =
+        await this.shopCategoryService.getShopCategoryByIdAndVendorType({
+          id: body.shopCategoryId,
+          vendorTypeId: existingShop.vendor.vendorTypeId,
+        });
+
+      if (
+        !existingShopCategory ||
+        existingShopCategory.status === Status.INACTIVE
+      ) {
+        throw new BadRequestException(
+          'Shop Category not found or it is inactive',
+        );
+      }
+    }
+
+    if (body.shopCityId) {
+      const city = await this.shopCityService.getCityById(body.shopCityId);
+      if (!city || city.status === Status.INACTIVE) {
+        throw new BadRequestException('City not found or it is inactive');
+      }
     }
 
     const { shopInfoData, licenseUpdate, shopImageUrl, licenseImageUrl } =
-      UpdateShopInfoUtils({
+      await UpdateShopInfoUtils({
         body,
         shopImage,
         licenseImage,
         fileUploadService: this.fileUploadService,
         license: existingShop.license,
+        licenseCategoryService: this.licenseCategoryService,
       });
 
     try {

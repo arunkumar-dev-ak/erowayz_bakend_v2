@@ -48,7 +48,12 @@ export class VendorServiceOptionService {
         serviceOption: true,
         vendor: {
           include: {
-            shopInfo: true,
+            shopInfo: {
+              include: {
+                shopCategory: true,
+                shopCity: true,
+              },
+            },
           },
         },
       },

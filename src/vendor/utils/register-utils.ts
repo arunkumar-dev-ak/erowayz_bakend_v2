@@ -81,7 +81,7 @@ export class RegisterUtils {
     existingOtp: TempRegister;
   }) {
     const {
-      licenseType,
+      licenseCategoryId,
       licenseNo,
       keyWordIds,
       expiryDate,
@@ -93,6 +93,7 @@ export class RegisterUtils {
       paymentMethod,
       serviceOptionIds,
       password,
+      shopCityId,
     } = parsedValue;
 
     const {
@@ -110,7 +111,7 @@ export class RegisterUtils {
             create: {
               licenseNo,
               expiryDate,
-              ...(licenseType ? { licenseType } : {}),
+              ...(licenseCategoryId ? { licenseCategoryId } : {}),
               image: licenseAbsPath,
               relativeUrl: licenseRelPath,
             },
@@ -134,7 +135,7 @@ export class RegisterUtils {
             create: {
               name: parsedValue.shopName,
               address: parsedValue.address,
-              city: parsedValue.city,
+              shopCityId,
               pincode: parsedValue.pincode,
               latitude: parsedValue.latitude,
               longitude: parsedValue.longitude,
@@ -143,7 +144,7 @@ export class RegisterUtils {
               license: licenseData,
               nameTamil: parsedValue.shopNameTamil,
               addressTamil: parsedValue.addressTamil,
-              shopType: parsedValue.shopType,
+              shopCategoryId: parsedValue.shopCategoryId,
             },
           },
           ...(serviceOptionIds?.length

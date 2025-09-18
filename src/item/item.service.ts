@@ -223,7 +223,7 @@ export class ItemService {
           description: body.description,
           price: body.price,
           discountPrice: body.discountPrice,
-          quantityUnit: body.quantityUnit,
+          productUnitId: body.productUnitId,
           remainingQty: body.dailyTotalQty,
           dailyTotalQty: body.dailyTotalQty,
           minSellingQty: body.minSellingQty,
@@ -314,7 +314,7 @@ export class ItemService {
         ...(body.description && { description: body.description }),
         ...(body.price && { price: body.price }),
         ...(body.discountPrice && { discountPrice: body.discountPrice }),
-        ...(body.quantityUnit && { quantityUnit: body.quantityUnit }),
+        ...(body.productUnitId && { productUnitId: body.productUnitId }),
         ...(body.dailyTotalQty && { dailyTotalQty: body.dailyTotalQty }),
         ...(body.minSellingQty && { minSellingQty: body.minSellingQty }),
         ...(body.categoryId && { categoryId: body.categoryId }),
@@ -524,7 +524,12 @@ export class ItemService {
       include: {
         vendor: {
           include: {
-            shopInfo: true,
+            shopInfo: {
+              include: {
+                shopCategory: true,
+                shopCity: true,
+              },
+            },
             User: true,
           },
         },

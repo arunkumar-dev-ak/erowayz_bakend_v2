@@ -7,5 +7,6 @@ import { VendorTypeModule } from 'src/vendor-type/vendor-type.module';
   imports: [VendorTypeModule],
   controllers: [ShopCategoryController],
   providers: [ShopCategoryService],
+  exports: [ShopCategoryService],
 })
 export class ShopCategoryModule {}

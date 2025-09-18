@@ -59,6 +59,8 @@ export function getIncludeVendorUtilsForAdmin(): Prisma.VendorInclude {
     shopInfo: {
       include: {
         license: true,
+        shopCategory: true,
+        shopCity: true,
       },
     },
   };

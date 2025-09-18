@@ -97,7 +97,12 @@ export class BannerService {
       include: {
         vendor: {
           include: {
-            shopInfo: true,
+            shopInfo: {
+              include: {
+                shopCategory: true,
+                shopCity: true,
+              },
+            },
           },
         },
         keyWordBanner: {
@@ -188,7 +193,12 @@ export class BannerService {
       include: {
         vendor: {
           include: {
-            shopInfo: true,
+            shopInfo: {
+              include: {
+                shopCategory: true,
+                shopCity: true,
+              },
+            },
           },
         },
         keyWordBanner: {
@@ -259,7 +269,12 @@ export class BannerService {
       include: {
         vendor: {
           include: {
-            shopInfo: true,
+            shopInfo: {
+              include: {
+                shopCategory: true,
+                shopCity: true,
+              },
+            },
           },
         },
         keyWordBanner: {
@@ -335,7 +350,12 @@ export class BannerService {
       include: {
         vendor: {
           include: {
-            shopInfo: true,
+            shopInfo: {
+              include: {
+                shopCategory: true,
+                shopCity: true,
+              },
+            },
           },
         },
         keyWordBanner: {

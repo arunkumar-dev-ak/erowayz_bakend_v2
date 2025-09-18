@@ -72,7 +72,7 @@ model OrderItem {
   id                    String              @id @default(uuid())
   orderId               String
   itemId                String
-  quantityUnit          QuantityUnit?
+  quantityUnit          QuantityUnit? //need to delete
   quantity              Float
   price                 Float
   discountPrice         Float?

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { LicenseType, PaymentMethod, ShopType } from '@prisma/client';
+import { PaymentMethod } from '@prisma/client';
 import {
   IsArray,
   IsDateString,
@@ -98,10 +98,10 @@ export class TempRegisterVendorDto {
   @IsNotEmpty({ message: 'Address is required' })
   address: string;
 
-  @ApiProperty({ description: 'City is required', required: true })
+  @ApiProperty({ description: 'shopCity is required', required: true })
   @IsString()
-  @IsNotEmpty({ message: 'city is required' })
-  city: string;
+  @IsNotEmpty({ message: 'shopCity is required' })
+  shopCityId: string;
 
   @ApiProperty({
     description: 'Pincode must contain exactly 6 digits',
@@ -144,18 +144,11 @@ export class TempRegisterVendorDto {
   @Validate(IsUniqueArrayConstraint)
   paymentMethod: PaymentMethod[];
 
-  @ApiProperty({
-    description: 'ShopTypes for the shop info',
-    enum: ShopType,
-    example: ShopType.CART,
-    required: true,
-  })
+  @ApiProperty({ description: 'ShopCategoryId is required', required: true })
+  @IsString()
+  @IsNotEmpty({ message: 'ShopCategoryId is required' })
   @IsOptional()
-  @IsEnum(ShopType, {
-    each: true,
-    message: `Each Shop Type must be one of: ${Object.values(ShopType).join(', ')}`,
-  })
-  shopType?: ShopType;
+  shopCategoryId?: string;
 
   @ApiProperty({
     type: 'array',
@@ -186,18 +179,10 @@ export class TempRegisterVendorDto {
   @IsString()
   licenseNo: string;
 
-  @ApiProperty({
-    description: 'License Type as ',
-    enum: LicenseType,
-    isArray: true,
-    example: LicenseType.FISSAI,
-    required: true,
-  })
-  @IsEnum(LicenseType, {
-    each: true,
-    message: `Each LicenseType must be one of: ${Object.values(LicenseType).join(', ')}`,
-  })
-  licenseType: LicenseType;
+  @ApiProperty({ description: 'License Category ID is optional' })
+  @IsString()
+  @IsNotEmpty({ message: `License Category id is required` })
+  licenseCategoryId: string;
 
   @ApiProperty({ description: 'FCM Token', required: false })
   @IsString()

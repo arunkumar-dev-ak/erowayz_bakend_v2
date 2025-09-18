@@ -56,7 +56,12 @@ export class VendorServiceService {
                 nameTamil: true,
               },
             },
-            shopInfo: true,
+            shopInfo: {
+              include: {
+                shopCategory: true,
+                shopCity: true,
+              },
+            },
           },
         },
         vendorSubService: {
@@ -350,7 +355,12 @@ export class VendorServiceService {
             serviceOption: true,
             vendor: {
               include: {
-                shopInfo: true,
+                shopInfo: {
+                  include: {
+                    shopCategory: true,
+                    shopCity: true,
+                  },
+                },
                 User: true,
               },
             },

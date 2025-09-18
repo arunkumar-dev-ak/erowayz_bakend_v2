@@ -16,12 +16,18 @@ import {
   WhatsappResponseInterface,
 } from 'src/auth/auth.service';
 import { RedisService } from 'src/redis/redis.service';
+import { LicenseCategoryService } from 'src/license-category/license-category.service';
+import { ShopCategoryService } from 'src/shop-category/shop-category.service';
+import { CityService } from 'src/city/city.service';
 
 export class TempRegisterUtils {
   static async verifyVendorData(
     body: TempRegisterVendorDto,
     vendorTypeService: VendorTypeService,
+    licenseCategoryService: LicenseCategoryService,
+    shopCategoryService: ShopCategoryService,
     keywordService: KeywordService,
+    shopCityService: CityService,
     userService: UserService,
     vendorService: VendorService,
     referralLimit: number,
@@ -29,10 +35,12 @@ export class TempRegisterUtils {
     await TempRegisterVendorVerification({
       body,
       vendorTypeService,
+      shopCityService,
       keywordService,
       userService,
       vendorService,
       referralLimit,
+      shopCategoryService,
     });
   }
 

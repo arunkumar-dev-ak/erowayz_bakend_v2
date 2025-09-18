@@ -249,7 +249,12 @@ export class AuthService {
           include: {
             vendor: {
               include: {
-                shopInfo: true,
+                shopInfo: {
+                  include: {
+                    shopCategory: true,
+                    shopCity: true,
+                  },
+                },
                 vendorServiceOption: {
                   include: {
                     serviceOption: true,
@@ -309,6 +314,8 @@ export class AuthService {
             shopInfo: {
               include: {
                 license: true,
+                shopCategory: true,
+                shopCity: true,
               },
             },
           },
@@ -717,7 +724,12 @@ export class AuthService {
           include: {
             vendor: {
               include: {
-                shopInfo: true,
+                shopInfo: {
+                  include: {
+                    shopCity: true,
+                    shopCategory: true,
+                  },
+                },
                 vendorServiceOption: {
                   include: {
                     serviceOption: true,

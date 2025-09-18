@@ -2,50 +2,61 @@ import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { ImageFiedlsInterface } from 'src/vendor/utils/update-vendor.utils';
 import { EditShopInfo } from '../dto/editshopinfo.dto';
-import { License, Prisma } from '@prisma/client';
+import { License, Prisma, Status } from '@prisma/client';
 import { BadRequestException } from '@nestjs/common';
+import { LicenseCategoryService } from 'src/license-category/license-category.service';
 
-export function UpdateShopInfoUtils({
+export async function UpdateShopInfoUtils({
   body,
   shopImage,
   licenseImage,
   fileUploadService,
+  licenseCategoryService,
   license,
 }: {
   body: EditShopInfo;
   shopImage?: Express.Multer.File;
   licenseImage?: Express.Multer.File;
   fileUploadService: FileUploadService;
+  licenseCategoryService: LicenseCategoryService;
   license?: License | null;
 }) {
   const {
     shopName,
     address,
     istermsAccepted,
-    city,
+    shopCityId,
     pincode,
     latitude,
     longitude,
     licenseNo,
     expiryDate,
-    licenseType,
+    licenseCategoryId,
     shopNameTamil,
     addressTamil,
-    shopType,
+    shopCategoryId,
   } = body;
 
   const shopInfoData: Prisma.ShopInfoUpdateInput = {
     ...(shopName && { name: shopName }),
     ...(address && { address }),
     ...(istermsAccepted && { istermsAccepted }),
-    ...(city && { city }),
+    ...(shopCityId && { shopCityId }),
     ...(pincode && { pincode }),
     ...(latitude && { latitude }),
     ...(longitude && { longitude }),
     ...(shopNameTamil && { nameTamil: shopNameTamil }),
     ...(addressTamil && { addressTamil }),
-    ...(shopType && { shopType }),
+    ...(shopCategoryId && { shopCategoryId }),
   };
+
+  if (licenseCategoryId) {
+    const licenseCategory =
+      await licenseCategoryService.getLicenseCategoryById(licenseCategoryId);
+    if (!licenseCategory || licenseCategory.status === Status.INACTIVE) {
+      throw new BadRequestException('License Category Not found or inactive');
+    }
+  }
 
   /*----- Uploading images -----*/
   const filesToUpload: Express.Multer.File[] = [];
@@ -97,7 +108,7 @@ export function UpdateShopInfoUtils({
     | undefined = undefined;
 
   const shouldCreate =
-    licenseNo && expiryDate && licenseImageUrl && licenseType;
+    licenseNo && expiryDate && licenseImageUrl && licenseCategoryId;
   const shouldUpdate = licenseNo || expiryDate || licenseImageUrl;
 
   if (shouldUpdate && (!license || license === null)) {
@@ -114,13 +125,13 @@ export function UpdateShopInfoUtils({
           expiryDate,
           image: licenseImageUrl.imageUrl,
           relativeUrl: licenseImageUrl.relativePath,
-          licenseType,
+          licenseCategoryId,
           isLicenseApproved: false,
         },
         update: {
           ...(licenseNo && { licenseNo }),
           ...(expiryDate && { expiryDate }),
-          ...(licenseType && { licenseType }),
+          ...(licenseCategoryId && { licenseCategoryId }),
           ...(licenseImageUrl && {
             image: licenseImageUrl.imageUrl,
             relativeUrl: licenseImageUrl.relativePath,

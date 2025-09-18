@@ -157,6 +157,8 @@ export function vendorInclude(userId?: string) {
     shopInfo: {
       include: {
         license: true,
+        shopCategory: true,
+        shopCity: true,
       },
     },
     vendorServiceOption: {

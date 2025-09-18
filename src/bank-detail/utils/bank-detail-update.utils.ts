@@ -1,29 +1,35 @@
 import { BadRequestException } from '@nestjs/common';
 import { UpdatedBankDetailDto } from '../dto/update-bank-detail.dto';
 import { BankDetailService } from '../bank-detail.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, Status } from '@prisma/client';
+import { BankNameNameService } from 'src/bank-name/bank-name.service';
+import { BankPaymenttypeService } from 'src/bank-paymenttype/bank-paymenttype.service';
 
 export const bankDetailUpdateUtils = async ({
   body,
   vendorId,
   bankDetailService,
   bankDetailId,
+  bankNameService,
+  bankPaymentTypeService,
 }: {
   body: UpdatedBankDetailDto;
   vendorId: string;
   bankDetailService: BankDetailService;
   bankDetailId: string;
+  bankNameService: BankNameNameService;
+  bankPaymentTypeService: BankPaymenttypeService;
 }) => {
   const {
     accountHolderName,
     accountNumber,
     ifscCode,
-    bankName,
+    bankNameId,
     branchName,
     accountType,
     upiId,
     linkedPhoneNumber,
-    bankPlatformType,
+    bankPaymentTypeId,
   } = body;
 
   // Check if bank detail exists
@@ -34,6 +40,19 @@ export const bankDetailUpdateUtils = async ({
   }
   if (existingBankDetails.vendorId !== vendorId) {
     throw new BadRequestException('Vendor does not match to update the record');
+  }
+  if (bankNameId) {
+    const existingBankName = await bankNameService.getBankNameById(bankNameId);
+    if (!existingBankName || existingBankName.status === Status.INACTIVE) {
+      throw new BadRequestException('Bank Name Not found or Inactive');
+    }
+  }
+  if (bankPaymentTypeId) {
+    const banPaymentType =
+      await bankPaymentTypeService.getBankPaymentTypeById(bankPaymentTypeId);
+    if (!banPaymentType) {
+      throw new BadRequestException('Bank Payment Type not found');
+    }
   }
 
   const updateQuery: Prisma.BankDetailUpdateInput = {};
@@ -47,8 +66,12 @@ export const bankDetailUpdateUtils = async ({
   if (ifscCode !== undefined) {
     updateQuery.ifscCode = ifscCode;
   }
-  if (bankName !== undefined) {
-    updateQuery.bankName = bankName;
+  if (bankNameId !== undefined) {
+    updateQuery.bankNameRel = {
+      connect: {
+        id: bankNameId,
+      },
+    };
   }
   if (branchName !== undefined) {
     updateQuery.branchName = branchName;
@@ -62,8 +85,12 @@ export const bankDetailUpdateUtils = async ({
   if (linkedPhoneNumber !== undefined) {
     updateQuery.linkedPhoneNumber = linkedPhoneNumber;
   }
-  if (bankPlatformType !== undefined) {
-    updateQuery.bankPlatformType = bankPlatformType;
+  if (bankPaymentTypeId !== undefined) {
+    updateQuery.bankPaymentRel = {
+      connect: {
+        id: bankPaymentTypeId,
+      },
+    };
   }
 
   return { updateQuery };

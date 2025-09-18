@@ -52,6 +52,9 @@ import { RedisService } from 'src/redis/redis.service';
 import { RegisterVendorDto } from './dto/register-vendor.dto';
 import { TempRegisterUtils } from './utils/temp-register.utils';
 import { RegisterUtils } from './utils/register-utils';
+import { LicenseCategoryService } from 'src/license-category/license-category.service';
+import { ShopCategoryService } from 'src/shop-category/shop-category.service';
+import { CityService } from 'src/city/city.service';
 
 export interface MultipleFileUploadInterface {
   filePaths: ImageFiedlsInterface[];
@@ -82,6 +85,9 @@ export class VendorService {
     private readonly configService: ConfigService,
     private readonly fcmTokenService: FcmTokenService,
     private readonly redisService: RedisService,
+    private readonly licenseCategoryService: LicenseCategoryService,
+    private readonly shopCategoryService: ShopCategoryService,
+    private readonly shopCityService: CityService,
   ) {
     this.WHATSAPP_OTP_REQUEST = configService.get<string>(
       'WHATSAPP_OTP_REQUEST',
@@ -326,6 +332,8 @@ export class VendorService {
         shopInfo: {
           include: {
             license: true,
+            shopCategory: true,
+            shopCity: true,
           },
         },
       },
@@ -419,7 +427,10 @@ export class VendorService {
     await TempRegisterUtils.verifyVendorData(
       body,
       this.vendorTypeService,
+      this.licenseCategoryService,
+      this.shopCategoryService,
       this.keywordService,
+      this.shopCityService,
       this.userService,
       this,
       this.REFERRAL_LIMIT,
@@ -524,7 +535,9 @@ export class VendorService {
         keywordService: this.keywordService,
         userService: this.userService,
         vendorService: this,
+        shopCategoryService: this.shopCategoryService,
         referralLimit: this.REFERRAL_LIMIT,
+        shopCityService: this.shopCityService,
       });
 
       const { vendorCreateQuery } = await RegisterUtils.buildVendorCreateData({
@@ -566,7 +579,12 @@ export class VendorService {
           include: {
             vendor: {
               include: {
-                shopInfo: true,
+                shopInfo: {
+                  include: {
+                    shopCategory: true,
+                    shopCity: true,
+                  },
+                },
                 vendorServiceOption: { include: { serviceOption: true } },
                 serviceVendorKeyword: { include: { keyword: true } },
               },
@@ -771,6 +789,8 @@ export class VendorService {
         shopInfo: {
           include: {
             license: true,
+            shopCategory: true,
+            shopCity: true,
           },
         },
       },
@@ -799,8 +819,8 @@ export class VendorService {
       expiryDate,
       keyWordIds,
       paymentMethod,
-      licenseType,
-      shopType,
+      licenseCategoryId,
+      shopCategoryId,
     } = body;
 
     await RegisterTestVendorVerification({
@@ -809,6 +829,8 @@ export class VendorService {
       keywordService: this.keywordService,
       userService: this.userService,
       vendorService: this,
+      shopCategoryService: this.shopCategoryService,
+      shopCityService: this.shopCityService,
     });
 
     /*----- Uploading images -----*/
@@ -832,7 +854,7 @@ export class VendorService {
             create: {
               licenseNo,
               expiryDate,
-              ...(licenseType ? { licenseType } : {}),
+              ...(licenseCategoryId ? { licenseCategoryId } : {}),
               image: uploadedLicenseImg.imageUrl,
               relativeUrl: uploadedLicenseImg.relativePath,
             },
@@ -857,14 +879,14 @@ export class VendorService {
                   create: {
                     name: body.shopName,
                     address: body.address,
-                    city: body.city,
+                    shopCityId: body.shopCityId,
                     pincode: body.pincode,
                     latitude: body.latitude,
                     longitude: body.longitude,
                     shopImageRef: shopImage.imageUrl,
                     relativeUrl: shopImage.relativePath,
                     license: licenseData,
-                    shopType,
+                    ...(shopCategoryId && { shopCategoryId }),
                   },
                 },
                 ...(serviceOptionIds?.length
@@ -895,7 +917,12 @@ export class VendorService {
           include: {
             vendor: {
               include: {
-                shopInfo: true,
+                shopInfo: {
+                  include: {
+                    shopCategory: true,
+                    shopCity: true,
+                  },
+                },
               },
             },
           },
@@ -930,7 +957,12 @@ export class VendorService {
           include: {
             vendor: {
               include: {
-                shopInfo: true,
+                shopInfo: {
+                  include: {
+                    shopCategory: true,
+                    shopCity: true,
+                  },
+                },
                 vendorServiceOption: {
                   include: {
                     serviceOption: true,
@@ -1020,7 +1052,12 @@ export class VendorService {
         id: vendorId,
       },
       include: {
-        shopInfo: true,
+        shopInfo: {
+          include: {
+            shopCategory: true,
+            shopCity: true,
+          },
+        },
         User: true,
         vendorType: true,
       },

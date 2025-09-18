@@ -7,7 +7,12 @@ export const includeItem = (userId?: string) => {
       select: {
         id: true,
         paymentMethod: true,
-        shopInfo: true,
+        shopInfo: {
+          include: {
+            shopCategory: true,
+            shopCity: true,
+          },
+        },
         vendorServiceOption: {
           include: {
             serviceOption: true,

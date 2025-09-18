@@ -1,9 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { LicenseType, ShopType } from '@prisma/client';
 import {
   IsBoolean,
   IsDateString,
-  IsEnum,
   IsLatitude,
   IsLongitude,
   IsNotEmpty,
@@ -31,10 +29,11 @@ export class EditShopInfo {
   @IsBoolean({ message: 'IsTermsAccepted must be either true or false' })
   istermsAccepted?: boolean;
 
-  @ApiProperty({ description: 'City is optional' })
-  @IsOptional()
+  @ApiProperty({ description: 'shopCity is required', required: true })
   @IsString()
-  city?: string;
+  @IsNotEmpty({ message: 'shopCity is required' })
+  @IsOptional()
+  shopCityId?: string;
 
   @ApiProperty({ description: 'Pincode must be exactly 6 digits' })
   @IsOptional()
@@ -60,32 +59,17 @@ export class EditShopInfo {
   @Length(14, 14, { message: 'License Number must be exactly 14 characters' })
   licenseNo?: string;
 
-  @ApiProperty({
-    description: 'License Type as ',
-    enum: LicenseType,
-    isArray: true,
-    example: LicenseType.FISSAI,
-    required: true,
-  })
-  @IsEnum(LicenseType, {
-    each: true,
-    message: `Each LicenseType must be one of: ${Object.values(LicenseType).join(', ')}`,
-  })
+  @ApiProperty({ description: 'License Category ID is optional' })
   @IsOptional()
-  licenseType?: LicenseType;
+  @IsString()
+  @IsNotEmpty({ message: `License Category id is required` })
+  licenseCategoryId?: string;
 
-  @ApiProperty({
-    description: 'ShopTypes for the shop info',
-    enum: ShopType,
-    example: ShopType.CART,
-    required: true,
-  })
-  @IsEnum(ShopType, {
-    each: true,
-    message: `Each Shop Type must be one of: ${Object.values(ShopType).join(', ')}`,
-  })
+  @ApiProperty({ description: 'ShopCategoryId is required', required: true })
+  @IsString()
+  @IsNotEmpty({ message: 'ShopCategoryId is required' })
   @IsOptional()
-  shopType?: ShopType;
+  shopCategoryId: string;
 
   @ApiProperty({ description: 'shopNameTamil is required', required: true })
   @IsString()

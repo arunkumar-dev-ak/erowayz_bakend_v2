@@ -84,7 +84,12 @@ export class BannerBookingService {
           include: {
             vendor: {
               include: {
-                shopInfo: true,
+                shopInfo: {
+                  include: {
+                    shopCategory: true,
+                    shopCity: true,
+                  },
+                },
               },
             },
           },
@@ -154,7 +159,12 @@ export class BannerBookingService {
           include: {
             vendor: {
               include: {
-                shopInfo: true,
+                shopInfo: {
+                  include: {
+                    shopCategory: true,
+                    shopCity: true,
+                  },
+                },
               },
             },
           },

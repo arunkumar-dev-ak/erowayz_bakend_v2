@@ -217,8 +217,8 @@ model BankDetail {
   bankNameId         String?  //need to remove ?
   branchName         String
   accountType        AccountType
-  bankPlatformType   BankPlatformType?
-  bankPaymentTypeId  String?
+  bankPlatformType   BankPlatformType?  //need to delete
+  bankPaymentTypeId  String?  //need to remove ?
   linkedPhoneNumber  String?
   upiId              String?
   isVerified          Boolean   @default(false)

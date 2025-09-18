@@ -195,4 +195,19 @@ export class ShopCategoryService {
       },
     });
   }
+
+  async getShopCategoryByIdAndVendorType({
+    id,
+    vendorTypeId,
+  }: {
+    id: string;
+    vendorTypeId: string;
+  }) {
+    return await this.prismaService.shopCategory.findUnique({
+      where: {
+        id,
+        vendorTypeId,
+      },
+    });
+  }
 }

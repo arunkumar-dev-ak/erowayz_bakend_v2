@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { QuantityUnit, Status } from '@prisma/client';
+import { Status } from '@prisma/client';
 import {
   IsArray,
   IsDate,
@@ -111,17 +111,13 @@ export class UpdateItemDto {
   discountPrice?: number;
 
   @ApiProperty({
-    description:
-      'QuantityUnit should be one of the predefined values, if defined',
+    description: 'ProductUnitId should not be empty',
     required: true,
-    enum: QuantityUnit,
+    example: 'Your ProductUnitId here',
   })
-  @IsOptional()
-  @IsEnum(QuantityUnit, {
-    message:
-      'Invalid Quantity Unit. Must be one of: GENERAL, KG, GRAM, BOX, SET, PIECE, LITRE, MILLILITRE, UNIT, SERVE., if defined',
-  })
-  quantityUnit?: QuantityUnit;
+  @IsString()
+  @IsNotEmpty({ message: 'ProductUnitId should not be empty' })
+  productUnitId: string;
 
   @ApiPropertyOptional({
     description: 'Expiry Date of the product',

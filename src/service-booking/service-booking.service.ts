@@ -92,7 +92,12 @@ export class ServiceBookingService {
                   include: {
                     vendor: {
                       include: {
-                        shopInfo: true,
+                        shopInfo: {
+                          include: {
+                            shopCategory: true,
+                            shopCity: true,
+                          },
+                        },
                       },
                     },
                   },

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AccountType, BankPlatformType } from '@prisma/client';
+import { AccountType } from '@prisma/client';
 import {
   IsEnum,
   IsNotEmpty,
@@ -37,13 +37,13 @@ export class CreateBankDetailDto {
   ifscCode: string;
 
   @ApiProperty({
-    description: 'Name of the bank',
+    description: 'Bank Id',
     example: 'HDFC Bank',
     required: true,
   })
   @IsString()
-  @IsNotEmpty({ message: 'Bank name should not be empty' })
-  bankName: string;
+  @IsNotEmpty({ message: 'Bank Id should not be empty' })
+  bankNameId: string;
 
   @ApiProperty({
     description: 'Branch name of the bank',
@@ -66,16 +66,14 @@ export class CreateBankDetailDto {
   accountType: AccountType;
 
   @ApiProperty({
-    description: 'Type of the paying platform',
-    enum: BankPlatformType,
-    example: BankPlatformType.AMAZON_PAY,
+    description: 'Bank Id',
+    example: 'HDFC Bank',
     required: true,
   })
+  @IsString()
   @IsOptional()
-  @IsEnum(BankPlatformType, {
-    message: `AccountType must be one of: ${Object.values(BankPlatformType).join(', ')}`,
-  })
-  bankPlatformType?: BankPlatformType;
+  @IsNotEmpty({ message: 'Bank Id should not be empty' })
+  bankPaymentTypeId?: string;
 
   @ApiProperty({
     description: 'Linked phone number',

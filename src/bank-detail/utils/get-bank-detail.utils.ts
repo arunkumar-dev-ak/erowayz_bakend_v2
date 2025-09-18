@@ -39,9 +39,11 @@ export function buildBankDetailWhereFilter({
   }
 
   if (bankName) {
-    where.bankName = {
-      contains: bankName,
-      mode: 'insensitive',
+    where.bankNameRel = {
+      name: {
+        contains: bankName,
+        mode: 'insensitive',
+      },
     };
   }
 

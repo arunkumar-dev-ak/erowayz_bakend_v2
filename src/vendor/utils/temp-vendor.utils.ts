@@ -6,6 +6,8 @@ import { UserService } from 'src/user/user.service';
 import { VendorService } from '../vendor.service';
 import { KeyWordType, VendorCategoryType, VendorType } from '@prisma/client';
 import { TempRegisterVendorDto } from '../dto/temp-registervendor.dto';
+import { ShopCategoryService } from 'src/shop-category/shop-category.service';
+import { CityService } from 'src/city/city.service';
 
 /*----- register -----*/
 export const TempRegisterVendorVerification = async ({
@@ -15,13 +17,17 @@ export const TempRegisterVendorVerification = async ({
   userService,
   vendorService,
   referralLimit,
+  shopCategoryService,
+  shopCityService,
 }: {
   body: TempRegisterVendorDto;
   keywordService: KeywordService;
   vendorTypeService: VendorTypeService;
+  shopCategoryService: ShopCategoryService;
   userService: UserService;
   vendorService: VendorService;
   referralLimit: number;
+  shopCityService: CityService;
 }) => {
   const {
     serviceOptionIds,
@@ -29,9 +35,10 @@ export const TempRegisterVendorVerification = async ({
     keyWordIds,
     licenseNo,
     email,
-    shopType,
+    shopCategoryId,
     mobile,
     referralId,
+    shopCityId,
   } = body;
 
   const [userByMobile, vendorType, licenseCheck, referralInfo] =
@@ -46,6 +53,14 @@ export const TempRegisterVendorVerification = async ({
   validateUserByMobile(userByMobile);
   validateVendorType(vendorType);
   validateLicenseNumber(licenseCheck);
+  await validateShopCity({ shopCityId, shopCityService });
+  if (shopCategoryId) {
+    await validateShopCategory({
+      shopCategoryId,
+      shopCategoryService,
+      vendorTypeId,
+    });
+  }
 
   // if (referralId) {
   //   if (!referralInfo) throw new BadRequestException('Referral Code Not found');
@@ -102,8 +117,8 @@ export const TempRegisterVendorVerification = async ({
 
   //checking shopType
   if (
-    (vendorType.type === VendorCategoryType.PRODUCT && !shopType) ||
-    (vendorType.type !== VendorCategoryType.PRODUCT && shopType)
+    (vendorType.type === VendorCategoryType.PRODUCT && !shopCategoryId) ||
+    (vendorType.type !== VendorCategoryType.PRODUCT && shopCategoryId)
   ) {
     throw new BadRequestException(
       'Shop type is required only when the vendor category is Street Food, and must not be provided for other categories.',
@@ -118,12 +133,16 @@ export const RegisterTestVendorVerification = async ({
   vendorTypeService,
   userService,
   vendorService,
+  shopCategoryService,
+  shopCityService,
 }: {
   body: TestRegisterVendorDto;
   keywordService: KeywordService;
   vendorTypeService: VendorTypeService;
   userService: UserService;
   vendorService: VendorService;
+  shopCategoryService: ShopCategoryService;
+  shopCityService: CityService;
 }) => {
   const {
     serviceOptionIds,
@@ -132,7 +151,8 @@ export const RegisterTestVendorVerification = async ({
     mobile,
     licenseNo,
     email,
-    shopType,
+    shopCategoryId,
+    shopCityId,
   } = body;
 
   const [userByMobile, vendorType, licenseCheck] = await Promise.all([
@@ -145,6 +165,14 @@ export const RegisterTestVendorVerification = async ({
   validateUserByMobile(userByMobile);
   validateVendorType(vendorType);
   validateLicenseNumber(licenseCheck);
+  await validateShopCity({ shopCityId, shopCityService });
+  if (shopCategoryId) {
+    await validateShopCategory({
+      shopCategoryId,
+      shopCategoryService,
+      vendorTypeId,
+    });
+  }
 
   if (!vendorType) {
     throw new BadRequestException('Invalid vendor type');
@@ -190,8 +218,8 @@ export const RegisterTestVendorVerification = async ({
 
   //checking shopType
   if (
-    (vendorType.type === VendorCategoryType.PRODUCT && !shopType) ||
-    (vendorType.type !== VendorCategoryType.PRODUCT && shopType)
+    (vendorType.type === VendorCategoryType.PRODUCT && !shopCategoryId) ||
+    (vendorType.type !== VendorCategoryType.PRODUCT && shopCategoryId)
   ) {
     throw new BadRequestException(
       'Shop type is required only when the vendor category is Street Food, and must not be provided for other categories.',
@@ -215,6 +243,44 @@ function validateLicenseNumber(licenseCheck: any) {
   if (licenseCheck) {
     throw new BadRequestException('License number is used by another vendor');
   }
+}
+
+async function validateShopCategory({
+  shopCategoryId,
+  shopCategoryService,
+  vendorTypeId,
+}: {
+  shopCategoryId: string;
+  shopCategoryService: ShopCategoryService;
+  vendorTypeId: string;
+}) {
+  const existingShopCategory =
+    await shopCategoryService.getShopCategoryByIdAndVendorType({
+      id: shopCategoryId,
+      vendorTypeId: vendorTypeId,
+    });
+
+  if (!existingShopCategory) {
+    throw new BadRequestException('Shop Category not found');
+  }
+
+  return existingShopCategory;
+}
+
+async function validateShopCity({
+  shopCityId,
+  shopCityService,
+}: {
+  shopCityId: string;
+  shopCityService: CityService;
+}) {
+  const existingShopCity = await shopCityService.getCityById(shopCityId);
+
+  if (!existingShopCity || existingShopCity.status === 'INACTIVE') {
+    throw new BadRequestException('Shop City not found or it is inactive');
+  }
+
+  return existingShopCity;
 }
 
 async function validateServiceOptionsForProductVendor({

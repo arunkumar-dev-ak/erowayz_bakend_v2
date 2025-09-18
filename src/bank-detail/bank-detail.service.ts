@@ -11,6 +11,9 @@ import { TrueOrFalseMap } from 'src/user/dto/edit-user.dto';
 import { GetBankQueryDto } from './dto/get-bank-query.dto';
 import { buildBankDetailWhereFilter } from './utils/get-bank-detail.utils';
 import { buildQueryParams } from 'src/common/functions/buildQueryParams';
+import { BankNameNameService } from 'src/bank-name/bank-name.service';
+import { Status } from '@prisma/client';
+import { BankPaymenttypeService } from 'src/bank-paymenttype/bank-paymenttype.service';
 
 @Injectable()
 export class BankDetailService {
@@ -18,6 +21,8 @@ export class BankDetailService {
     private readonly prisma: PrismaService,
     private readonly metaDataService: MetadataService,
     private readonly responseService: ResponseService,
+    private readonly bankNameService: BankNameNameService,
+    private readonly bankPaymentTypeService: BankPaymenttypeService,
   ) {}
 
   async getAllBankDetailForAdmin({
@@ -51,9 +56,16 @@ export class BankDetailService {
                 name: true,
               },
             },
-            shopInfo: true,
+            shopInfo: {
+              include: {
+                shopCategory: true,
+                shopCity: true,
+              },
+            },
           },
         },
+        bankNameRel: true,
+        bankPaymentRel: true,
       },
       orderBy: {
         isVerified: 'asc',
@@ -110,6 +122,8 @@ export class BankDetailService {
             },
           },
         },
+        bankNameRel: true,
+        bankPaymentRel: true,
       },
     });
 
@@ -137,19 +151,37 @@ export class BankDetailService {
       accountHolderName,
       accountNumber,
       ifscCode,
-      bankName,
+      bankNameId,
       branchName,
       accountType,
       upiId,
       linkedPhoneNumber,
-      bankPlatformType,
+      bankPaymentTypeId,
     } = body;
 
-    const existingBankDetails = await this.checkBankDetailsByVendor(vendorId);
+    const [existingBankDetails, existingBankName, existingBankPaymentType] =
+      await Promise.all([
+        this.checkBankDetailsByVendor(vendorId),
+        this.bankNameService.getBankNameById(bankNameId),
+        bankPaymentTypeId
+          ? this.bankPaymentTypeService.getBankPaymentTypeById(
+              bankPaymentTypeId,
+            )
+          : null,
+      ]);
+
     if (existingBankDetails) {
       throw new BadRequestException(
         'Bank details already exists.You muts edit or delete that one and bnot to create an extra one',
       );
+    }
+    if (!existingBankName || existingBankName.status === Status.INACTIVE) {
+      throw new BadRequestException('Bank Name Not found or Inactive');
+    }
+    if (bankPaymentTypeId) {
+      if (!existingBankPaymentType) {
+        throw new BadRequestException('Bank Payment Type not found');
+      }
     }
 
     const newBankDetail = await this.prisma.bankDetail.create({
@@ -157,13 +189,13 @@ export class BankDetailService {
         accountHolderName,
         accountNumber,
         ifscCode,
-        bankName,
+        bankNameId,
         branchName,
         accountType,
         upiId,
         vendorId,
         linkedPhoneNumber,
-        bankPlatformType,
+        ...(bankPaymentTypeId && { bankPaymentTypeId }),
       },
     });
 
@@ -194,6 +226,8 @@ export class BankDetailService {
       vendorId,
       bankDetailService: this,
       bankDetailId,
+      bankNameService: this.bankNameService,
+      bankPaymentTypeService: this.bankPaymentTypeService,
     });
 
     const updatedBankDetail = await this.prisma.bankDetail.update({

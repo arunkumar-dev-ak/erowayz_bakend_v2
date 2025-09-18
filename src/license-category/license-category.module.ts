@@ -5,5 +5,6 @@ import { LicenseCategoryController } from './license-category.controller';
 @Module({
   controllers: [LicenseCategoryController],
   providers: [LicenseCategoryService],
+  exports: [LicenseCategoryService],
 })
 export class LicenseCategoryModule {}

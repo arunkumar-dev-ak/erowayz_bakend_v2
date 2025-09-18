@@ -7,11 +7,21 @@ import { KeywordModule } from 'src/keyword/keyword.module';
 import { FcmTokenModule } from 'src/fcm-token/fcm-token.module';
 import { ConfigService } from '@nestjs/config';
 import { RedisModule } from 'src/redis/redis.module';
+import { LicenseCategoryModule } from 'src/license-category/license-category.module';
+import { CityModule } from 'src/city/city.module';
+import { ShopCategoryModule } from 'src/shop-category/shop-category.module';
 
 @Module({
-  imports: [KeywordModule, FcmTokenModule, RedisModule],
+  imports: [
+    KeywordModule,
+    FcmTokenModule,
+    RedisModule,
+    LicenseCategoryModule,
+    CityModule,
+    ShopCategoryModule,
+  ],
   controllers: [VendorController],
   providers: [VendorService, VendorTypeService, UserService, ConfigService],
-  exports: [VendorService, KeywordModule, VendorTypeService],
+  exports: [VendorService, KeywordModule, VendorTypeService, CityModule],
 })
 export class VendorModule {}

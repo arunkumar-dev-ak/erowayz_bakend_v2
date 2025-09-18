@@ -1,8 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { QuantityUnit } from '@prisma/client';
 import {
   IsDate,
-  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -104,15 +102,13 @@ export class CreateItemDto {
   discountPrice?: number;
 
   @ApiProperty({
-    description: 'QuantityUnit should be one of the predefined values',
+    description: 'ProductUnitId should not be empty',
     required: true,
-    enum: QuantityUnit,
+    example: 'Your ProductUnitId here',
   })
-  @IsEnum(QuantityUnit, {
-    message:
-      'Invalid Quantity Unit. Must be one of: GENERAL, KG, GRAM, BOX, SET, PIECE, LITRE, MILLILITRE, UNIT, SERVE.',
-  })
-  quantityUnit: QuantityUnit;
+  @IsString()
+  @IsNotEmpty({ message: 'ProductUnitId should not be empty' })
+  productUnitId: string;
 
   @ApiProperty({
     description: 'Daily Total quantity available',
