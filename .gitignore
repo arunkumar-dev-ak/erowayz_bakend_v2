@@ -4,7 +4,6 @@
 /build
 /src/firebase/firebaseServiceAccount.json
 /uploads
-./prisma/migrations
 
 # Logs
 logs
