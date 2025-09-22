@@ -102,6 +102,9 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "prisma": {
+      "schema": "prisma/schema"
+    }
   }
 }
