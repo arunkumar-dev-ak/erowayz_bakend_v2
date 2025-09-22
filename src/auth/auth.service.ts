@@ -689,6 +689,7 @@ export class AuthService {
             name,
             mobile,
             imageRef: imageUrl,
+            relativeUrl: relativePath,
             email,
           },
         });

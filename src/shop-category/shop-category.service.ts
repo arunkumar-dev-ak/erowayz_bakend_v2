@@ -50,6 +50,9 @@ export class ShopCategoryService {
       orderBy: {
         createdAt: 'desc',
       },
+      include: {
+        vendorType: true,
+      },
     });
 
     const queries = buildQueryParams({

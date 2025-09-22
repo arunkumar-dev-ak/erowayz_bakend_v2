@@ -11,8 +11,12 @@ export class FileUploadService {
     'image/jpg',
     'application/pdf',
     'application/octet-stream',
+    'text/html',
   ];
   private maxSize = 5 * 1024 * 1024; // 5MB
+
+  private baseUploadPath =
+    process.env.FILE_UPLOAD_PATH || path.resolve('./uploads');
 
   private generateUniqueFilename(originalName: string): string {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
@@ -20,62 +24,65 @@ export class FileUploadService {
   }
 
   private getUploadPath(type?: string): string {
-    let uploadPath = './uploads/general';
+    let uploadPath = path.join(this.baseUploadPath, 'general');
     if (type) {
       switch (type) {
         case 'profile':
-          uploadPath = './uploads/profiles';
+          uploadPath = path.join(this.baseUploadPath, 'profiles');
           break;
         case 'license':
-          uploadPath = './uploads/license';
+          uploadPath = path.join(this.baseUploadPath, 'license');
           break;
         case 'vendor':
-          uploadPath = './uploads/vendors';
+          uploadPath = path.join(this.baseUploadPath, 'vendors');
           break;
         case 'shop':
-          uploadPath = './uploads/shops';
+          uploadPath = path.join(this.baseUploadPath, 'shops');
           break;
         case 'vendortype':
-          uploadPath = './uploads/vendortypes';
+          uploadPath = path.join(this.baseUploadPath, 'vendortypes');
           break;
         case 'serviceOption':
-          uploadPath = './uploads/serviceOption';
+          uploadPath = path.join(this.baseUploadPath, 'serviceOption');
           break;
         case 'category':
-          uploadPath = './uploads/category';
+          uploadPath = path.join(this.baseUploadPath, 'category');
           break;
         case 'subCategory':
-          uploadPath = './uploads/subCategory';
+          uploadPath = path.join(this.baseUploadPath, 'subCategory');
           break;
         case 'item':
-          uploadPath = './uploads/item';
+          uploadPath = path.join(this.baseUploadPath, 'item');
           break;
         case 'banner':
-          uploadPath = './uploads/banner';
+          uploadPath = path.join(this.baseUploadPath, 'banner');
           break;
         case 'bannerProduct':
-          uploadPath = './uploads/bannerProduct';
+          uploadPath = path.join(this.baseUploadPath, 'bannerProduct');
           break;
         case 'service':
-          uploadPath = './uploads/service';
+          uploadPath = path.join(this.baseUploadPath, 'service');
           break;
         case 'bannerVendorItem':
-          uploadPath = './uploads/bannerVendorItem';
+          uploadPath = path.join(this.baseUploadPath, 'bannerVendorItem');
           break;
         case 'bankPaymentType':
-          uploadPath = './uploads/bankPaymentType';
+          uploadPath = path.join(this.baseUploadPath, 'bankPaymentType');
           break;
         case 'bankName':
-          uploadPath = './uploads/bankName';
+          uploadPath = path.join(this.baseUploadPath, 'bankName');
           break;
         case 'disclaimer':
-          uploadPath = './uploads/disclaimer';
+          uploadPath = path.join(this.baseUploadPath, 'disclaimer');
           break;
         case 'privacyPolicy':
-          uploadPath = './uploads/privacyPolicy';
+          uploadPath = path.join(this.baseUploadPath, 'privacyPolicy');
           break;
-        case 'videoLink':
-          uploadPath = './uploads/videoLink';
+        case 'poster':
+          uploadPath = path.join(this.baseUploadPath, 'poster');
+          break;
+        case 'termsAndCondition':
+          uploadPath = path.join(this.baseUploadPath, 'termsAndCondition');
           break;
       }
     }
@@ -107,8 +114,10 @@ export class FileUploadService {
     this.validateFile(file);
 
     const uploadPath = this.getUploadPath(body.type);
+    // console.log(`upload path is ${uploadPath}`);
     const uniqueFilename = this.generateUniqueFilename(file.originalname);
     const finalPath = `${uploadPath}/${uniqueFilename}`;
+    // console.log(`finalPath is ${finalPath}`);
     //upload files
     if (!file.path && !file.buffer) {
       throw new Error('File path cannot be empty');
@@ -117,7 +126,7 @@ export class FileUploadService {
     const relativePath = path
       .relative('./uploads', finalPath)
       .replace(/\\/g, '/'); //in windows the file path is like C:\\project\\uploads
-
+    // console.log(`relativePath is ${relativePath}`);
     const imageUrl = `${process.env.DOMAIN_URL || 'http://localhost:3000/'}client/${relativePath}`;
     return {
       imageUrl, //absolute URL

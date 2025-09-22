@@ -9,6 +9,7 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  Body,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { TermsAndConditionService } from './terms-and-condition.service';
@@ -18,12 +19,15 @@ import {
   ApiOperation,
   ApiParam,
   ApiTags,
+  ApiBody,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Roles } from 'src/common/roles/roles.docorator';
 import { Role } from '@prisma/client';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RoleGuard } from 'src/common/guards/role.guard';
+import { CreateTermsAndConditionDto } from './dto/create-terms-and-condition-policy.dto';
+import { UpdateTermsAndConditionDto } from './dto/update-terms-and-condition.dto';
 
 @ApiTags('Terms And Condition')
 @Controller('terms-and-condition')
@@ -42,16 +46,19 @@ export class TermsAndConditionController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create Terms and Condition (file upload)' })
   @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: CreateTermsAndConditionDto })
   @UseGuards(AuthGuard, RoleGuard)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('image'))
   @Post('/create')
   async createTermsAndCondition(
     @UploadedFile() file: Express.Multer.File,
     @Res() res: Response,
+    @Body() body: CreateTermsAndConditionDto,
   ) {
     return await this.termsAndConditionService.createTermsAndCondition({
       file,
       res,
+      body,
     });
   }
 
@@ -59,16 +66,22 @@ export class TermsAndConditionController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update Terms and Condition (file upload)' })
   @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'termsId', type: String, description: 'Terms ID' })
+  @ApiBody({ type: UpdateTermsAndConditionDto })
   @UseGuards(AuthGuard, RoleGuard)
-  @UseInterceptors(FileInterceptor('file'))
-  @Put('/update')
+  @UseInterceptors(FileInterceptor('image'))
+  @Put('/update/:termsId')
   async updateTermsAndCondition(
     @UploadedFile() file: Express.Multer.File,
     @Res() res: Response,
+    @Param('termsId') termsId: string,
+    @Body() body: UpdateTermsAndConditionDto,
   ) {
     return await this.termsAndConditionService.updateTermsAndCondition({
       file,
       res,
+      body,
+      termsId,
     });
   }
 

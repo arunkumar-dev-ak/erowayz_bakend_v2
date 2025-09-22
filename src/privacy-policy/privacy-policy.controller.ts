@@ -6,6 +6,7 @@ import {
   Delete,
   Param,
   Res,
+  Body,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -24,6 +25,8 @@ import { Roles } from 'src/common/roles/roles.docorator';
 import { Role } from '@prisma/client';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RoleGuard } from 'src/common/guards/role.guard';
+import { CreatePrivacyPolicyDto } from './dto/create-privacy-policy.dto';
+import { UpdatePrivacyPolicyDto } from './dto/update-privacy-policy.dto';
 
 @ApiTags('Privacy Policy')
 @Controller('privacy-policy')
@@ -46,22 +49,35 @@ export class PrivacyPolicyController {
   async createPrivacyPolicy(
     @Res() res: Response,
     @UploadedFile() file: Express.Multer.File,
+    @Body() body: CreatePrivacyPolicyDto,
   ) {
-    return await this.privacyPolicyService.createPrivacyPolicy({ res, file });
+    return await this.privacyPolicyService.createPrivacyPolicy({
+      res,
+      file,
+      body,
+    });
   }
 
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update Privacy Policy' })
   @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'privacyPolicyId', type: String })
   @UseGuards(AuthGuard, RoleGuard)
   @UseInterceptors(FileInterceptor('file'))
-  @Put('/update')
+  @Put('/update/:privacyPolicyId')
   async updatePrivacyPolicy(
     @Res() res: Response,
+    @Param('privacyPolicyId') privacyPolicyId: string,
     @UploadedFile() file: Express.Multer.File,
+    @Body() body: UpdatePrivacyPolicyDto,
   ) {
-    return await this.privacyPolicyService.updatePrivacyPolicy({ res, file });
+    return await this.privacyPolicyService.updatePrivacyPolicy({
+      res,
+      file,
+      body,
+      privacyPolicyId,
+    });
   }
 
   @Roles(Role.ADMIN)

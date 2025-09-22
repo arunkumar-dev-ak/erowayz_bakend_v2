@@ -2,11 +2,16 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Status } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
-export class UpdateBankNameDto {
+export class UpdateVideoLinkDto {
   @ApiProperty()
   @IsNotEmpty({ message: 'name is required' })
   @IsOptional()
-  name?: string;
+  heading?: string;
+
+  @ApiProperty()
+  @IsNotEmpty({ message: 'Link is required' })
+  @IsOptional()
+  link?: string;
 
   @ApiProperty({
     enum: Status,

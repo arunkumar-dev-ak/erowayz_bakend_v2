@@ -6,24 +6,25 @@ import {
   Delete,
   Param,
   Res,
-  UploadedFile,
+  Query,
+  Body,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { VideoLinkService } from './video-link.service';
 import {
   ApiBearerAuth,
-  ApiConsumes,
   ApiOperation,
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { Roles } from 'src/common/roles/roles.docorator';
 import { Role } from '@prisma/client';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RoleGuard } from 'src/common/guards/role.guard';
+import { GetVideoQueryDto } from './dto/get-video-link.dto';
+import { CreateVideoLinkDto } from './dto/create-video-link.dto';
+import { UpdateVideoLinkDto } from './dto/update-video-link.dto';
 
 @ApiTags('Video Link')
 @Controller('video-link')
@@ -32,36 +33,47 @@ export class VideoLinkController {
 
   @ApiOperation({ summary: 'Get all Video Links' })
   @Get()
-  async getVideoLink(@Res() res: Response) {
-    return await this.videoLinkService.getVideoLink({ res });
+  async getVideoLink(@Query() query: GetVideoQueryDto, @Res() res: Response) {
+    // pass pagination values (default example)
+    const offset = Number(query.offset ?? '0');
+    const limit = Number(query.limit ?? '0');
+
+    return await this.videoLinkService.getVideoLink({
+      res,
+      query,
+      offset,
+      limit,
+    });
   }
 
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create Video Link (upload a file)' })
-  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Create Video Link' })
   @UseGuards(AuthGuard, RoleGuard)
-  @UseInterceptors(FileInterceptor('file'))
   @Post('/create')
   async createVideoLink(
-    @UploadedFile() file: Express.Multer.File,
+    @Body() body: CreateVideoLinkDto,
     @Res() res: Response,
   ) {
-    return await this.videoLinkService.createVideoLink({ file, res });
+    return await this.videoLinkService.createVideoLink({ body, res });
   }
 
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update Video Link (upload a file)' })
-  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Update Video Link' })
+  @ApiParam({ name: 'videoLinkId', type: String })
   @UseGuards(AuthGuard, RoleGuard)
-  @UseInterceptors(FileInterceptor('file'))
-  @Put('/update')
+  @Put('/update/:videoLinkId')
   async updateVideoLink(
-    @UploadedFile() file: Express.Multer.File,
+    @Param('videoLinkId') videoLinkId: string,
+    @Body() body: UpdateVideoLinkDto,
     @Res() res: Response,
   ) {
-    return await this.videoLinkService.updateVideoLink({ file, res });
+    return await this.videoLinkService.updateVideoLink({
+      videoLinkId,
+      body,
+      res,
+    });
   }
 
   @Roles(Role.ADMIN)
@@ -74,9 +86,6 @@ export class VideoLinkController {
     @Param('videoLinkId') videoLinkId: string,
     @Res() res: Response,
   ) {
-    return await this.videoLinkService.deleteVideoLink({
-      videoLinkId,
-      res,
-    });
+    return await this.videoLinkService.deleteVideoLink({ videoLinkId, res });
   }
 }

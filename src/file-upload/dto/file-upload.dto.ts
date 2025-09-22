@@ -22,7 +22,7 @@ export enum ImageTypeEnum {
   DISCLAIMER = 'disclaimer',
   TERMSANDCONDITION = 'termsAndCondition',
   PRIVACYPOLICY = 'privacyPolicy',
-  VIDEOLINK = 'videoLink',
+  POSTER = 'poster',
 }
 export class FileUploadDto {
   @ApiProperty({

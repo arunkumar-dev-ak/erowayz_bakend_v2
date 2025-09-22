@@ -1,9 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Response } from 'express';
-import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseService } from 'src/response/response.service';
+import { GetVideoQueryDto } from './dto/get-video-link.dto';
+import { buildVideoLinkWhereFilter } from './utils/get-video-link.utils';
+import { buildQueryParams } from 'src/common/functions/buildQueryParams';
+import { MetadataService } from 'src/metadata/metadata.service';
+import { CreateVideoLinkDto } from './dto/create-video-link.dto';
+import { UpdateVideoLinkDto } from './dto/update-video-link.dto';
 
 @Injectable()
 export class VideoLinkService {
@@ -11,104 +16,127 @@ export class VideoLinkService {
     private readonly responseService: ResponseService,
     private readonly prismaService: PrismaService,
     private readonly fileUploadService: FileUploadService,
+    private readonly metaDataService: MetadataService,
   ) {}
 
-  async getVideoLink({ res }: { res: Response }) {
+  async getVideoLink({
+    res,
+    query,
+    offset,
+    limit,
+  }: {
+    res: Response;
+    query: GetVideoQueryDto;
+    offset: number;
+    limit: number;
+  }) {
     const initialDate = new Date();
 
-    const videoLinks = await this.prismaService.videoLink.findMany();
+    const where = buildVideoLinkWhereFilter({
+      query,
+    });
+
+    const totalCount = await this.prismaService.videoLink.count({
+      where,
+    });
+
+    const citys = await this.prismaService.videoLink.findMany({
+      where,
+      skip: offset,
+      take: limit,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    const queries = buildQueryParams({
+      heading: query.heading,
+    });
+
+    const meta = this.metaDataService.createMetaData({
+      totalCount,
+      offset,
+      limit,
+      path: 'video-link',
+      queries,
+    });
 
     return this.responseService.successResponse({
       initialDate,
       res,
-      data: videoLinks,
-      message: 'VideoLinks retrieved successfully',
+      data: citys,
+      meta,
+      message: 'Video Link retrieved successfully',
       statusCode: 200,
     });
   }
 
   async createVideoLink({
-    file,
     res,
+    body,
   }: {
-    file: Express.Multer.File;
     res: Response;
+    body: CreateVideoLinkDto;
   }) {
     const initialDate = new Date();
 
-    const videoLink = await this.prismaService.videoLink.findFirst({});
-    if (videoLink) {
-      throw new BadRequestException('VideoLink already exists');
-    }
+    const { link, status, heading } = body;
 
-    const newFile = this.fileUploadService.handleSingleFileUpload({
-      file,
-      body: {
-        type: ImageTypeEnum.VIDEOLINK,
+    const newVideoLink = await this.prismaService.videoLink.create({
+      data: {
+        link,
+        status,
+        heading,
       },
     });
 
-    try {
-      const newVideoLink = await this.prismaService.videoLink.create({
-        data: {
-          image: newFile.relativePath,
-        },
-      });
-
-      return this.responseService.successResponse({
-        res,
-        data: newVideoLink,
-        message: 'VideoLink Created Successfully',
-        statusCode: 200,
-        initialDate,
-      });
-    } catch (err) {
-      this.fileUploadService.handleSingleFileDeletion(newFile.relativePath);
-      throw err;
-    }
+    return this.responseService.successResponse({
+      res,
+      data: newVideoLink,
+      message: 'VideoLink Created Successfully',
+      statusCode: 200,
+      initialDate,
+    });
   }
 
   async updateVideoLink({
-    file,
     res,
+    videoLinkId,
+    body,
   }: {
-    file: Express.Multer.File;
     res: Response;
+    videoLinkId: string;
+    body: UpdateVideoLinkDto;
   }) {
     const initialDate = new Date();
 
-    const videoLink = await this.prismaService.videoLink.findFirst({});
+    const videoLink = await this.prismaService.videoLink.findUnique({
+      where: { id: videoLinkId },
+    });
     if (!videoLink) {
       throw new BadRequestException('VideoLink Not Found');
     }
 
-    const updatedFile = this.fileUploadService.handleSingleFileUpload({
-      file,
-      body: {
-        type: ImageTypeEnum.VIDEOLINK,
+    const { link, status, heading } = body;
+
+    const updatedVideoLink = await this.prismaService.videoLink.update({
+      where: {
+        id: videoLinkId,
+      },
+      data: {
+        ...(link && { link }),
+        ...(status && { status }),
+        ...(heading && { heading }),
       },
     });
 
-    try {
-      const updatedVideoLink = await this.prismaService.videoLink.create({
-        data: {
-          image: updatedFile.relativePath,
-        },
-      });
-
-      this.fileUploadService.handleSingleFileDeletion(videoLink.image);
-
-      return this.responseService.successResponse({
-        res,
-        data: updatedVideoLink,
-        message: 'VideoLink Updated Successfully',
-        statusCode: 200,
-        initialDate,
-      });
-    } catch (err) {
-      this.fileUploadService.handleSingleFileDeletion(updatedFile.relativePath);
-      throw err;
-    }
+    return this.responseService.successResponse({
+      res,
+      data: updatedVideoLink,
+      message: 'VideoLink Updated Successfully',
+      statusCode: 200,
+      initialDate,
+    });
   }
 
   async deleteVideoLink({
@@ -120,7 +148,9 @@ export class VideoLinkService {
   }) {
     const initialDate = new Date();
 
-    const videoLink = await this.prismaService.videoLink.findFirst({});
+    const videoLink = await this.prismaService.videoLink.findUnique({
+      where: { id: videoLinkId },
+    });
     if (!videoLink) {
       throw new BadRequestException('VideoLink Not Found');
     }

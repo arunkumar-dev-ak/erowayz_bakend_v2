@@ -74,6 +74,7 @@ import { PrivacyPolicyModule } from './privacy-policy/privacy-policy.module';
 import { VideoLinkModule } from './video-link/video-link.module';
 import { SettlementModule } from './settlement/settlement.module';
 import { ReferralModule } from './referral/referral.module';
+import { PosterModule } from './poster/poster.module';
 
 @Module({
   imports: [
@@ -122,7 +123,7 @@ import { ReferralModule } from './referral/referral.module';
     VendorSubscriptionModule,
     ManualRefundModule,
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
+      rootPath: join(`${process.env.FILE_UPLOAD_PATH}`),
       serveRoot: '/client/',
     }),
     ShopTimingModule,
@@ -145,6 +146,7 @@ import { ReferralModule } from './referral/referral.module';
     VideoLinkModule,
     SettlementModule,
     ReferralModule,
+    PosterModule,
   ],
   controllers: [AppController],
   providers: [

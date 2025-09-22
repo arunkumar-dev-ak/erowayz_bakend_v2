@@ -45,19 +45,19 @@ async function bootstrap() {
     }),
   );
   app.enableCors();
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api/v2');
   /*----- swagger setup -----*/
   const options = new DocumentBuilder()
     .setTitle('Eroways Api Docs')
     .setDescription('This api documentation is for Eroways application')
     .setVersion('1.0')
-    .addServer('http://localhost:3000/', 'Local environment')
+    .addServer('http://localhost:6000/', 'Local environment')
     .addServer('https://beta.erowayz.in/', 'Production')
     .addBearerAuth({ in: 'header', type: 'http' })
     .build();
   const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('api/v2', app, document);
+  SwaggerModule.setup('docs/v2', app, document);
 
-  await app.listen(process.env.PORT ?? 6000);
+  await app.listen(process.env.PORT ?? 8443);
 }
 bootstrap();

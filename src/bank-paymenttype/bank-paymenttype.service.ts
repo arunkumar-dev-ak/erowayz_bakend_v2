@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { MetadataService } from 'src/metadata/metadata.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseService } from 'src/response/response.service';
@@ -84,6 +84,10 @@ export class BankPaymenttypeService {
     file: Express.Multer.File;
   }) {
     const initialDate = new Date();
+
+    if (!body || !file) {
+      throw new BadRequestException('File or name,status is required');
+    }
 
     //verification, query generation
     const { createQuery, uploadedFile } = await CreateBankPaymentTypeUtils({

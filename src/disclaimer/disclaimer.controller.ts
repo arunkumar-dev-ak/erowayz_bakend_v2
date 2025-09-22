@@ -10,6 +10,7 @@ import {
   UseInterceptors,
   UseGuards,
   BadRequestException,
+  Body,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -25,6 +26,8 @@ import { Roles } from 'src/common/roles/roles.docorator';
 import { Role } from '@prisma/client';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RoleGuard } from 'src/common/guards/role.guard';
+import { CreateDiscalimerDto } from './dto/create-disclaimer.dto';
+import { UpdateDiscalimerDto } from './dto/update-disclaimer.dto';
 
 @Controller('disclaimer')
 export class DisclaimerController {
@@ -52,14 +55,15 @@ export class DisclaimerController {
     },
   })
   @UseGuards(AuthGuard, RoleGuard)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('image'))
   @Post('/create')
   async createDisclaimer(
     @Res() res: Response,
     @UploadedFile() file: Express.Multer.File,
+    @Body() body: CreateDiscalimerDto,
   ) {
     if (!file) throw new BadRequestException('File is required');
-    return await this.disclaimerService.createDisclaimer({ res, file });
+    return await this.disclaimerService.createDisclaimer({ res, file, body });
   }
 
   @Roles(Role.ADMIN)
@@ -78,14 +82,15 @@ export class DisclaimerController {
     },
   })
   @UseGuards(AuthGuard, RoleGuard)
-  @UseInterceptors(FileInterceptor('file'))
-  @Put('/update')
+  @UseInterceptors(FileInterceptor('image'))
+  @Put('/update/:id')
   async updateDisclaimer(
     @Res() res: Response,
     @UploadedFile() file: Express.Multer.File,
+    @Body() body: UpdateDiscalimerDto,
   ) {
     if (!file) throw new BadRequestException('File is required');
-    return await this.disclaimerService.updateDisclaimer({ res, file });
+    return await this.disclaimerService.updateDisclaimer({ res, file, body });
   }
 
   @Roles(Role.ADMIN)
