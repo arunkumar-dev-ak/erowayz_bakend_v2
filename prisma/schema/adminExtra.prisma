@@ -68,6 +68,7 @@ model BankPaymentType {
 model ShopCity {
     id               String             @id @default(uuid())
     name             String @unique
+    tamilName        String?
     status           Status             @default(ACTIVE)
 
     createdAt        DateTime           @default(now())

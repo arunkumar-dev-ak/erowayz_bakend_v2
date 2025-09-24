@@ -10,7 +10,7 @@ export const CreateCityUtils = async ({
   body: CreateCityDto;
   cityService: CityService;
 }) => {
-  const { name, status } = body;
+  const { name, status, tamilName } = body;
 
   const existingCity = await cityService.getCityByName(name);
   if (existingCity) {
@@ -20,6 +20,7 @@ export const CreateCityUtils = async ({
   const createQuery: Prisma.ShopCityCreateInput = {
     name,
     status,
+    tamilName,
   };
 
   return { createQuery };

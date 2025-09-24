@@ -55,6 +55,9 @@
     "socket.io": "^4.8.1",
     "uuid": "^11.1.0"
   },
+  "prisma": {
+    "schema": "prisma/schema"
+  },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
@@ -102,9 +105,6 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node",
-    "prisma": {
-      "schema": "prisma/schema"
-    }
+    "testEnvironment": "node"
   }
 }

@@ -8,13 +8,17 @@ export function buildLicenseCategoryWhereFilter({
 }): Prisma.LicenseCategoryWhereInput {
   const where: Prisma.LicenseCategoryWhereInput = {};
 
-  const { name } = query;
+  const { name, status } = query;
 
   if (name) {
     where.name = {
       contains: name,
       mode: 'insensitive',
     };
+  }
+
+  if (status) {
+    where.status = status;
   }
 
   return where;

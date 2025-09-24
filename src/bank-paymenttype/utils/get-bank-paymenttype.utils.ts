@@ -8,13 +8,17 @@ export function buildBankPaymentTypeWhereFilter({
 }): Prisma.BankPaymentTypeWhereInput {
   const where: Prisma.BankPaymentTypeWhereInput = {};
 
-  const { name } = query;
+  const { name, status } = query;
 
   if (name) {
     where.name = {
       contains: name,
       mode: 'insensitive',
     };
+  }
+
+  if (status) {
+    where.status = status;
   }
 
   return where;

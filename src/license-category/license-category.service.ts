@@ -52,6 +52,7 @@ export class LicenseCategoryService {
 
     const queries = buildQueryParams({
       name: query.name,
+      status: query.status,
     });
 
     const meta = this.metaDataService.createMetaData({

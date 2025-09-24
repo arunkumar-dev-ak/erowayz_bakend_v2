@@ -30,6 +30,11 @@ export class UpdateCityDto {
   @IsOptional()
   name?: string;
 
+  @ApiProperty()
+  @IsNotEmpty({ message: 'name is required' })
+  @IsOptional()
+  tamilName?: string;
+
   @ApiProperty({
     enum: Status,
   })

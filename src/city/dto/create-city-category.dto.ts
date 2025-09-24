@@ -7,6 +7,11 @@ export class CreateCityDto {
   @IsNotEmpty({ message: 'name is required' })
   name: string;
 
+  @ApiProperty()
+  @IsNotEmpty({ message: 'name is required' })
+  @IsOptional()
+  tamilName?: string;
+
   @ApiProperty({
     enum: Status,
   })

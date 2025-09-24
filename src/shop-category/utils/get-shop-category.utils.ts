@@ -8,13 +8,17 @@ export function buildShopCategoryWhereFilter({
 }): Prisma.ShopCategoryWhereInput {
   const where: Prisma.ShopCategoryWhereInput = {};
 
-  const { name } = query;
+  const { name, status } = query;
 
   if (name) {
     where.name = {
       contains: name,
       mode: 'insensitive',
     };
+  }
+
+  if (status) {
+    where.status = status;
   }
 
   return where;

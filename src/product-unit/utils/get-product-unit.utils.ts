@@ -8,13 +8,16 @@ export function buildProductUnitWhereFilter({
 }): Prisma.ProductUnitWhereInput {
   const where: Prisma.ProductUnitWhereInput = {};
 
-  const { name } = query;
+  const { name, status } = query;
 
   if (name) {
     where.name = {
       contains: name,
       mode: 'insensitive',
     };
+  }
+  if (status) {
+    where.status = status;
   }
 
   return where;

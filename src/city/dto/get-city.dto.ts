@@ -1,5 +1,6 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumberString, IsOptional, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Status } from '@prisma/client';
+import { IsEnum, IsNumberString, IsOptional, IsString } from 'class-validator';
 
 export class GetCityQueryDto {
   @ApiPropertyOptional({
@@ -9,6 +10,15 @@ export class GetCityQueryDto {
   @IsString()
   @IsOptional()
   name?: string;
+
+  @ApiProperty({
+    enum: Status,
+  })
+  @IsOptional()
+  @IsEnum(Status, {
+    message: `Status must be one of the following: ${Object.values(Status).join(', ')}`,
+  })
+  status?: Status;
 
   @ApiPropertyOptional({
     description: 'Number of records to skip (for pagination), default is 0',

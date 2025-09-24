@@ -12,7 +12,7 @@ export const UpdateCityUtils = async ({
   cityService: CityService;
   cityId: string;
 }) => {
-  const { name, status } = body;
+  const { name, status, tamilName } = body;
 
   const existingCity = await cityService.getCityById(cityId);
   if (!existingCity) {
@@ -37,6 +37,10 @@ export const UpdateCityUtils = async ({
 
   if (name !== undefined) {
     updateQuery.name = name;
+  }
+
+  if (tamilName !== undefined) {
+    updateQuery.tamilName = tamilName;
   }
 
   if (status !== undefined) {
