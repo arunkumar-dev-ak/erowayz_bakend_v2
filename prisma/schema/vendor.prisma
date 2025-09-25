@@ -68,6 +68,9 @@ model VendorType {
   keyword           keyWord[]
   subscriptionPlan  SubscriptionPlan[]
   shopCategory      ShopCategory[]
+  termsAndCondition TermsAndCondition?
+  privacyPolicy     PrivacyPolicy?
+  poster            Poster[]
 
   user              User               @relation(fields: [creatorId], references: [id])
 

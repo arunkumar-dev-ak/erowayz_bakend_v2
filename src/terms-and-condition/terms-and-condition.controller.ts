@@ -1,3 +1,4 @@
+// terms-and-condition.controller.ts
 import {
   Controller,
   Get,
@@ -6,26 +7,24 @@ import {
   Delete,
   Param,
   Res,
-  UploadedFile,
   UseGuards,
-  UseInterceptors,
   Body,
+  Query,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { TermsAndConditionService } from './terms-and-condition.service';
 import {
   ApiBearerAuth,
-  ApiConsumes,
   ApiOperation,
   ApiParam,
   ApiTags,
-  ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { Roles } from 'src/common/roles/roles.docorator';
 import { Role } from '@prisma/client';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RoleGuard } from 'src/common/guards/role.guard';
+import { GetTermsAndConditionQueryDto } from './dto/get-terms-query.dto';
 import { CreateTermsAndConditionDto } from './dto/create-terms-and-condition-policy.dto';
 import { UpdateTermsAndConditionDto } from './dto/update-terms-and-condition.dto';
 
@@ -37,26 +36,31 @@ export class TermsAndConditionController {
   ) {}
 
   @ApiOperation({ summary: 'Get all Terms and Conditions' })
+  @ApiQuery({ name: 'userType', enum: ['CUSTOMER', 'VENDOR'], required: false })
+  @ApiQuery({ name: 'vendorTypeId', type: String, required: false })
   @Get()
-  async getTermsAndCondition(@Res() res: Response) {
-    return await this.termsAndConditionService.getTermsAndCondition({ res });
+  async getTermsAndCondition(
+    @Res() res: Response,
+    @Query() query: GetTermsAndConditionQueryDto,
+  ) {
+    return await this.termsAndConditionService.getTermsAndCondition({
+      res,
+      query,
+      offset: Number(query.offset || '0'),
+      limit: Number(query.limit || '10'),
+    });
   }
 
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create Terms and Condition (file upload)' })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: CreateTermsAndConditionDto })
+  @ApiOperation({ summary: 'Create Terms and Condition' })
   @UseGuards(AuthGuard, RoleGuard)
-  @UseInterceptors(FileInterceptor('image'))
   @Post('/create')
   async createTermsAndCondition(
-    @UploadedFile() file: Express.Multer.File,
     @Res() res: Response,
     @Body() body: CreateTermsAndConditionDto,
   ) {
     return await this.termsAndConditionService.createTermsAndCondition({
-      file,
       res,
       body,
     });
@@ -64,21 +68,16 @@ export class TermsAndConditionController {
 
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update Terms and Condition (file upload)' })
-  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Update Terms and Condition' })
   @ApiParam({ name: 'termsId', type: String, description: 'Terms ID' })
-  @ApiBody({ type: UpdateTermsAndConditionDto })
   @UseGuards(AuthGuard, RoleGuard)
-  @UseInterceptors(FileInterceptor('image'))
   @Put('/update/:termsId')
   async updateTermsAndCondition(
-    @UploadedFile() file: Express.Multer.File,
     @Res() res: Response,
     @Param('termsId') termsId: string,
     @Body() body: UpdateTermsAndConditionDto,
   ) {
     return await this.termsAndConditionService.updateTermsAndCondition({
-      file,
       res,
       body,
       termsId,

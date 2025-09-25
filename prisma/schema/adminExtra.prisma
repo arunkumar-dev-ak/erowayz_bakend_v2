@@ -3,6 +3,12 @@ enum UserType {
     VENDOR
 }
 
+enum DisclaimerType {
+    PRODUCT_ORDER
+    SERVICE_BOOK
+    BANNER_BOOK
+}
+
 model LicenseCategory {
     id               String             @id @default(uuid())
     name             String @unique
@@ -79,8 +85,9 @@ model ShopCity {
 
 model Disclaimer {
     id               String             @id @default(uuid())
-    image            String
-    userType         UserType
+    disclaimerType   DisclaimerType
+    disclaimerHtml    String    @db.Text
+    disclaimerHtmlTa  String    @db.Text
 
     createdAt        DateTime           @default(now())
     updatedAt        DateTime           @updatedAt
@@ -88,20 +95,30 @@ model Disclaimer {
 
 model TermsAndCondition {
     id               String             @id @default(uuid())
-    image            String
     userType         UserType
+    vendorTypeId     String?
+    termsAndConditionHtml    String    @db.Text
+    termsAndConditionHtmlTa  String    @db.Text
 
     createdAt        DateTime           @default(now())
     updatedAt        DateTime           @updatedAt
+
+    @@unique([vendorTypeId])
+    vendorType      VendorType?  @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
 }
 
 model PrivacyPolicy {
     id               String             @id @default(uuid())
-    image            String
     userType         UserType
+    vendorTypeId     String?
+    privacyPolicyHtml    String    @db.Text
+    privacyPolicyHtmlTa  String    @db.Text
 
     createdAt        DateTime           @default(now())
     updatedAt        DateTime           @updatedAt
+
+    @@unique([vendorTypeId])
+    vendorType      VendorType?  @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
 }
 
 model VideoLink {
@@ -118,8 +135,11 @@ model Poster {
     id               String             @id @default(uuid())
     file              String
     heading          String
+    userType         UserType
+    vendorTypeId     String?
     status           Status             @default(ACTIVE)
 
     createdAt        DateTime           @default(now())
     updatedAt        DateTime           @updatedAt
+    vendorType       VendorType?  @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
 }

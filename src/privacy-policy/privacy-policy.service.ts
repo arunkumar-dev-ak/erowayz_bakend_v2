@@ -1,155 +1,161 @@
+// privacy-policy.service.ts
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Response } from 'express';
-import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
-import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseService } from 'src/response/response.service';
 import { CreatePrivacyPolicyDto } from './dto/create-privacy-policy.dto';
 import { UpdatePrivacyPolicyDto } from './dto/update-privacy-policy.dto';
+import { GetPrivacyPolicyQueryDto } from './dto/get-privacy-policy.dto';
 import { MetadataService } from 'src/metadata/metadata.service';
+import { buildPrivacyPolicyWhereFilter } from './utils/get-privacy-policy.utils';
+import { validateCreatePrivacyPolicy } from './utils/create-privacy-policy.utils';
+import { validateUpdatePrivacyPolicy } from './utils/update-privacy-policy.utils';
+import { buildQueryParams } from 'src/common/functions/buildQueryParams';
 
 @Injectable()
 export class PrivacyPolicyService {
   constructor(
     private readonly responseService: ResponseService,
     private readonly prismaService: PrismaService,
-    private readonly fileUploadService: FileUploadService,
     private readonly metaDataService: MetadataService,
   ) {}
 
-  async getPrivacyPolicy({ res }: { res: Response }) {
+  async getPrivacyPolicy({
+    res,
+    query,
+    offset,
+    limit,
+  }: {
+    res: Response;
+    query: GetPrivacyPolicyQueryDto;
+    offset: number;
+    limit: number;
+  }) {
     const initialDate = new Date();
 
-    const privacyPolicys = await this.prismaService.privacyPolicy.findMany();
+    const where = buildPrivacyPolicyWhereFilter({ query });
 
-    const count = await this.prismaService.termsAndCondition.count();
+    const totalCount = await this.prismaService.privacyPolicy.count({
+      where,
+    });
+
+    const privacyPolicies = await this.prismaService.privacyPolicy.findMany({
+      where,
+      skip: offset,
+      take: limit,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        vendorType: true,
+      },
+    });
+
+    const queries = buildQueryParams({
+      userType: query.userType,
+      vendorTypeName: query.vendorTypeName,
+      vendorTypeId: query.vendorTypeId,
+    });
 
     const meta = this.metaDataService.createMetaData({
-      totalCount: count,
-      offset: 0,
-      limit: 10,
-      path: 'terms-and-condition',
+      totalCount,
+      offset,
+      limit,
+      path: 'privacy-policy',
+      queries,
     });
 
     return this.responseService.successResponse({
       initialDate,
       res,
-      data: privacyPolicys,
-      message: 'TermsAndConditions retrieved successfully',
-      statusCode: 200,
+      data: privacyPolicies,
       meta,
-    });
-
-    return this.responseService.successResponse({
-      initialDate,
-      res,
-      data: privacyPolicys,
-      message: 'PrivacyPolicys retrieved successfully',
+      message: 'Privacy policies retrieved successfully',
       statusCode: 200,
     });
   }
 
   async createPrivacyPolicy({
-    file,
     res,
     body,
   }: {
-    file: Express.Multer.File;
     res: Response;
     body: CreatePrivacyPolicyDto;
   }) {
     const initialDate = new Date();
 
-    const newFile = this.fileUploadService.handleSingleFileUpload({
-      file,
-      body: {
-        type: ImageTypeEnum.PRIVACYPOLICY,
+    // Validate input and check constraints
+    await validateCreatePrivacyPolicy(this.prismaService, body);
+
+    const newPrivacyPolicy = await this.prismaService.privacyPolicy.create({
+      data: {
+        userType: body.userType,
+        vendorTypeId: body.vendorTypeId || null,
+        privacyPolicyHtml: body.privacyPolicyHtml,
+        privacyPolicyHtmlTa: body.privacyPolicyHtmlTa,
+      },
+      include: {
+        vendorType: true,
       },
     });
 
-    try {
-      const newPrivacyPolicy = await this.prismaService.privacyPolicy.create({
-        data: {
-          image: newFile.relativePath,
-          userType: body.userType,
-        },
-      });
-
-      return this.responseService.successResponse({
-        res,
-        data: newPrivacyPolicy,
-        message: 'PrivacyPolicy Created Successfully',
-        statusCode: 200,
-        initialDate,
-      });
-    } catch (err) {
-      this.fileUploadService.handleSingleFileDeletion(newFile.relativePath);
-      throw err;
-    }
+    return this.responseService.successResponse({
+      res,
+      data: newPrivacyPolicy,
+      message: 'Privacy policy created successfully',
+      statusCode: 201,
+      initialDate,
+    });
   }
 
   async updatePrivacyPolicy({
-    file,
     res,
     body,
     privacyPolicyId,
   }: {
-    file?: Express.Multer.File;
     res: Response;
     body: UpdatePrivacyPolicyDto;
     privacyPolicyId: string;
   }) {
     const initialDate = new Date();
 
-    const privacyPolicy = await this.prismaService.privacyPolicy.findUnique({
+    // Validate input and check constraints
+    await validateUpdatePrivacyPolicy(
+      this.prismaService,
+      privacyPolicyId,
+      body,
+    );
+
+    const updatedPrivacyPolicy = await this.prismaService.privacyPolicy.update({
       where: { id: privacyPolicyId },
+      data: {
+        ...(body.userType && { userType: body.userType }),
+
+        // If CUSTOMER, force null. Else update only if vendorTypeId is provided.
+        ...(body.userType === 'CUSTOMER'
+          ? { vendorTypeId: null }
+          : body.vendorTypeId !== undefined && {
+              vendorTypeId: body.vendorTypeId,
+            }),
+        ...(body.privacyPolicyHtml && {
+          privacyPolicyHtml: body.privacyPolicyHtml,
+        }),
+        ...(body.privacyPolicyHtmlTa && {
+          privacyPolicyHtmlTa: body.privacyPolicyHtmlTa,
+        }),
+      },
+      include: {
+        vendorType: true,
+      },
     });
-    if (!privacyPolicy) {
-      throw new BadRequestException('PrivacyPolicy Not Found');
-    }
 
-    let updatedFile: {
-      imageUrl: string;
-      relativePath: string;
-    } | null = null;
-    if (file) {
-      updatedFile = this.fileUploadService.handleSingleFileUpload({
-        file,
-        body: {
-          type: ImageTypeEnum.PRIVACYPOLICY,
-        },
-      });
-    }
-
-    try {
-      const updatedPrivacyPolicy =
-        await this.prismaService.privacyPolicy.update({
-          where: {
-            id: privacyPolicy.id,
-          },
-          data: {
-            ...(updatedFile && { image: updatedFile.relativePath }),
-            ...(body.userType && { userType: body.userType }),
-          },
-        });
-
-      this.fileUploadService.handleSingleFileDeletion(privacyPolicy.image);
-
-      return this.responseService.successResponse({
-        res,
-        data: updatedPrivacyPolicy,
-        message: 'PrivacyPolicy Updated Successfully',
-        statusCode: 200,
-        initialDate,
-      });
-    } catch (err) {
-      if (updatedFile) {
-        this.fileUploadService.handleSingleFileDeletion(
-          updatedFile.relativePath,
-        );
-      }
-      throw err;
-    }
+    return this.responseService.successResponse({
+      res,
+      data: updatedPrivacyPolicy,
+      message: 'Privacy policy updated successfully',
+      statusCode: 200,
+      initialDate,
+    });
   }
 
   async deletePrivacyPolicy({
@@ -164,20 +170,19 @@ export class PrivacyPolicyService {
     const privacyPolicy = await this.prismaService.privacyPolicy.findUnique({
       where: { id: privacyPolicyId },
     });
+
     if (!privacyPolicy) {
-      throw new BadRequestException('PrivacyPolicy Not Found');
+      throw new BadRequestException('Privacy policy not found');
     }
 
-    const deletePrivacyPolicy = await this.prismaService.privacyPolicy.delete({
-      where: {
-        id: privacyPolicyId,
-      },
+    const deletedPrivacyPolicy = await this.prismaService.privacyPolicy.delete({
+      where: { id: privacyPolicyId },
     });
 
     return this.responseService.successResponse({
       res,
-      data: deletePrivacyPolicy,
-      message: 'PrivacyPolicy Deleted Successfully',
+      data: deletedPrivacyPolicy,
+      message: 'Privacy policy deleted successfully',
       statusCode: 200,
       initialDate,
     });

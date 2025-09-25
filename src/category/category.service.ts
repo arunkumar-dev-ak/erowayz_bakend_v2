@@ -38,7 +38,7 @@ export class CategoryService {
     query: GetCategoryQueryDto;
   }) {
     const initialDate = new Date();
-    const { name, vendorId } = query;
+    const { name, vendorId, vendorTypeId } = query;
     const where: Prisma.CategoryWhereInput = {};
     if (name) {
       where.name = {
@@ -52,6 +52,9 @@ export class CategoryService {
           vendorId,
         },
       };
+    }
+    if (vendorTypeId) {
+      where.vendorTypeId = vendorTypeId;
     }
 
     const totalCount = await this.prisma.category.count({ where });
@@ -68,6 +71,7 @@ export class CategoryService {
     const queries = buildQueryParams({
       name,
       vendorId,
+      vendorTypeId,
     });
 
     const meta = this.metaDataService.createMetaData({

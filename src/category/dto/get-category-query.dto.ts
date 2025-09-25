@@ -19,6 +19,14 @@ export class GetCategoryQueryDto {
   vendorId?: string;
 
   @ApiPropertyOptional({
+    description: 'Filter License Category by name',
+    type: String,
+  })
+  @IsString()
+  @IsOptional()
+  vendorTypeId?: string;
+
+  @ApiPropertyOptional({
     type: Number,
     description: 'Pagination offset, defaults to 0',
     example: 0,

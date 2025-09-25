@@ -1,3 +1,4 @@
+// poster.controller.ts
 import {
   Controller,
   Get,
@@ -21,7 +22,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiParam,
-  ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
 import { PosterService } from './poster.service';
 import { CreatePosterDto } from './dto/create-poster.dto';
@@ -33,23 +34,12 @@ import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RoleGuard } from 'src/common/guards/role.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 
+@ApiTags('Poster')
 @Controller('poster')
 export class PosterController {
   constructor(private readonly posterService: PosterService) {}
 
   @ApiOperation({ summary: 'Get Posters with filtering & pagination' })
-  @ApiQuery({
-    name: 'offset',
-    type: Number,
-    required: false,
-    description: 'Pagination offset',
-  })
-  @ApiQuery({
-    name: 'limit',
-    type: Number,
-    required: false,
-    description: 'Pagination limit',
-  })
   @Get()
   async getPosters(
     @Res() res: Response,

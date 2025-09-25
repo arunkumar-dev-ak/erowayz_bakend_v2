@@ -6,17 +6,13 @@ import {
   Delete,
   Res,
   Param,
-  UploadedFile,
-  UseInterceptors,
   UseGuards,
-  BadRequestException,
   Body,
+  Query,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
-  ApiConsumes,
   ApiBody,
   ApiOperation,
   ApiParam,
@@ -26,8 +22,9 @@ import { Roles } from 'src/common/roles/roles.docorator';
 import { Role } from '@prisma/client';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RoleGuard } from 'src/common/guards/role.guard';
-import { CreateDiscalimerDto } from './dto/create-disclaimer.dto';
-import { UpdateDiscalimerDto } from './dto/update-disclaimer.dto';
+import { CreateDisclaimerDto } from './dto/create-disclaimer.dto';
+import { UpdateDisclaimerDto } from './dto/update-disclaimer.dto';
+import { GetDisclaimerQueryDto } from './dto/get-discalimer.dto';
 
 @Controller('disclaimer')
 export class DisclaimerController {
@@ -35,62 +32,46 @@ export class DisclaimerController {
 
   @ApiOperation({ summary: 'Get all Disclaimers' })
   @Get()
-  async getDisclaimer(@Res() res: Response) {
-    return await this.disclaimerService.getDisclaimer({ res });
+  async getDisclaimer(
+    @Res() res: Response,
+    @Query() query: GetDisclaimerQueryDto,
+  ) {
+    const offsetNum = Number(query.offset) || 0;
+    const limitNum = Number(query.limit) || 10;
+
+    return await this.disclaimerService.getDisclaimer({
+      res,
+      offset: offsetNum,
+      limit: limitNum,
+      query,
+    });
   }
 
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create Disclaimer (with image)' })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
-  })
+  @ApiOperation({ summary: 'Create Disclaimer' })
+  @ApiBody({ type: CreateDisclaimerDto })
   @UseGuards(AuthGuard, RoleGuard)
-  @UseInterceptors(FileInterceptor('image'))
   @Post('/create')
   async createDisclaimer(
     @Res() res: Response,
-    @UploadedFile() file: Express.Multer.File,
-    @Body() body: CreateDiscalimerDto,
+    @Body() body: CreateDisclaimerDto,
   ) {
-    if (!file) throw new BadRequestException('File is required');
-    return await this.disclaimerService.createDisclaimer({ res, file, body });
+    return await this.disclaimerService.createDisclaimer({ res, body });
   }
 
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update Disclaimer (replace image)' })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
-  })
+  @ApiOperation({ summary: 'Update Disclaimer' })
+  @ApiBody({ type: UpdateDisclaimerDto })
   @UseGuards(AuthGuard, RoleGuard)
-  @UseInterceptors(FileInterceptor('image'))
   @Put('/update/:id')
   async updateDisclaimer(
     @Res() res: Response,
-    @UploadedFile() file: Express.Multer.File,
-    @Body() body: UpdateDiscalimerDto,
+    @Param('id') id: string,
+    @Body() body: UpdateDisclaimerDto,
   ) {
-    if (!file) throw new BadRequestException('File is required');
-    return await this.disclaimerService.updateDisclaimer({ res, file, body });
+    return await this.disclaimerService.updateDisclaimer({ res, id, body });
   }
 
   @Roles(Role.ADMIN)

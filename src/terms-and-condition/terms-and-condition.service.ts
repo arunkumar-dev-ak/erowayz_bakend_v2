@@ -1,94 +1,120 @@
+// terms-and-condition.service.ts
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Response } from 'express';
-import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
-import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { MetadataService } from 'src/metadata/metadata.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseService } from 'src/response/response.service';
+import { GetTermsAndConditionQueryDto } from './dto/get-terms-query.dto';
+import { buildTermsAndConditionWhereFilter } from './utils/get-terms.utils';
+import { buildQueryParams } from 'src/common/functions/buildQueryParams';
 import { CreateTermsAndConditionDto } from './dto/create-terms-and-condition-policy.dto';
+import { validateCreateTermsAndCondition } from './utils/create-terms.utils';
 import { UpdateTermsAndConditionDto } from './dto/update-terms-and-condition.dto';
+import { validateUpdateTermsAndCondition } from './utils/update-terms.utils';
 
 @Injectable()
 export class TermsAndConditionService {
   constructor(
     private readonly responseService: ResponseService,
     private readonly prismaService: PrismaService,
-    private readonly fileUploadService: FileUploadService,
     private readonly metaDataService: MetadataService,
   ) {}
 
-  async getTermsAndCondition({ res }: { res: Response }) {
+  async getTermsAndCondition({
+    res,
+    query,
+    offset,
+    limit,
+  }: {
+    res: Response;
+    query: GetTermsAndConditionQueryDto;
+    offset: number;
+    limit: number;
+  }) {
     const initialDate = new Date();
 
-    const termsAndConditions =
-      await this.prismaService.termsAndCondition.findMany();
+    const where = buildTermsAndConditionWhereFilter({ query });
 
-    const count = await this.prismaService.termsAndCondition.count();
+    const totalCount = await this.prismaService.termsAndCondition.count({
+      where,
+    });
+
+    const termsAndConditions =
+      await this.prismaService.termsAndCondition.findMany({
+        where,
+        skip: offset,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          vendorType: true,
+        },
+      });
+
+    const queries = buildQueryParams({
+      userType: query.userType,
+      vendorTypeName: query.vendorTypeName,
+      vendorTypeId: query.vendorTypeId,
+    });
 
     const meta = this.metaDataService.createMetaData({
-      totalCount: count,
-      offset: 0,
-      limit: 10,
+      totalCount,
+      offset,
+      limit,
       path: 'terms-and-condition',
+      queries,
     });
 
     return this.responseService.successResponse({
       initialDate,
       res,
       data: termsAndConditions,
-      message: 'TermsAndConditions retrieved successfully',
-      statusCode: 200,
       meta,
+      message: 'Terms and Conditions retrieved successfully',
+      statusCode: 200,
     });
   }
 
   async createTermsAndCondition({
-    file,
     res,
     body,
   }: {
-    file: Express.Multer.File;
     res: Response;
     body: CreateTermsAndConditionDto;
   }) {
     const initialDate = new Date();
 
-    const newFile = this.fileUploadService.handleSingleFileUpload({
-      file,
-      body: {
-        type: ImageTypeEnum.TERMSANDCONDITION,
-      },
-    });
+    // Validate input and check constraints
+    await validateCreateTermsAndCondition(this.prismaService, body);
 
-    try {
-      const newTermsAndCondition =
-        await this.prismaService.termsAndCondition.create({
-          data: {
-            image: newFile.relativePath,
-            userType: body.userType,
-          },
-        });
-
-      return this.responseService.successResponse({
-        res,
-        data: newTermsAndCondition,
-        message: 'TermsAndCondition Created Successfully',
-        statusCode: 200,
-        initialDate,
+    const newTermsAndCondition =
+      await this.prismaService.termsAndCondition.create({
+        data: {
+          userType: body.userType,
+          vendorTypeId: body.vendorTypeId || null,
+          termsAndConditionHtml: body.termsAndConditionHtml,
+          termsAndConditionHtmlTa: body.termsAndConditionHtmlTa,
+        },
+        include: {
+          vendorType: true,
+        },
       });
-    } catch (err) {
-      this.fileUploadService.handleSingleFileDeletion(newFile.relativePath);
-      throw err;
-    }
+
+    return this.responseService.successResponse({
+      res,
+      data: newTermsAndCondition,
+      message: 'Terms and Conditions created successfully',
+      statusCode: 201,
+      initialDate,
+    });
   }
 
   async updateTermsAndCondition({
-    file,
     res,
     body,
     termsId,
   }: {
-    file: Express.Multer.File;
     res: Response;
     termsId: string;
     body: UpdateTermsAndConditionDto;
@@ -99,50 +125,46 @@ export class TermsAndConditionService {
       await this.prismaService.termsAndCondition.findUnique({
         where: { id: termsId },
       });
+
     if (!termsAndCondition) {
-      throw new BadRequestException('TermsAndCondition Not Found');
+      throw new BadRequestException('Terms and Conditions not found');
     }
 
-    let updatedFile: {
-      imageUrl: string;
-      relativePath: string;
-    } | null = null;
-    if (file) {
-      updatedFile = this.fileUploadService.handleSingleFileUpload({
-        file,
-        body: {
-          type: ImageTypeEnum.TERMSANDCONDITION,
+    // Validate input and check constraints
+    await validateUpdateTermsAndCondition(this.prismaService, termsId, body);
+
+    const updatedTermsAndCondition =
+      await this.prismaService.termsAndCondition.update({
+        where: { id: termsId },
+        data: {
+          ...(body.userType && { userType: body.userType }),
+
+          // If CUSTOMER, force null. Else update only if vendorTypeId is provided.
+          ...(body.userType === 'CUSTOMER'
+            ? { vendorTypeId: null }
+            : body.vendorTypeId !== undefined && {
+                vendorTypeId: body.vendorTypeId,
+              }),
+
+          ...(body.termsAndConditionHtml && {
+            termsAndConditionHtml: body.termsAndConditionHtml,
+          }),
+          ...(body.termsAndConditionHtmlTa && {
+            termsAndConditionHtmlTa: body.termsAndConditionHtmlTa,
+          }),
+        },
+        include: {
+          vendorType: true,
         },
       });
-    }
 
-    try {
-      const newTermsAndCondition =
-        await this.prismaService.termsAndCondition.update({
-          where: {
-            id: termsAndCondition.id,
-          },
-          data: {
-            ...(updatedFile && { image: updatedFile.relativePath }),
-            ...(body.userType && { userType: body.userType }),
-          },
-        });
-
-      return this.responseService.successResponse({
-        res,
-        data: newTermsAndCondition,
-        message: 'TermsAndCondition Created Successfully',
-        statusCode: 200,
-        initialDate,
-      });
-    } catch (err) {
-      if (updatedFile) {
-        this.fileUploadService.handleSingleFileDeletion(
-          updatedFile.relativePath,
-        );
-      }
-      throw err;
-    }
+    return this.responseService.successResponse({
+      res,
+      data: updatedTermsAndCondition,
+      message: 'Terms and Conditions updated successfully',
+      statusCode: 200,
+      initialDate,
+    });
   }
 
   async deleteTermsAndCondition({
@@ -156,25 +178,22 @@ export class TermsAndConditionService {
 
     const termsAndCondition =
       await this.prismaService.termsAndCondition.findUnique({
-        where: {
-          id: termsAndConditionId,
-        },
+        where: { id: termsAndConditionId },
       });
+
     if (!termsAndCondition) {
-      throw new BadRequestException('TermsAndCondition Not Found');
+      throw new BadRequestException('Terms and Conditions not found');
     }
 
-    const deleteTermsAndCondition =
+    const deletedTermsAndCondition =
       await this.prismaService.termsAndCondition.delete({
-        where: {
-          id: termsAndConditionId,
-        },
+        where: { id: termsAndConditionId },
       });
 
     return this.responseService.successResponse({
       res,
-      data: deleteTermsAndCondition,
-      message: 'TermsAndCondition Deleted Successfully',
+      data: deletedTermsAndCondition,
+      message: 'Terms and Conditions deleted successfully',
       statusCode: 200,
       initialDate,
     });

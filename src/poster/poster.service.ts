@@ -1,3 +1,4 @@
+// poster.service.ts
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { MetadataService } from 'src/metadata/metadata.service';
@@ -10,6 +11,8 @@ import { Response } from 'express';
 import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
 import { CreatePosterDto } from './dto/create-poster.dto';
 import { UpdatePosterDto } from './dto/update-poster.dto';
+import { validateCreatePoster } from './utils/create-poster.utils';
+import { validateUpdatePoster } from './utils/update-poster.utils';
 
 @Injectable()
 export class PosterService {
@@ -41,17 +44,23 @@ export class PosterService {
       where,
     });
 
-    const citys = await this.prismaService.poster.findMany({
+    const posters = await this.prismaService.poster.findMany({
       where,
       skip: offset,
       take: limit,
       orderBy: {
         createdAt: 'desc',
       },
+      include: {
+        vendorType: true,
+      },
     });
 
     const queries = buildQueryParams({
       heading: query.heading,
+      userType: query.userType,
+      vendorTypeId: query.vendorTypeId,
+      vendorTypeName: query.vendorTypeName,
     });
 
     const meta = this.metaDataService.createMetaData({
@@ -65,9 +74,9 @@ export class PosterService {
     return this.responseService.successResponse({
       initialDate,
       res,
-      data: citys,
+      data: posters,
       meta,
-      message: 'Poster retrieved successfully',
+      message: 'Posters retrieved successfully',
       statusCode: 200,
     });
   }
@@ -83,6 +92,9 @@ export class PosterService {
   }) {
     const initialDate = new Date();
 
+    // Validate input and check constraints
+    await validateCreatePoster(this.prismaService, body);
+
     const newFile = this.fileUploadService.handleSingleFileUpload({
       file,
       body: {
@@ -90,22 +102,27 @@ export class PosterService {
       },
     });
 
-    const { heading, status } = body;
+    const { heading, userType, vendorTypeId, status } = body;
 
     try {
       const newPoster = await this.prismaService.poster.create({
         data: {
           file: newFile.relativePath,
-          status,
           heading,
+          userType,
+          vendorTypeId: vendorTypeId || null,
+          status: status || 'ACTIVE',
+        },
+        include: {
+          vendorType: true,
         },
       });
 
       return this.responseService.successResponse({
         res,
         data: newPoster,
-        message: 'Poster Created Successfully',
-        statusCode: 200,
+        message: 'Poster created successfully',
+        statusCode: 201,
         initialDate,
       });
     } catch (err) {
@@ -120,24 +137,29 @@ export class PosterService {
     body,
     posterId,
   }: {
-    file: Express.Multer.File;
+    file?: Express.Multer.File;
     res: Response;
     posterId: string;
     body: UpdatePosterDto;
   }) {
     const initialDate = new Date();
 
+    // Validate input and check constraints
+    await validateUpdatePoster(this.prismaService, posterId, body);
+
     const poster = await this.prismaService.poster.findUnique({
       where: { id: posterId },
     });
+
     if (!poster) {
-      throw new BadRequestException('Poster Not Found');
+      throw new BadRequestException('Poster not found');
     }
 
     let updatedFile: {
       imageUrl: string;
       relativePath: string;
     } | null = null;
+
     if (file) {
       updatedFile = this.fileUploadService.handleSingleFileUpload({
         file,
@@ -147,24 +169,34 @@ export class PosterService {
       });
     }
 
-    const { heading, status } = body;
+    const { heading, userType, vendorTypeId, status } = body;
 
     try {
-      const newPoster = await this.prismaService.poster.update({
+      const updatedPoster = await this.prismaService.poster.update({
         where: {
           id: poster.id,
         },
         data: {
           ...(updatedFile && { file: updatedFile.relativePath }),
           ...(heading && { heading }),
+          ...(userType && { userType }),
+          ...(vendorTypeId !== undefined && { vendorTypeId }),
           ...(status && { status }),
+        },
+        include: {
+          vendorType: true,
         },
       });
 
+      // Delete old file if new file was uploaded
+      if (updatedFile && poster.file) {
+        this.fileUploadService.handleSingleFileDeletion(poster.file);
+      }
+
       return this.responseService.successResponse({
         res,
-        data: newPoster,
-        message: 'Poster Created Successfully',
+        data: updatedPoster,
+        message: 'Poster updated successfully',
         statusCode: 200,
         initialDate,
       });
@@ -186,20 +218,26 @@ export class PosterService {
         id: posterId,
       },
     });
+
     if (!poster) {
-      throw new BadRequestException('Poster Not Found');
+      throw new BadRequestException('Poster not found');
     }
 
-    const deletePoster = await this.prismaService.poster.delete({
+    const deletedPoster = await this.prismaService.poster.delete({
       where: {
         id: posterId,
       },
     });
 
+    // Delete associated file
+    if (poster.file) {
+      this.fileUploadService.handleSingleFileDeletion(poster.file);
+    }
+
     return this.responseService.successResponse({
       res,
-      data: deletePoster,
-      message: 'Poster Deleted Successfully',
+      data: deletedPoster,
+      message: 'Poster deleted successfully',
       statusCode: 200,
       initialDate,
     });
