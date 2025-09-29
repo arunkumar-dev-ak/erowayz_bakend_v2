@@ -331,7 +331,11 @@ export class VendorService {
         },
         shopInfo: {
           include: {
-            license: true,
+            license: {
+              include: {
+                licenseCategory: true,
+              },
+            },
             shopCategory: true,
             shopCity: true,
           },
