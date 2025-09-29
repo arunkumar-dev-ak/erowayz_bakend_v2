@@ -145,6 +145,7 @@ export async function UpdateShopInfoUtils({
       update: {
         ...(licenseNo && { licenseNo }),
         ...(expiryDate && { expiryDate }),
+        ...(licenseCategoryId && { licenseCategoryId }),
         ...(licenseImageUrl && {
           image: licenseImageUrl.imageUrl,
           relativeUrl: licenseImageUrl.relativePath,

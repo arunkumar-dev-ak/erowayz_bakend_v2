@@ -39,6 +39,7 @@ export const includeItem = (userId?: string) => {
         relativeUrl: true,
       },
     },
+    productUnit: true,
   };
 
   if (userId) {
