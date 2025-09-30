@@ -12,6 +12,7 @@ import {
   SubscriptionPlan,
   User,
   Vendor,
+  VendorSubscription,
 } from '@prisma/client';
 import { initiateVendorSubscriptionVerification } from './utils/initiate-vendor-sub.utils';
 import { JuspayOrderResponse } from 'src/payment/dto/juspay-webhook.dto';
@@ -20,7 +21,6 @@ import { ManualRefundService } from 'src/manual-refund/manual-refund.service';
 import {
   calculateEndDate,
   checkCurrentAndFutureSubscription,
-  createManualRefund,
   getSubscriptionPlanOrThrow,
 } from './utils/create-vendor-sub-utils';
 import { GetVendorSubscriptionQueryForAdmin } from './dto/get-vendor-sub.query.dto';
@@ -70,9 +70,7 @@ export class VendorSubscriptionService {
           },
         },
       },
-      orderBy: {
-        isActive: 'desc',
-      },
+      orderBy: [{ isActive: 'desc' }, { endDate: 'desc' }],
     });
 
     const queries = buildQueryParams({
@@ -135,14 +133,33 @@ export class VendorSubscriptionService {
     const initialDate = new Date();
 
     try {
-      const { subPlan } = await initiateVendorSubscriptionVerification({
-        currentDate: initialDate,
-        body,
-        subscriptionService: this.subscriptionService,
-        vendor,
-        vendorSubscriptionService: this,
-        user,
-      });
+      const { subPlan, existingSubscriptionPlan, futureVendorSubscription } =
+        await initiateVendorSubscriptionVerification({
+          currentDate: initialDate,
+          body,
+          subscriptionService: this.subscriptionService,
+          vendor,
+          vendorSubscriptionService: this,
+          user,
+        });
+
+      //handle amount zero
+      if (subPlan.discountPrice === 0) {
+        const vendorSubscriptionPlan =
+          await this.createVendorSubscriptionForZeroAmount({
+            vendorId: vendor.id,
+            subPlan,
+            existingSubscriptionPlan,
+            futureVendorSubscription,
+          });
+        return this.responseService.successResponse({
+          initialDate,
+          data: vendorSubscriptionPlan,
+          res,
+          message: 'Subscrition processed successfully',
+          statusCode: 200,
+        });
+      }
 
       const jusPayOrder: JuspayOrderResponse | undefined =
         await this.paymentJuspayService.createOrder({
@@ -248,7 +265,7 @@ export class VendorSubscriptionService {
       return this.createSubscriptionEntry({
         payment,
         plan,
-        startDate: now,
+        startDate: existingSubscriptionPlan.endDate,
         endDate,
         vendorId,
         tx,
@@ -267,6 +284,58 @@ export class VendorSubscriptionService {
     }
   }
 
+  /*----- handling zero amount -----*/
+  createVendorSubscriptionForZeroAmount = async ({
+    subPlan,
+    vendorId,
+    existingSubscriptionPlan,
+    futureVendorSubscription,
+    tx,
+  }: {
+    subPlan: SubscriptionPlan;
+    existingSubscriptionPlan?: VendorSubscription | null;
+    futureVendorSubscription?: VendorSubscription | null;
+    vendorId: string;
+    tx?: Prisma.TransactionClient;
+  }) => {
+    const now = new Date();
+
+    if (existingSubscriptionPlan && futureVendorSubscription) {
+      throw new PaymentError(
+        'You already have an active and an upcoming subscription. New subscription cannot be created.',
+        false,
+        'Active and future subscription conflict',
+        {
+          existingSubscriptionPlan,
+          futureVendorSubscription,
+        },
+      );
+    } else if (existingSubscriptionPlan && !futureVendorSubscription) {
+      const endDate = calculateEndDate(
+        existingSubscriptionPlan.endDate,
+        subPlan.billingPeriod,
+      );
+
+      return this.createSubscriptionEntry({
+        plan: subPlan,
+        startDate: existingSubscriptionPlan.endDate,
+        endDate,
+        vendorId,
+        tx,
+      });
+    } else {
+      const endDate = calculateEndDate(now, subPlan.billingPeriod);
+
+      return this.createSubscriptionEntry({
+        plan: subPlan,
+        startDate: now,
+        endDate,
+        vendorId,
+        tx,
+      });
+    }
+  };
+
   private async createSubscriptionEntry({
     payment,
     plan,
@@ -275,7 +344,7 @@ export class VendorSubscriptionService {
     vendorId,
     tx,
   }: {
-    payment: Payment;
+    payment?: Payment;
     plan: SubscriptionPlan;
     startDate: Date;
     endDate: Date;
@@ -287,7 +356,7 @@ export class VendorSubscriptionService {
     const newVendorSubscription = await prisma.vendorSubscription.create({
       data: {
         vendorId,
-        paymentId: payment.id,
+        paymentId: payment ? payment.id : undefined,
         planId: plan.id,
         planName: plan.name,
         planFeatures: plan.features
@@ -307,6 +376,7 @@ export class VendorSubscriptionService {
   /*----- helper func -----*/
   async checkCurrentVendorSubscription({ vendorId }: { vendorId: string }) {
     const currentDate = new Date();
+    console.log(currentDate);
     return await this.prisma.vendorSubscription.findFirst({
       where: {
         vendorId,
@@ -357,7 +427,7 @@ export class VendorSubscriptionService {
   async checkVendorSubInitiationCount(userId: string) {
     const currentDate = new Date();
 
-    return await this.prisma.payment.count({
+    const payments = await this.prisma.payment.count({
       where: {
         userId,
         purpose: PaymentPurpose.SUBSCRIPTION_PURCHASE,
@@ -367,5 +437,6 @@ export class VendorSubscriptionService {
         },
       },
     });
+    return payments;
   }
 }

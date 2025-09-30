@@ -63,7 +63,7 @@ export const initiateVendorSubscriptionVerification = async ({
       vendorSubscriptionService.checkCurrentVendorSubscription({
         vendorId: vendor.id,
       }),
-      vendorSubscriptionService.checkCurrentVendorSubscription({
+      vendorSubscriptionService.checkFutureVendorSubscription({
         vendorId: vendor.id,
       }),
     ]);
@@ -87,5 +87,5 @@ export const initiateVendorSubscriptionVerification = async ({
     );
   }
 
-  return { subPlan };
+  return { subPlan, existingSubscriptionPlan, futureVendorSubscription };
 };

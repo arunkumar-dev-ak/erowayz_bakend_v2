@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -18,6 +19,7 @@ import { RoleGuard } from 'src/common/guards/role.guard';
 import { CreateVendorSubscriptionDto } from './dto/create-vendor-sub.dto';
 import { CurrentUser } from 'src/common/decorator/currentuser.decorator';
 import { extractVendorIdFromRequest } from 'src/common/functions/extractVendorid';
+import { GetVendorSubscriptionQueryForAdmin } from './dto/get-vendor-sub.query.dto';
 
 @ApiTags('vendor-subscription')
 @Controller('vendor-subscription')
@@ -25,6 +27,22 @@ export class VendorSubscriptionController {
   constructor(
     private readonly vendorSubscriptionService: VendorSubscriptionService,
   ) {}
+
+  @Roles(Role.VENDOR, Role.ADMIN)
+  @UseGuards(AuthGuard, RoleGuard)
+  @ApiBearerAuth()
+  @Get('forAdmin')
+  async getVendorSubscriptionForAdmin(
+    @Query() query: GetVendorSubscriptionQueryForAdmin,
+    @Res() res: Response,
+  ) {
+    await this.vendorSubscriptionService.getVendorSubscriptionForAdmin({
+      res,
+      query,
+      offset: Number(query.offset || '0'),
+      limit: Number(query.limit || '0'),
+    });
+  }
 
   @Roles(Role.VENDOR)
   @UseGuards(AuthGuard, RoleGuard)
