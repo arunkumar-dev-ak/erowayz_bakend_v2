@@ -263,6 +263,7 @@ export class OrderService {
                     },
                   },
                 },
+                productUnit: true,
               },
             },
             orderItemVendorServiceOption: {
