@@ -17,9 +17,9 @@ export const OrderPaymentUtils = async ({
   tx,
   body,
   orderService,
+  userId,
   paymentService,
   walletService,
-  vendorUserId,
   vendorWalletLimit,
   errorLogService,
   paymentJuspayService,
@@ -29,7 +29,7 @@ export const OrderPaymentUtils = async ({
   orderService: OrderService;
   paymentService: PaymentSerice;
   walletService: WalletService;
-  vendorUserId: string;
+  userId: string;
   tx: Prisma.TransactionClient;
   vendorWalletLimit: number;
   errorLogService: ErrorLogService;
@@ -39,7 +39,7 @@ export const OrderPaymentUtils = async ({
   const { orderId } = body;
 
   /** 1. Validate order */
-  const existingOrder = await orderService.getOrderById(orderId, vendorUserId);
+  const existingOrder = await orderService.getOrderById(orderId, userId);
   if (!existingOrder) {
     throw new BadRequestException(
       'Order not found or not associated with User',
@@ -50,7 +50,10 @@ export const OrderPaymentUtils = async ({
   }
 
   const preferredType = existingOrder.preferredPaymentMethod;
-  const customerUserId = existingOrder.userId;
+  const customerUserId = userId;
+  const vendorUserId =
+    existingOrder.orderItems[0].orderItemVendorServiceOption[0]
+      .vendorServiceOption.vendorId;
 
   /** Return objects for service */
   let updateVendorWalletQuery: Prisma.WalletUpdateArgs | null = null;

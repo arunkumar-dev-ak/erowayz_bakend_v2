@@ -118,7 +118,6 @@ export class OrderService {
     offset: number;
     limit: number;
   }) {
-    console.log(!!this.prisma);
     const initialDate = new Date();
 
     const { startDate, endDate, serviceOptionsIds, paymentMode, orderStatus } =
@@ -136,8 +135,8 @@ export class OrderService {
     const totalCount = await this.prisma.order.count({ where });
 
     const [vendor, orders] = await Promise.all([
-      await this.vendorService.findVendorById({ id: vendorId }),
-      await this.prisma.order.findMany({
+      this.vendorService.findVendorById({ id: vendorId }),
+      this.prisma.order.findMany({
         where,
         skip: Number(offset),
         take: Number(limit),
@@ -930,12 +929,12 @@ export class OrderService {
 
   async paymentForOrder({
     body,
-    vendorUserId,
     res,
+    userId,
   }: {
     body: OrderPaymentDto;
-    vendorUserId: string;
     res: Response;
+    userId: string;
   }) {
     const initialDate = new Date();
 
@@ -948,8 +947,8 @@ export class OrderService {
               orderService: this,
               paymentService: this.paymentService,
               walletService: this.walletService,
-              vendorUserId,
               tx,
+              userId,
               vendorWalletLimit: 2000,
               errorLogService: this.errorLogService,
               paymentJuspayService: this.paymentJuspayService,

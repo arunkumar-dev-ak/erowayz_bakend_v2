@@ -127,7 +127,7 @@ export class ProcessPaymentProcessor {
     }
 
     // Update payment status within the same transaction
-    if (!PaymentPurpose.COIN_PURCHASE) {
+    if (payment.purpose !== PaymentPurpose.COIN_PURCHASE) {
       await tx.payment.update({
         where: {
           id: payment.id,

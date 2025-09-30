@@ -245,7 +245,12 @@ export class PaymentJuspayService {
     console.log('payment');
     console.log(payment);
     // Only enqueue payment for further processing if it’s CHARGED
-    if (payment && mappedStatus === PaymentStatus.CHARGED) {
+    if (
+      payment &&
+      mappedStatus === PaymentStatus.CHARGED &&
+      payment.status !== PaymentStatus.CHARGED &&
+      payment.status !== PaymentStatus.FAILED
+    ) {
       await this.queueService.processPaymentJob(payment.id); // enqueue job
     }
   }

@@ -78,7 +78,7 @@ export async function checkCurrentAndFutureSubscription({
       vendorSubscriptionService.checkCurrentVendorSubscription({
         vendorId,
       }),
-      vendorSubscriptionService.checkCurrentVendorSubscription({
+      vendorSubscriptionService.checkFutureVendorSubscription({
         vendorId,
       }),
     ]);

@@ -26,6 +26,7 @@ import { CustomerGetOrderQueryDto } from './dto/customer-get-order-querydto';
 import { extractUserIdFromRequest } from 'src/common/functions/extractUserId';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { GetAdminOrderQueryDto } from './dto/get-order-admin-query.dto';
+import { OrderPaymentDto } from './dto/order-payment.dto';
 
 @Controller('order')
 export class OrderController {
@@ -130,6 +131,22 @@ export class OrderController {
     @CurrentUser() user: User & { vendor?: Vendor; staff?: Staff },
   ) {
     await this.orderService.createOrder({
+      userId: user.id,
+      res,
+      body,
+    });
+  }
+
+  @Roles(Role.CUSTOMER)
+  @UseGuards(AuthGuard, RoleGuard)
+  @ApiBearerAuth()
+  @Post('order-payment')
+  async createOrderPayment(
+    @Res() res: Response,
+    @Body() body: OrderPaymentDto,
+    @CurrentUser() user: User,
+  ) {
+    await this.orderService.paymentForOrder({
       userId: user.id,
       res,
       body,
