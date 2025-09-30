@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { PaymentController } from './payment.controller';
 import { ConfigModule } from '@nestjs/config';
 import { PaymentJuspayService } from './payment.juspay.service';
@@ -7,7 +7,7 @@ import { OrderPaymentModule } from 'src/order-payment/order-payment.module';
 import { QueueModule } from 'src/queue/queue.module';
 
 @Module({
-  imports: [ConfigModule, QueueModule, OrderPaymentModule],
+  imports: [ConfigModule, forwardRef(() => QueueModule), OrderPaymentModule],
   controllers: [PaymentController],
   providers: [PaymentJuspayService, PaymentSerice],
   exports: [ConfigModule, PaymentJuspayService, PaymentSerice],

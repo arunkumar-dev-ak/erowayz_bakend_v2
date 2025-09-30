@@ -3,15 +3,13 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Job } from 'bull';
 import {
-  PaymentSerice,
-  PaymentWithUserAndVendor,
-} from 'src/payment/payment.service';
-import {
   Payment,
   PaymentPurpose,
   PaymentStatus,
   Prisma,
   RefundStatus,
+  User,
+  Vendor,
 } from '@prisma/client';
 import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
 import { WalletService } from 'src/wallet/wallet.service';
@@ -23,7 +21,6 @@ import { PaymentError } from 'src/payment/utils/payment-error.utils';
 export class ProcessPaymentProcessor {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly paymentService: PaymentSerice,
     private readonly vendorSubscriptionService: VendorSubscriptionService,
     private readonly walletServcice: WalletService,
     private readonly orderPaymentService: OrderPaymentService,
@@ -31,8 +28,23 @@ export class ProcessPaymentProcessor {
 
   @Process('process-payment-job')
   async handleProcessPayment(job: Job) {
+    console.log('prismaInstace', !!this.prisma);
+    console.log('in process job');
     const { paymentId } = job.data as { paymentId: string };
-    const payment = await this.paymentService.getPaymentById(paymentId);
+    const payment = await this.prisma.payment.findUnique({
+      where: {
+        id: paymentId,
+      },
+      include: {
+        user: {
+          include: {
+            vendor: true,
+          },
+        },
+      },
+    });
+
+    console.log(`payment is`, payment);
 
     if (!payment) {
       // TODO: log or move to dead letter queue
@@ -62,7 +74,11 @@ export class ProcessPaymentProcessor {
   }
 
   private async processPaymentWithTransaction(
-    payment: PaymentWithUserAndVendor,
+    payment: Payment & {
+      user: User & {
+        vendor: Vendor | null;
+      };
+    },
     tx: Prisma.TransactionClient,
   ) {
     switch (payment.purpose) {
@@ -112,11 +128,14 @@ export class ProcessPaymentProcessor {
 
     // Update payment status within the same transaction
     if (!PaymentPurpose.COIN_PURCHASE) {
-      await this.paymentService.changePaymentStatus(
-        payment.id,
-        PaymentStatus.CHARGED,
-        tx, // Pass transaction client
-      );
+      await tx.payment.update({
+        where: {
+          id: payment.id,
+        },
+        data: {
+          status: PaymentStatus.CHARGED,
+        },
+      });
     }
   }
 
@@ -131,11 +150,14 @@ export class ProcessPaymentProcessor {
         tx, // Pass transaction client
       });
 
-      await this.paymentService.changePaymentStatus(
-        payment.id,
-        PaymentStatus.FAILED,
-        tx, // Pass transaction client
-      );
+      await tx.payment.update({
+        where: {
+          id: payment.id,
+        },
+        data: {
+          status: PaymentStatus.FAILED,
+        },
+      });
     });
   }
 

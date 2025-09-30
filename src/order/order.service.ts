@@ -118,6 +118,7 @@ export class OrderService {
     offset: number;
     limit: number;
   }) {
+    console.log(!!this.prisma);
     const initialDate = new Date();
 
     const { startDate, endDate, serviceOptionsIds, paymentMode, orderStatus } =
