@@ -1,7 +1,22 @@
-import { PaymentPurpose, PaymentStatus } from '@prisma/client';
+import { PaymentPurpose, PaymentStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseService } from 'src/response/response.service';
 import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
+
+export const paymentWithUserAndVendor =
+  Prisma.validator<Prisma.PaymentDefaultArgs>()({
+    include: {
+      user: {
+        include: {
+          vendor: true,
+        },
+      },
+    },
+  });
+
+export type PaymentWithUserAndVendor = Prisma.PaymentGetPayload<
+  typeof paymentWithUserAndVendor
+>;
 
 export class PaymentSerice {
   constructor(
@@ -33,7 +48,9 @@ export class PaymentSerice {
     });
   }
 
-  async getPaymentById(paymentId: string) {
+  async getPaymentById(
+    paymentId: string,
+  ): Promise<PaymentWithUserAndVendor | null> {
     return await this.prisma.payment.findUnique({
       where: {
         id: paymentId,
@@ -48,8 +65,13 @@ export class PaymentSerice {
     });
   }
 
-  async changePaymentStatus(paymentId: string, paymentStatus: PaymentStatus) {
-    await this.prisma.payment.update({
+  async changePaymentStatus(
+    paymentId: string,
+    paymentStatus: PaymentStatus,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const prismaClient = this.prisma ?? tx;
+    await prismaClient.payment.update({
       where: {
         id: paymentId,
       },

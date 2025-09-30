@@ -163,7 +163,7 @@ export class VendorSubscriptionService {
 
       const jusPayOrder: JuspayOrderResponse | undefined =
         await this.paymentJuspayService.createOrder({
-          amount: subPlan.price,
+          amount: subPlan.discountPrice || subPlan.price,
           user,
           referenceId: subPlan.id,
           paymentPurpose: PaymentPurpose.SUBSCRIPTION_PURCHASE,
@@ -177,7 +177,7 @@ export class VendorSubscriptionService {
         data: {
           juspayOrderId: jusPayOrder.id,
           orderId: jusPayOrder.order_id,
-          amount: subPlan.price,
+          amount: subPlan.discountPrice || subPlan.price,
           purpose: PaymentPurpose.SUBSCRIPTION_PURCHASE,
           referenceId: subPlan.id,
           status: 'PENDING',

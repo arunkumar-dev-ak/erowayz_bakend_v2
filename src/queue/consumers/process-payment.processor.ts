@@ -2,7 +2,10 @@ import { Process, Processor } from '@nestjs/bull';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Job } from 'bull';
-import { PaymentSerice } from 'src/payment/payment.service';
+import {
+  PaymentSerice,
+  PaymentWithUserAndVendor,
+} from 'src/payment/payment.service';
 import {
   Payment,
   PaymentPurpose,
@@ -37,77 +40,103 @@ export class ProcessPaymentProcessor {
     }
 
     try {
-      switch (payment.purpose) {
-        case PaymentPurpose.SUBSCRIPTION_PURCHASE:
-          if (!payment.user.vendor?.id) {
-            throw new PaymentError(
-              'Vendor not found for subscription purchase',
-              false,
-              'Missing vendorId',
-            );
-          }
-          await this.vendorSubscriptionService.createVendorSubscription({
-            payment,
-            vendorId: payment.user.vendor.id,
-          });
-          break;
-
-        case PaymentPurpose.PRODUCT_PURCHASE:
-          await this.orderPaymentService.createOrderPayment({
-            payment,
-          });
-          break;
-
-        case PaymentPurpose.COIN_PURCHASE:
-          if (!payment.user.vendor?.id) {
-            throw new PaymentError(
-              'Vendor not found for coin purchase',
-              false,
-              'Missing vendorId',
-            );
-          }
-          await this.walletServcice.safeTopUpVendorWallet({
-            vendorId: payment.user.vendor.id,
-            payment,
-          });
-          break;
-
-        default:
-          throw new PaymentError(
-            `Unsupported payment purpose: ${payment.purpose}`,
-            false,
-            'Invalid payment purpose',
-          );
-      }
-
-      await this.paymentService.changePaymentStatus(
-        payment.id,
-        PaymentStatus.CHARGED,
-      );
+      // Wrap entire payment processing in a transaction
+      await this.prisma.$transaction(async (tx) => {
+        await this.processPaymentWithTransaction(payment, tx);
+      });
     } catch (err: unknown) {
       if (err instanceof PaymentError) {
         if (err.retryable) {
-          //retry by bull
+          // Retry by bull
           throw err;
         } else {
           // Non-retryable → manual refund + mark failed
-          await this.createManualRefund({
-            payment,
-            reason: err.reason,
-            userId: payment.userId,
-            metaData: err.metaData,
-          });
-
-          await this.paymentService.changePaymentStatus(
-            payment.id,
-            PaymentStatus.FAILED,
-          );
+          // Use separate transaction for failure handling
+          await this.handlePaymentFailure(payment, err);
         }
       } else {
         // Unknown error → rethrow so Bull retries
         throw err;
       }
     }
+  }
+
+  private async processPaymentWithTransaction(
+    payment: PaymentWithUserAndVendor,
+    tx: Prisma.TransactionClient,
+  ) {
+    switch (payment.purpose) {
+      case PaymentPurpose.SUBSCRIPTION_PURCHASE:
+        if (!payment.user.vendor?.id) {
+          throw new PaymentError(
+            'Vendor not found for subscription purchase',
+            false,
+            'Missing vendorId',
+          );
+        }
+        await this.vendorSubscriptionService.createVendorSubscription({
+          payment,
+          vendorId: payment.user.vendor.id,
+          tx,
+        });
+        break;
+
+      case PaymentPurpose.PRODUCT_PURCHASE:
+        await this.orderPaymentService.createOrderPayment({
+          payment,
+          tx,
+        });
+        break;
+
+      case PaymentPurpose.COIN_PURCHASE:
+        if (!payment.user.vendor?.id) {
+          throw new PaymentError(
+            'Vendor not found for coin purchase',
+            false,
+            'Missing vendorId',
+          );
+        }
+        await this.walletServcice.safeTopUpVendorWallet({
+          vendorId: payment.user.vendor.id,
+          payment,
+        });
+        break;
+
+      default:
+        throw new PaymentError(
+          `Unsupported payment purpose: ${payment.purpose}`,
+          false,
+          'Invalid payment purpose',
+        );
+    }
+
+    // Update payment status within the same transaction
+    if (!PaymentPurpose.COIN_PURCHASE) {
+      await this.paymentService.changePaymentStatus(
+        payment.id,
+        PaymentStatus.CHARGED,
+        tx, // Pass transaction client
+      );
+    }
+  }
+
+  private async handlePaymentFailure(payment: Payment, err: PaymentError) {
+    // Handle failure in a separate transaction
+    await this.prisma.$transaction(async (tx) => {
+      await this.createManualRefund({
+        payment,
+        reason: err.reason,
+        userId: payment.userId,
+        metaData: err.metaData,
+        tx, // Pass transaction client
+      });
+
+      await this.paymentService.changePaymentStatus(
+        payment.id,
+        PaymentStatus.FAILED,
+        tx, // Pass transaction client
+      );
+    });
   }
 
   private async createManualRefund({

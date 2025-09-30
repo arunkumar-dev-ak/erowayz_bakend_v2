@@ -122,7 +122,7 @@ export class PaymentJuspayService {
       customer_phone: params.user.mobile,
       payment_page_client_id: this.merchantId,
       action: 'paymentPage',
-      return_url: 'https://erowayz.in',
+      return_url: 'https://erowayz.in/index.php/thank-you/',
       description: 'Complete your payment',
       first_name: params.user.name,
       udf1: params.paymentPurpose,
@@ -163,6 +163,9 @@ export class PaymentJuspayService {
     card?: card;
   }) {
     const mappedStatus = paymentStatusMap[order.status];
+
+    console.log('mapped status');
+    console.log(mappedStatus);
 
     if (!mappedStatus) {
       console.warn(`Unhandled Juspay status: ${order.status}`);
@@ -239,6 +242,8 @@ export class PaymentJuspayService {
       });
     });
 
+    console.log('payment');
+    console.log(payment);
     // Only enqueue payment for further processing if it’s CHARGED
     if (payment && mappedStatus === PaymentStatus.CHARGED) {
       await this.queueService.processPaymentJob(payment.id); // enqueue job

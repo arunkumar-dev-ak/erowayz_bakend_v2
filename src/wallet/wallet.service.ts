@@ -21,6 +21,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PaymentJuspayService } from 'src/payment/payment.juspay.service';
 import { JuspayOrderResponse } from 'src/payment/dto/juspay-webhook.dto';
+import { PaymentSerice } from 'src/payment/payment.service';
 
 @Injectable()
 export class WalletService {
@@ -33,6 +34,7 @@ export class WalletService {
     private readonly userService: UserService,
     private readonly configService: ConfigService,
     private readonly paymentJuspayService: PaymentJuspayService,
+    private readonly paymentService: PaymentSerice,
   ) {
     this.MAX_RETRIES = parseInt(
       configService.get<string>('ISOLATION_LEVEL_MAX_RETRIES') || '3',
@@ -160,6 +162,12 @@ export class WalletService {
             await tx.walletTransaction.create({
               data: createTransactionQuery,
             });
+
+            await this.paymentService.changePaymentStatus(
+              payment.id,
+              PaymentStatus.CHARGED,
+              tx,
+            );
 
             return updatedWallet;
           },
