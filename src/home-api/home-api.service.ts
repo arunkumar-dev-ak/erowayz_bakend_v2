@@ -27,9 +27,6 @@ export class HomeApiService {
 
     const { startDateTime, endDateTime } = body;
 
-    console.log(startDateTime);
-    console.log(endDateTime);
-
     //total orders
     const totalOrdersCount = await this.prisma.order.count({
       where: {
@@ -44,6 +41,9 @@ export class HomeApiService {
             },
           },
         },
+        orderPayment: {
+          isNot: null,
+        },
       },
     });
 
@@ -52,12 +52,19 @@ export class HomeApiService {
       await this.prisma.orderItemVendorServiceOption.groupBy({
         by: ['vendorServiceOptionId'],
         _count: {
-          id: true,
+          vendorServiceOptionId: true,
         },
         where: {
-          createdAt: {
-            gte: startDateTime,
-            lte: endDateTime,
+          orderItem: {
+            order: {
+              createdAt: {
+                gte: startDateTime,
+                lte: endDateTime,
+              },
+              orderPayment: {
+                isNot: null,
+              },
+            },
           },
           vendorServiceOption: {
             vendorId: vendorId,
@@ -87,7 +94,6 @@ export class HomeApiService {
     const totalOrdersByCash = await this.prisma.order.count({
       where: {
         orderPayment: {
-          // paymentMethod: 'CASH',
           type: OrderPaymentType.CASH,
         },
         orderItems: {
@@ -124,6 +130,25 @@ export class HomeApiService {
       },
     });
 
+    const totalOrdersByCoins = await this.prisma.order.count({
+      where: {
+        orderPayment: {
+          type: OrderPaymentType.COINS,
+        },
+        orderItems: {
+          some: {
+            item: {
+              vendorId: vendorId,
+            },
+          },
+        },
+        createdAt: {
+          gte: startDateTime,
+          lte: endDateTime,
+        },
+      },
+    });
+
     const result = {
       totalOrders: totalOrdersCount,
       ordersByServiceOption: serviceOptionCounts.map((item) => {
@@ -138,12 +163,13 @@ export class HomeApiService {
         return {
           serviceOptionId,
           serviceOptionName,
-          orderCount: item._count.id,
+          orderCount: item._count.vendorServiceOptionId,
         };
       }),
       ordersByPaymentMethod: {
         CASH: totalOrdersByCash,
         JUSPAY: totalOrdersByJuspay,
+        COINS: totalOrdersByCoins,
       },
     };
 

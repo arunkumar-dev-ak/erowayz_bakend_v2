@@ -11,8 +11,8 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  Length,
   Matches,
+  MaxLength,
   Validate,
   ValidateIf,
   ValidatorConstraint,
@@ -178,7 +178,9 @@ export class TempRegisterVendorDto {
   @ApiProperty({ description: 'License number', example: 'ABCDEFGHIJKLMN' })
   @IsNotEmpty({ message: 'License Number must not be empty, if defined' })
   @IsString()
-  @Length(40, 40, { message: 'License Number must be exactly 14 characters' })
+  @MaxLength(40, {
+    message: 'License Number must be within 40 characters',
+  })
   licenseNo: string;
 
   @ApiProperty({ description: 'License Category ID is optional' })
