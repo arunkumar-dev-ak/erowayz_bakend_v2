@@ -61,7 +61,7 @@ export const lockVendorAndCustomerWallet = async ({
 
   //wallet updates
   const vendorWalletUpdateQuery: Prisma.WalletUpdateInput = {
-    lockedBalance: { increment: finalLockedBalance },
+    lockedBalance: { increment: finalPayableAmount },
   };
 
   const customerWalletUpdateQuery: Prisma.WalletUpdateInput = {

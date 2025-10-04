@@ -5,9 +5,15 @@ import { PaymentJuspayService } from './payment.juspay.service';
 import { PaymentSerice } from './payment.service';
 import { OrderPaymentModule } from 'src/order-payment/order-payment.module';
 import { QueueModule } from 'src/queue/queue.module';
+import { VendorSubscriptionModule } from 'src/vendor-subscription/vendor-subscription.module';
 
 @Module({
-  imports: [ConfigModule, forwardRef(() => QueueModule), OrderPaymentModule],
+  imports: [
+    ConfigModule,
+    forwardRef(() => QueueModule),
+    OrderPaymentModule,
+    VendorSubscriptionModule,
+  ],
   controllers: [PaymentController],
   providers: [PaymentJuspayService, PaymentSerice],
   exports: [ConfigModule, PaymentJuspayService, PaymentSerice],

@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import { PaymentPurpose, PaymentStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseService } from 'src/response/response.service';
@@ -18,6 +19,7 @@ export type PaymentWithUserAndVendor = Prisma.PaymentGetPayload<
   typeof paymentWithUserAndVendor
 >;
 
+@Injectable()
 export class PaymentSerice {
   constructor(
     private readonly responseService: ResponseService,

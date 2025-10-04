@@ -68,8 +68,8 @@ import { PaymentJuspayService } from 'src/payment/payment.juspay.service';
 
 @Injectable()
 export class OrderService {
-  private readonly MAX_RETRIES;
-  private readonly ORDER_MAX_INITIATION_COUNT;
+  private readonly MAX_RETRIES: number;
+  private readonly ORDER_MAX_INITIATION_COUNT: number;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -730,8 +730,10 @@ export class OrderService {
                   payableAmount: bestPrice,
                 });
 
+              console.log(vendorWalletUpdateQuery);
+
               //vendor wallet update
-              await this.prisma.wallet.update({
+              await tx.wallet.update({
                 where: {
                   userId: vendorUserId,
                 },
@@ -739,7 +741,7 @@ export class OrderService {
               });
 
               //customer wallet update
-              await this.prisma.wallet.update({
+              await tx.wallet.update({
                 where: {
                   userId: userId,
                 },
@@ -984,7 +986,6 @@ export class OrderService {
                 'Out of coins. You can pay the amount while receiving your order',
               );
             }
-
             // Case 2: Normal payment flow
             if (updateCustomerWalletQuery) {
               await tx.wallet.update(updateCustomerWalletQuery);
@@ -1000,7 +1001,7 @@ export class OrderService {
               await tx.orderPayment.create({
                 data: {
                   walletTransactionId: walletTransaction.id,
-                  orderId: existingOrder.orderId,
+                  orderId: existingOrder.id,
                   type: OrderPaymentType.COINS,
                   paidedAmount: finalPayableAmount,
                 },

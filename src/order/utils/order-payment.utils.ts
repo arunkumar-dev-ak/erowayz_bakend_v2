@@ -5,6 +5,7 @@ import { WalletService } from 'src/wallet/wallet.service';
 import { BadRequestException } from '@nestjs/common';
 import {
   OrderPaymentType,
+  OrderStatus,
   PaymentPurpose,
   Prisma,
   WalletTransactionType,
@@ -48,12 +49,19 @@ export const OrderPaymentUtils = async ({
   if (existingOrder.orderPayment) {
     throw new BadRequestException('Payment already done for this order');
   }
+  if (existingOrder.orderStatus === OrderStatus.CANCELLED) {
+    throw new BadRequestException("You can't pay for the Cancelled order");
+  } else if (existingOrder.orderStatus === OrderStatus.PENDING) {
+    throw new BadRequestException(
+      'Vendor not accepted the order.You can pay after the order is accepted',
+    );
+  }
 
   const preferredType = existingOrder.preferredPaymentMethod;
   const customerUserId = userId;
   const vendorUserId =
     existingOrder.orderItems[0].orderItemVendorServiceOption[0]
-      .vendorServiceOption.vendorId;
+      .vendorServiceOption.vendor.userId;
 
   /** Return objects for service */
   let updateVendorWalletQuery: Prisma.WalletUpdateArgs | null = null;
@@ -201,8 +209,8 @@ export const OrderPaymentUtils = async ({
 
   /** 7. Customer wallet update */
   updateCustomerWalletQuery = {
-    where: { userId: customerUserId, locked: false },
-    data: { balance: { decrement: finalPayableAmount } },
+    where: { userId: customerUserId },
+    data: { balance: { decrement: finalPayableAmount }, locked: false },
   };
 
   /** 8. Wallet transaction creation */

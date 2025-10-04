@@ -133,9 +133,17 @@ export class SettlementService {
 
   async getOrderSettlementForVendor({
     res,
+    month,
+    year,
+    offset,
+    limit,
     vendorId,
   }: {
     res: Response;
     vendorId: string;
+    offset: number;
+    limit: number;
+    month: number;
+    year: number;
   }) {}
 }

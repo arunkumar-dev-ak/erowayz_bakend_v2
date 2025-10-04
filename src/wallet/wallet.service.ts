@@ -25,8 +25,8 @@ import { PaymentSerice } from 'src/payment/payment.service';
 
 @Injectable()
 export class WalletService {
-  private readonly MAX_RETRIES;
-  private readonly maxWalletPaymentInitiationCount;
+  private readonly MAX_RETRIES: number;
+  private readonly maxWalletPaymentInitiationCount: number;
   constructor(
     private readonly prisma: PrismaService,
     private readonly response: ResponseService,

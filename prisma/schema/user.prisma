@@ -37,6 +37,11 @@ model User {
   favouriteCustomerForVendor  FavouriteCustomerForVendor[]
   favouriteVendorForCustomer  FavouriteVendorForCustomer[]
 
+  // Self relation
+  referrerId   String?      // who referred this user
+  referrer     User?        @relation("UserReferrals", fields: [referrerId], references: [id])
+  referees     User[]       @relation("UserReferrals") // users referred by this user
+
   @@index([status])
 }
 
