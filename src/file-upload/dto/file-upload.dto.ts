@@ -23,6 +23,8 @@ export enum ImageTypeEnum {
   TERMSANDCONDITION = 'termsAndCondition',
   PRIVACYPOLICY = 'privacyPolicy',
   POSTER = 'poster',
+  SETTLEMENT_IMAGE = 'settlementImage',
+  COINS_SETTLEMENT_IMAGE = 'coinsSettlementImage',
 }
 export class FileUploadDto {
   @ApiProperty({

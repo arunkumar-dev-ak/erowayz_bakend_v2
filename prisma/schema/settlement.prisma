@@ -3,16 +3,28 @@ model OrderSettlement {
   vendorId   String
   date       DateTime
   amount     Float
-  status     SettlementStatus @default(UNPAID)
-  proofImage String?
+  status     SettlementStatus @default(PAID)
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   vendor     Vendor   @relation(fields: [vendorId], references: [id])
+  orderSettlementFile OrderSettlementFile[]
 
   @@unique([vendorId, date])
 }
+
+model OrderSettlementFile {
+  id        String  @id @default(uuid())
+  proofImage String
+  orderSettlementId String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  orderSettlement     OrderSettlement?   @relation(fields: [orderSettlementId], references: [id], onDelete: Cascade)
+}
+
 
 enum SettlementStatus {
   PAID

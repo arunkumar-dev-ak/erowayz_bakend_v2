@@ -8,6 +8,7 @@ import { getSettlements } from './utils/get-order-settlement.utils';
 import { buildQueryParams } from 'src/common/functions/buildQueryParams';
 import { GetAdminIndividulaSettlementQueryDto } from './dto/admin-order-ind-settlement';
 import { getAdminIndividualSettlements } from './utils/get-order-ind-settlement.utils';
+import { getOrderSettlementsForVendor } from './utils/get-vendor-order-settlement.utils';
 
 type CountResult = { totalcount: number };
 
@@ -135,15 +136,46 @@ export class SettlementService {
     res,
     month,
     year,
-    offset,
-    limit,
     vendorId,
   }: {
     res: Response;
     vendorId: string;
-    offset: number;
-    limit: number;
     month: number;
     year: number;
-  }) {}
+  }) {
+    const initialDate = new Date();
+
+    const { sql } = getOrderSettlementsForVendor({
+      month,
+      year,
+      vendorId,
+    });
+
+    // Execute the query
+    const rows = await this.prismaService.$queryRawUnsafe<any[]>(sql);
+
+    // Build query params for metadata
+    const queries = buildQueryParams({
+      month: month.toString(),
+      year: year.toString(),
+      vendorId,
+    });
+
+    const meta = this.metaDataService.createMetaData({
+      totalCount: rows.length,
+      offset: 0,
+      limit: 0,
+      path: 'settlement/vendor/order',
+      queries,
+    });
+
+    return this.responseService.successResponse({
+      initialDate,
+      res,
+      data: rows,
+      meta,
+      message: 'Vendor settlements retrieved successfully',
+      statusCode: 200,
+    });
+  }
 }

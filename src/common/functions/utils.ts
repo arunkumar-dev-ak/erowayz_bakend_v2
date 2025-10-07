@@ -171,3 +171,31 @@ export function convertUTCToISTFormatted(utcTimeStr) {
 
   return `${day}-${month}-${year} ${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
 }
+
+export function getDayRange(shiftDate: Date) {
+  const start = new Date(
+    Date.UTC(
+      shiftDate.getUTCFullYear(),
+      shiftDate.getUTCMonth(),
+      shiftDate.getUTCDate(),
+      0,
+      0,
+      0,
+      0,
+    ),
+  );
+
+  const end = new Date(
+    Date.UTC(
+      shiftDate.getUTCFullYear(),
+      shiftDate.getUTCMonth(),
+      shiftDate.getUTCDate(),
+      23,
+      59,
+      59,
+      999,
+    ),
+  );
+
+  return { start, end };
+}

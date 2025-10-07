@@ -1,17 +1,15 @@
 export function getOrderSettlementsForVendor({
   month,
   year,
-  offset,
-  limit,
+  vendorId, // Add this parameter
 }: {
-  offset: number;
-  limit: number;
   month: number;
   year: number;
+  vendorId: string; // Add this type
 }) {
   // JavaScript months are 0-based, so subtract 1
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0); // Last day of the month
+  const startDate = new Date(Date.UTC(year, month - 1, 1));
+  const endDate = new Date(Date.UTC(year, month, 0)); // Last day of the month
 
   const startDateStr = startDate.toISOString().split('T')[0]; // YYYY-MM-DD format
   const endDateStr = endDate.toISOString().split('T')[0]; // YYYY-MM-DD format
@@ -28,10 +26,11 @@ export function getOrderSettlementsForVendor({
       d.day,
       v.id AS "vendorId",
       u.name AS "vendorName",
-      COALESCE(SUM(op."paidedAmount"), 0) AS "totalPaid",
+      COALESCE(SUM(op."paidedAmount"),0) AS totalAmount,
+      COALESCE(SUM(os."amount"),0) AS totalPaid,
       COALESCE(os.status, 'UNPAID') AS "settlementStatus"
     FROM days d
-    JOIN "Vendor" v ON TRUE
+    JOIN "Vendor" v ON v.id = '${vendorId}'
     JOIN "User" u ON u.id = v."userId"
     LEFT JOIN "Order" o ON TRUE
     LEFT JOIN "OrderItem" oi ON oi."orderId" = o.id
@@ -50,7 +49,6 @@ export function getOrderSettlementsForVendor({
           AND os.date::date = d.day
     GROUP BY d.day, v.id, u.name, os.status
     ORDER BY d.day
-    LIMIT ${limit} OFFSET ${offset};
   `;
 
   return { sql, params: [] };

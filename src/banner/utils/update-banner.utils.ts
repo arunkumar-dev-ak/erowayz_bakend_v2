@@ -138,7 +138,7 @@ export function checkOfferVal({
 
     if (offerType === OfferType.FLAT && offerValue >= minApplyValue) {
       throw new BadRequestException(
-        'Offer value should be less than minApplyValue if OfferType is FLAT.',
+        'Offer value should be less than Minimum Purchase Value if OfferType is FLAT.',
       );
     }
 

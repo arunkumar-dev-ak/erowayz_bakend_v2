@@ -13,9 +13,6 @@ export function getSettlements({
 
   // Safe date parsing
   const parsedDate = new Date(date);
-  if (isNaN(parsedDate.getTime())) {
-    throw new Error(`Invalid date received: ${date}`);
-  }
 
   const year = parsedDate.getUTCFullYear();
   const month = parsedDate.getUTCMonth(); // 0-based
@@ -44,7 +41,8 @@ export function getSettlements({
       vso."vendorId",
       u.name AS "vendorName",
       si.name,
-      SUM(op."paidedAmount") AS "totalPaid",
+      COALESCE(SUM(op."paidedAmount"),0) AS totalAmount,
+      COALESCE(SUM(os."amount"),0) AS totalPaid,
       COALESCE(os.status, 'UNPAID') AS "settlementStatus"
     FROM "OrderPayment" AS op
     INNER JOIN "Order" AS o ON o.id = op."orderId"
@@ -56,7 +54,7 @@ export function getSettlements({
     INNER JOIN "User" AS u ON u.id = v."userId"
     LEFT JOIN "OrderSettlement" AS os 
       ON os."vendorId" = vso."vendorId"
-      AND os.date::date = DATE('${settlementDateISO}') + INTERVAL '5 hours 30 minutes'
+      AND os.date::date = DATE('${settlementDateISO}')
     WHERE ${conditions.join(' AND ')}
     GROUP BY vso."vendorId", u.name, os.status, si.name
     LIMIT ${limit} OFFSET ${offset};
@@ -76,7 +74,7 @@ export function getSettlements({
       INNER JOIN "User" AS u ON u.id = v."userId"
       LEFT JOIN "OrderSettlement" AS os 
         ON os."vendorId" = vso."vendorId"
-        AND os.date::date = DATE('${settlementDateISO}') + INTERVAL '5 hours 30 minutes'
+        AND os.date::date = DATE('${settlementDateISO}')
       WHERE ${conditions.join(' AND ')}
       GROUP BY vso."vendorId", u.name, os.status, si.name
     ) AS subquery;

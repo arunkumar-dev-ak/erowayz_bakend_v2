@@ -37,7 +37,7 @@ export class OfferValueValidator implements ValidatorConstraintInterface {
   }
 
   defaultMessage() {
-    return `Offer value should be less than minimum apply value or less than 100 if offerType is PERCENTAGE`;
+    return `Offer value must be less than 100 for PERCENTAGE, and less than Minimum Purchase Amount for FLAT.`;
   }
 }
 

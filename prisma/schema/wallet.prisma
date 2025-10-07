@@ -29,6 +29,7 @@ model WalletTransaction {
     metadata                Json?
 
     orderPayment        OrderPayment?
+    coinsSettlement     CoinsSettlement?
 
     senderWallet        Wallet?      @relation("SenderWallet", fields: [senderWalletId], references: [id])
     receiverWallet      Wallet?      @relation("ReceiverWallet", fields: [receiverWalletId], references: [id])
@@ -47,4 +48,28 @@ model AdminVendorCredit {
   updatedAt DateTime @updatedAt
 
   vendor       Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+}
+
+model CoinsSettlement {
+  id        String   @id @default(uuid())
+  walletTransactionId  String @unique()
+  amount     Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  coinsSettlementFile CoinsSettlementFile[]
+
+  walletTransaction WalletTransaction @relation(fields: [walletTransactionId], references: [id], onDelete: Cascade)
+}
+
+model CoinsSettlementFile {
+  id        String   @id @default(uuid())
+  proofImage String
+  coinsSettlementId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  coinsSettlement CoinsSettlement? @relation(fields: [coinsSettlementId], references: [id], onDelete: Cascade)
 }

@@ -75,6 +75,8 @@ import { VideoLinkModule } from './video-link/video-link.module';
 import { SettlementModule } from './settlement/settlement.module';
 import { ReferralModule } from './referral/referral.module';
 import { PosterModule } from './poster/poster.module';
+import { OrderSettlementModule } from './order-settlement/order-settlement.module';
+import { CoinsSettlementModule } from './coins-settlement/coins-settlement.module';
 
 @Module({
   imports: [
@@ -147,6 +149,8 @@ import { PosterModule } from './poster/poster.module';
     SettlementModule,
     ReferralModule,
     PosterModule,
+    OrderSettlementModule,
+    CoinsSettlementModule,
   ],
   controllers: [AppController],
   providers: [

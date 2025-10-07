@@ -7,6 +7,8 @@ import { RoleGuard } from 'src/common/guards/role.guard';
 import { Request, Response } from 'express';
 import { AdminSettlementQueryDto } from './dto/admin-settlement.dto';
 import { GetAdminIndividulaSettlementQueryDto } from './dto/admin-order-ind-settlement';
+import { extractVendorIdFromRequest } from 'src/common/functions/extractVendorid';
+import { VendorOrderSettlementQueryDto } from './dto/vendor-order-settlement';
 
 @Controller('settlement')
 export class SettlementController {
@@ -15,7 +17,7 @@ export class SettlementController {
   @Get('admin/order')
   @Roles(Role.ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
-  async getAllVendorsForAdmin(
+  async getSettlementForAdmin(
     @Res() res: Response,
     @Query() query: AdminSettlementQueryDto,
   ) {
@@ -27,7 +29,24 @@ export class SettlementController {
     });
   }
 
-  @Get('settlement/individualOrderSettlement')
+  @Get('vendor/order')
+  @Roles(Role.VENDOR)
+  @UseGuards(AuthGuard, RoleGuard)
+  async getSettlementForVendor(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query() query: VendorOrderSettlementQueryDto,
+  ) {
+    const vendorId = extractVendorIdFromRequest(req);
+    await this.settlementService.getOrderSettlementForVendor({
+      vendorId,
+      res,
+      month: Number(query.month),
+      year: Number(query.year),
+    });
+  }
+
+  @Get('individualOrderSettlement')
   @Roles(Role.ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   async getIndivdualOrderSettlement(
