@@ -87,6 +87,9 @@ export class FileUploadService {
         case 'settlementImage':
           uploadPath = path.join(this.baseUploadPath, 'settlementImage');
           break;
+        case 'coinsSettlementImage':
+          uploadPath = path.join(this.baseUploadPath, 'coinsSettlementImage');
+          break;
       }
     }
     if (!fs.existsSync(uploadPath)) {

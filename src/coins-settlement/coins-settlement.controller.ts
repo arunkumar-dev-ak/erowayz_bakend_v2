@@ -36,6 +36,21 @@ export class CoinsSettlementController {
   @Roles(Role.ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @Get('admin')
+  async getTransactionForAdmin(
+    @Res() res: Response,
+    @Query() query: GetCoinSettlementQueryDto,
+  ) {
+    await this.coinsSettlementService.getCoinSettlementForVendoe({
+      query,
+      res,
+      offset: Number(query.offset || '0'),
+      limit: Number(query.limit || '10'),
+    });
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard, RoleGuard)
+  @Get('transaction/admin')
   async getCoinSettlement(
     @Res() res: Response,
     @Query() query: GetCoinSettlementQueryDto,

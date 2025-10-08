@@ -54,6 +54,32 @@ export class CoinsSettlementService {
       orderBy: {
         createdAt: 'desc',
       },
+      include: {
+        walletTransaction: {
+          include: {
+            senderWallet: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    vendor: {
+                      select: {
+                        id: true,
+                        shopInfo: {
+                          select: {
+                            name: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     const { vendorName, walletTransactionId, shopName, id, vendorId } = query;
@@ -70,7 +96,7 @@ export class CoinsSettlementService {
       totalCount,
       offset,
       limit,
-      path: 'coinSettlement/admin',
+      path: 'transaction/admin',
       queries,
     });
 
@@ -95,7 +121,7 @@ export class CoinsSettlementService {
     query: GetCoinSettlementQueryDto;
     offset: number;
     limit: number;
-    vendorId: string;
+    vendorId?: string;
   }) {
     const initialDate = new Date();
 
@@ -119,6 +145,26 @@ export class CoinsSettlementService {
         coinsSettlement: {
           include: {
             coinsSettlementFile: true,
+          },
+        },
+        senderWallet: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                vendor: {
+                  select: {
+                    id: true,
+                    shopInfo: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -266,7 +312,7 @@ export class CoinsSettlementService {
     const uploadImage = this.fileUploadService.handleSingleFileUpload({
       file,
       body: {
-        type: ImageTypeEnum.SETTLEMENT_IMAGE,
+        type: ImageTypeEnum.COINS_SETTLEMENT_IMAGE,
       },
     });
     try {

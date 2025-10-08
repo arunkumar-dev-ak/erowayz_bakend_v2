@@ -68,7 +68,7 @@ export function buildWalletTransactionWhereFilter({
   vendorId,
   query,
 }: {
-  vendorId: string;
+  vendorId?: string;
   query: GetCoinSettlementQueryDto;
 }) {
   const { walletTransactionId, startDate, endDate } = query;
