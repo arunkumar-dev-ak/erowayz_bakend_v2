@@ -22,6 +22,7 @@ import { Response } from 'express';
 import { CreateOrderSettlementDto } from './dto/create-order-settlement';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from 'src/common/guards/auth.guard';
+import { UpdateOrderSettlementDto } from './dto/update-order-settlement';
 
 @Controller('order-settlement')
 export class OrderSettlementController {
@@ -80,7 +81,7 @@ export class OrderSettlementController {
   @Put('update/:id')
   async updateOrderSettlement(
     @Res() res: Response,
-    @Body() body: CreateOrderSettlementDto,
+    @Body() body: UpdateOrderSettlementDto,
     @Param('id') id: string,
   ) {
     await this.orderSettlementService.updateOrderSettlement({

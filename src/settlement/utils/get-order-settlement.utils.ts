@@ -40,7 +40,8 @@ export function getSettlements({
     SELECT 
       vso."vendorId",
       u.name AS "vendorName",
-      si.name,
+      u.id AS "userId",
+      si.name AS "shopName",
       COALESCE(SUM(op."paidedAmount"),0) AS totalAmount,
       COALESCE(SUM(os."amount"),0) AS totalPaid,
       COALESCE(os.status, 'UNPAID') AS "settlementStatus"
@@ -56,7 +57,7 @@ export function getSettlements({
       ON os."vendorId" = vso."vendorId"
       AND os.date::date = DATE('${settlementDateISO}')
     WHERE ${conditions.join(' AND ')}
-    GROUP BY vso."vendorId", u.name, os.status, si.name
+    GROUP BY vso."vendorId", u.name, os.status, si.name, u.id
     LIMIT ${limit} OFFSET ${offset};
   `;
 

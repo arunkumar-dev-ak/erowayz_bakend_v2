@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsArray,
   Validate,
+  IsNumber,
 } from 'class-validator';
 import { IsUniqueArrayConstraint } from 'src/vendor/dto/testregistervendor.dto';
 
@@ -33,7 +34,7 @@ export class UpdateOrderSettlementDto {
     required: false,
     example: 'rehijhnfdjf657585hfhfh',
   })
-  @IsString()
+  @IsNumber()
   @IsNotEmpty({ message: 'Amount is required' })
   @IsOptional()
   amount?: number;

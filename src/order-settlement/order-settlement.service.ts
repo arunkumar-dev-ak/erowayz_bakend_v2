@@ -53,6 +53,9 @@ export class OrderSettlementService {
       orderBy: {
         createdAt: 'desc',
       },
+      include: {
+        orderSettlementFile: true,
+      },
     });
 
     const { vendorName, startDate, endDate, shopName, id, vendorId } = query;
@@ -125,9 +128,7 @@ export class OrderSettlementService {
     const initialDate = new Date();
 
     if (!body) {
-      throw new BadRequestException(
-        `One of the keys such as ${Object.keys(body).join('')} are required to update`,
-      );
+      throw new BadRequestException(`No Fields provided to update`);
     }
 
     //verification, query generation
@@ -199,7 +200,7 @@ export class OrderSettlementService {
     const uploadImage = this.fileUploadService.handleSingleFileUpload({
       file,
       body: {
-        type: ImageTypeEnum.COINS_SETTLEMENT_IMAGE,
+        type: ImageTypeEnum.SETTLEMENT_IMAGE,
       },
     });
     try {
