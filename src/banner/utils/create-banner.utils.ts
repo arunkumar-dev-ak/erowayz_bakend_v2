@@ -6,8 +6,14 @@ import { BannerService } from '../banner.service';
 import { checkFieldsForBanner, getBannerType } from './bannerhelper';
 import { BadRequestException } from '@nestjs/common';
 import { CreateBannerDto } from '../dto/create-banner.dto';
-import { BannerType, KeyWordType, Prisma } from '@prisma/client';
+import {
+  BannerType,
+  KeyWordType,
+  Prisma,
+  VendorSubscription,
+} from '@prisma/client';
 import { KeywordService } from 'src/keyword/keyword.service';
+import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
 
 export const CreateBannerValidation = async ({
   bannerService,
@@ -15,13 +21,50 @@ export const CreateBannerValidation = async ({
   keywordService,
   body,
   vendorId,
+  vendorSubscriptionService,
+  currentVendorSubscription,
 }: {
   bannerService: BannerService;
   vendorService: VendorService;
   keywordService: KeywordService;
   body: CreateBannerDto;
   vendorId: string;
+  vendorSubscriptionService: VendorSubscriptionService;
+  currentVendorSubscription: VendorSubscription;
 }) => {
+  let updateVendorUsageQuery: Prisma.VendorFeatureUsageUpdateArgs | null = null;
+
+  const vendorFeatureUsageForQtyUpdate =
+    await vendorSubscriptionService.getOrCreateFeatureUsage({
+      vendorSubscriptionId: currentVendorSubscription.id,
+      feature: 'bannerCount',
+    });
+  const bannerLimit = (
+    vendorFeatureUsageForQtyUpdate.vendorSubscription.planFeatures as Record<
+      string,
+      any
+    >
+  )['bannerCount'] as number | null;
+  if (!bannerLimit) {
+    throw new BadRequestException('You are not allowed to access this feature');
+  }
+  if (vendorFeatureUsageForQtyUpdate.usageCount >= bannerLimit) {
+    throw new BadRequestException(
+      'You have reached the limit to update the quantity',
+    );
+  }
+
+  updateVendorUsageQuery = {
+    where: {
+      id: vendorFeatureUsageForQtyUpdate.id,
+    },
+    data: {
+      usageCount: {
+        increment: 1,
+      },
+    },
+  };
+
   //unique name
   if (await bannerService.checkBannerByName({ vendorId, name: body.name })) {
     throw new BadRequestException('Banner name must be unique');
@@ -55,7 +98,7 @@ export const CreateBannerValidation = async ({
     );
   }
 
-  return { bannerType };
+  return { bannerType, updateVendorUsageQuery };
 };
 
 export function createBannerItemImages(

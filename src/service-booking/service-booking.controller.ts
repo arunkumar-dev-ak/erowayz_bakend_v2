@@ -28,6 +28,7 @@ import { extractVendorIdFromRequest } from 'src/common/functions/extractVendorid
 import { CurrentUser } from 'src/common/decorator/currentuser.decorator';
 import { CreateServiceBookingDto } from './dto/create-service-booking.dto';
 import { ChangeBookingStatusDto } from './dto/service-booking-status.dto';
+import { GetAdminServiceBookingQueryDto } from './dto/service-booking-admin.dto';
 
 @Controller('service-booking')
 export class ServiceBookingController {
@@ -74,6 +75,24 @@ export class ServiceBookingController {
       query,
       limit,
       offset,
+    });
+  }
+
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard, RoleGuard)
+  @Get('admin')
+  @ApiOperation({ summary: 'Get banner booking by ID' })
+  @ApiParam({ name: 'id', type: String, description: 'Booking ID' })
+  async getBannerBookingForAdmin(
+    @Query() query: GetAdminServiceBookingQueryDto,
+    @Res() res: Response,
+  ) {
+    await this.serviceBookingService.getServiceBookingForAdmin({
+      res,
+      query,
+      offset: Number(query.offset ?? '0'),
+      limit: Number(query.limit ?? '0'),
     });
   }
 

@@ -138,7 +138,7 @@ export class SubCategoryService {
     subCategoryImage: Express.Multer.File;
   }) {
     const initialDate = new Date();
-    const { name, categoryId } = body;
+    const { name, categoryId, tamilName } = body;
     const category = await this.categoryService.checkCategoryById(categoryId);
 
     //check category
@@ -163,6 +163,7 @@ export class SubCategoryService {
           categoryId,
           imageRef: imageUrl,
           relativeUrl: relativePath,
+          tamilName,
         },
       });
 
@@ -195,7 +196,7 @@ export class SubCategoryService {
       throw new ConflictException('No valid fields provided for update');
     }
 
-    const { name } = body;
+    const { name, tamilName } = body;
     //check subCategory
     const subCategory = await this.getSubCategoryId(subCategoryId);
     if (!subCategory) {
@@ -223,6 +224,7 @@ export class SubCategoryService {
 
     const updateQuery = {
       name: name ?? undefined,
+      tamilName: tamilName ?? undefined,
       imageRef: updatedImage?.imageUrl ?? undefined,
       relativeUrl: updatedImage?.relativePath ?? undefined,
     };

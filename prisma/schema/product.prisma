@@ -1,6 +1,7 @@
 model Category {
   id           String        @id @default(uuid())
   name         String
+  tamilName        String?
   imageRef     String
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -19,6 +20,7 @@ model Category {
 model SubCategory {
   id          String   @id @default(uuid())
   name        String
+  tamilName        String?
   imageRef    String
   relativeUrl String
   categoryId  String
@@ -63,6 +65,7 @@ model Item {
   cartItem          CartItem[]
   itemImage         ItemImage[]
   orderItems        OrderItem[]
+  vendorFeatureUsage  VendorFeatureUsage[]
   expiryDate        DateTime?
 
   @@unique([name,vendorId])
@@ -111,3 +114,5 @@ enum ProductStatus {
   AVAILABLE
   OUT_OF_STOCK
 }
+
+

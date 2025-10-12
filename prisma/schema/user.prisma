@@ -149,6 +149,7 @@ enum Role {
   ADMIN
   VENDOR
   STAFF
+  SUB_ADMIN
 }
 
 enum BloodGroups {

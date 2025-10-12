@@ -162,7 +162,7 @@ export class CategoryService {
     categoryImage: Express.Multer.File;
   }) {
     const initialDate = new Date();
-    const { name, vendorTypeId } = body;
+    const { name, vendorTypeId, tamilName } = body;
     //check vendorTypeId
     const vendorType =
       await this.vendorTypeService.findVendorTypeById(vendorTypeId);
@@ -191,6 +191,7 @@ export class CategoryService {
           vendorTypeId,
           imageRef: imageUrl,
           relativeUrl: relativePath,
+          tamilName,
         },
       });
 
@@ -220,11 +221,14 @@ export class CategoryService {
   }) {
     const initialDate = new Date();
 
-    if (body === undefined || (!body.name && !categoryImage)) {
+    if (
+      body === undefined ||
+      (!body.name && !categoryImage && !body.tamilName)
+    ) {
       throw new Error('No valid fields provided for update');
     }
 
-    const { name } = body;
+    const { name, tamilName } = body;
 
     const category = await this.checkCategoryById(categoryId);
     //check category
@@ -258,6 +262,7 @@ export class CategoryService {
       name: name ?? undefined,
       imageRef: updatedImage ? updatedImage.imageUrl : undefined,
       relativeUrl: updatedImage ? updatedImage.relativePath : undefined,
+      tamilName: tamilName ?? undefined,
     };
 
     try {

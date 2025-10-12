@@ -16,11 +16,15 @@ export class ValidUpdateCityConstraint implements ValidatorConstraintInterface {
     const object = args.object as UpdateCityDto;
 
     // Check that at least one of these fields is provided
-    return object.name !== undefined || object.status !== undefined;
+    return (
+      object.name !== undefined ||
+      object.status !== undefined ||
+      object.tamilName !== undefined
+    );
   }
 
   defaultMessage(): string {
-    return `At least one of 'name' or 'status' must be provided`;
+    return `At least one of 'name' or 'status' or 'tamilName must be provided`;
   }
 }
 

@@ -38,6 +38,7 @@ import { extractFileFromReq } from 'src/common/functions/bannerfunctions';
 import { GetBannerQuery } from './dto/get-banner-query.dto';
 import { GetPopularBannerQueryDto } from './dto/get-popularbanner-query.dto';
 import { GetBannerForAdminQueryDto } from './dto/get-banner-for-admin.dto';
+import { extractVendorSubFromRequest } from 'src/common/functions/extact-sub';
 
 @ApiTags('banner')
 @Controller('banner')
@@ -163,6 +164,7 @@ export class BannerController {
       );
     }
     const vendorId = extractVendorIdFromRequest(req);
+    const currentVendorSub = extractVendorSubFromRequest(req);
     return await this.bannerService.createBanner({
       res,
       body,
@@ -170,6 +172,7 @@ export class BannerController {
       itemImages: files?.itemImages ?? [],
       fgImage: files?.fgImage,
       bgImage: files?.bgImage,
+      currentVendorSubscription: currentVendorSub,
     });
   }
 

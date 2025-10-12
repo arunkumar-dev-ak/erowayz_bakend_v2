@@ -9,7 +9,13 @@ import {
   MultipleFileUploadInterface,
   VendorService,
 } from 'src/vendor/vendor.service';
-import { Banner, BannerStatus, BannerType, Prisma } from '@prisma/client';
+import {
+  Banner,
+  BannerStatus,
+  BannerType,
+  Prisma,
+  VendorSubscription,
+} from '@prisma/client';
 import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
 import { UpdateBannerStatusDto } from './dto/updatestatus-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
@@ -32,6 +38,7 @@ import {
 } from './utils/update-banner.utils';
 import { GetBannerForAdminQueryDto } from './dto/get-banner-for-admin.dto';
 import { buildBannerForAdminWhereFilter } from './utils/get-banner-for-admin-filter';
+import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
 
 @Injectable()
 export class BannerService {
@@ -43,6 +50,7 @@ export class BannerService {
     private readonly vendorService: VendorService,
     private readonly itemService: ItemService,
     private readonly keywordService: KeywordService,
+    private readonly vendorSubscriptionService: VendorSubscriptionService,
   ) {}
 
   /*---- Get Banners -----*/
@@ -392,6 +400,7 @@ export class BannerService {
     itemImages,
     fgImage,
     bgImage,
+    currentVendorSubscription,
   }: {
     vendorId: string;
     res: Response;
@@ -399,17 +408,22 @@ export class BannerService {
     itemImages: Express.Multer.File[];
     fgImage?: Express.Multer.File;
     bgImage?: Express.Multer.File;
+    currentVendorSubscription: VendorSubscription;
   }) {
     const initialDate = new Date();
 
     //validation
-    const { bannerType } = await CreateBannerValidation({
-      bannerService: this,
-      vendorService: this.vendorService,
-      body,
-      vendorId,
-      keywordService: this.keywordService,
-    });
+    const { bannerType, updateVendorUsageQuery } = await CreateBannerValidation(
+      {
+        bannerService: this,
+        vendorService: this.vendorService,
+        body,
+        vendorId,
+        keywordService: this.keywordService,
+        vendorSubscriptionService: this.vendorSubscriptionService,
+        currentVendorSubscription,
+      },
+    );
 
     //upload images
     // file is Express.Multer.File  => type predicate
@@ -447,16 +461,22 @@ export class BannerService {
     });
 
     try {
-      const banner = await this.prisma.banner.create({
-        data: createBannerQuery,
-        include: {
-          bannerItemImages: true,
-          keyWordBanner: {
-            include: {
-              keyWord: true,
+      const banner = await this.prisma.$transaction(async (tx) => {
+        if (updateVendorUsageQuery) {
+          await tx.vendorFeatureUsage.update(updateVendorUsageQuery);
+        }
+
+        return tx.banner.create({
+          data: createBannerQuery,
+          include: {
+            bannerItemImages: true,
+            keyWordBanner: {
+              include: {
+                keyWord: true,
+              },
             },
           },
-        },
+        });
       });
 
       return this.response.successResponse({

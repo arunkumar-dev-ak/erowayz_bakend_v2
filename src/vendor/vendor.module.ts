@@ -10,6 +10,7 @@ import { RedisModule } from 'src/redis/redis.module';
 import { LicenseCategoryModule } from 'src/license-category/license-category.module';
 import { CityModule } from 'src/city/city.module';
 import { ShopCategoryModule } from 'src/shop-category/shop-category.module';
+import { ReferralModule } from 'src/referral/referral.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ShopCategoryModule } from 'src/shop-category/shop-category.module';
     LicenseCategoryModule,
     CityModule,
     ShopCategoryModule,
+    ReferralModule,
   ],
   controllers: [VendorController],
   providers: [VendorService, VendorTypeService, UserService, ConfigService],

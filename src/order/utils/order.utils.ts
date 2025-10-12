@@ -4,6 +4,7 @@ import {
   Item,
   OfferType,
   OrderStatus,
+  PaymentMethod,
   ProductStatus,
   QuantityUnit,
   Role,
@@ -14,6 +15,8 @@ import {
 } from '@prisma/client';
 import { CartItemWithItem } from 'src/cart/utils/cartItem_raw_types.utils';
 import * as _ from 'lodash';
+import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
+import { capitalize } from 'src/common/functions/utils';
 
 export function getTotalAndDiscountForItem(item: Item, totalQty: number) {
   const totalAmount = totalQty * item.price;
@@ -68,6 +71,33 @@ export function handleVendorForOrder({
     );
   }
 }
+
+export const validatePreferredPaymentType = async ({
+  preferredPaymentType,
+  vendorId,
+  vendorSubscriptionService,
+}: {
+  preferredPaymentType: PaymentMethod;
+  vendorId: string;
+  vendorSubscriptionService: VendorSubscriptionService;
+}) => {
+  const currentSubscription =
+    await vendorSubscriptionService.checkCurrentVendorSubscriptionForPlanFeatures(
+      { vendorId },
+    );
+
+  const planFeatures = currentSubscription.planFeatures as Record<string, any>;
+  const paymentModes = planFeatures['paymentModes'] as
+    | PaymentMethod[]
+    | undefined;
+  if (!paymentModes) {
+    throw new BadRequestException('Currently vendor is not accepting orders');
+  } else if (!paymentModes.includes(preferredPaymentType)) {
+    throw new BadRequestException(
+      `Currently vendor is not accepting ${capitalize(paymentModes.toString())} mode of payment`,
+    );
+  }
+};
 
 export function handleItemVerification({
   item,

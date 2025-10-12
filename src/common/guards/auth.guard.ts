@@ -78,11 +78,13 @@ import { JwtPayload, TokenService } from 'src/token/token.service';
 import { UserService } from 'src/user/user.service';
 import { Socket } from 'socket.io';
 import { Request } from 'express';
-import { User } from '@prisma/client';
+import { User, VendorSubscription } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
+import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
 
 export interface SocketRequest extends Socket {
   user?: User | null;
+  currentSubscription?: VendorSubscription;
 }
 
 interface payloadType {
@@ -94,6 +96,7 @@ export class AuthGuard implements CanActivate {
   constructor(
     private readonly tokenService: TokenService,
     private readonly userService: UserService,
+    private readonly vendorSubscriptionService: VendorSubscriptionService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -128,6 +131,14 @@ export class AuthGuard implements CanActivate {
       throw isWebSocket ? new WsException(err) : new UnauthorizedException(err);
     }
 
+    let subscription: VendorSubscription | undefined = undefined;
+    if (user.role === 'VENDOR' && user.vendor) {
+      subscription =
+        (await this.vendorSubscriptionService.checkCurrentVendorSubscription({
+          vendorId: user.vendor.id,
+        })) ?? undefined;
+    }
+
     const payload = await this.tokenService.verifyAccessToken({
       token,
       salt: user.salt,
@@ -142,9 +153,11 @@ export class AuthGuard implements CanActivate {
     if (isWebSocket) {
       const client = context.switchToWs().getClient<SocketRequest>();
       client.user = user; // Socket.IO way
+      client.currentSubscription = subscription;
     } else {
       const request: Request = context.switchToHttp().getRequest();
       request['user'] = user;
+      request['currentSubscription'] = subscription;
     }
 
     return true;

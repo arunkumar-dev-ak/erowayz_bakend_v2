@@ -16,6 +16,13 @@ import { VendorSubscriptionModule } from 'src/vendor-subscription/vendor-subscri
   ],
   controllers: [PaymentController],
   providers: [PaymentJuspayService, PaymentSerice],
-  exports: [ConfigModule, PaymentJuspayService, PaymentSerice],
+  exports: [
+    ConfigModule,
+    QueueModule,
+    OrderPaymentModule,
+    VendorSubscriptionModule,
+    PaymentJuspayService,
+    PaymentSerice,
+  ],
 })
 export class PaymentModule {}

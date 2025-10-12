@@ -77,6 +77,7 @@ import { ReferralModule } from './referral/referral.module';
 import { PosterModule } from './poster/poster.module';
 import { OrderSettlementModule } from './order-settlement/order-settlement.module';
 import { CoinsSettlementModule } from './coins-settlement/coins-settlement.module';
+import { SubAdminModule } from './sub-admin/sub-admin.module';
 
 @Module({
   imports: [
@@ -151,6 +152,7 @@ import { CoinsSettlementModule } from './coins-settlement/coins-settlement.modul
     PosterModule,
     OrderSettlementModule,
     CoinsSettlementModule,
+    SubAdminModule,
   ],
   controllers: [AppController],
   providers: [

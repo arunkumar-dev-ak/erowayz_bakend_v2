@@ -12,7 +12,7 @@ export const UpdateProductUnitUtils = async ({
   productUnitService: ProductUnitService;
   productUnitId: string;
 }) => {
-  const { name, status } = body;
+  const { name, status, tamilName } = body;
 
   const existingProductUnit =
     await productUnitService.getProductUnitById(productUnitId);
@@ -40,6 +40,10 @@ export const UpdateProductUnitUtils = async ({
 
   if (name !== undefined) {
     updateQuery.name = name;
+  }
+
+  if (tamilName !== undefined) {
+    updateQuery.tamilName = tamilName;
   }
 
   if (status !== undefined) {

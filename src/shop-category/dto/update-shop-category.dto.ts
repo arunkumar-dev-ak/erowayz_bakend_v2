@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsOptional,
+  IsString,
   Validate,
   ValidationArguments,
   ValidatorConstraint,
@@ -18,11 +19,15 @@ export class ValidUpdateShopCategoryConstraint
     const object = args.object as UpdateShopCategoryDto;
 
     // Check that at least one of these fields is provided
-    return object.name !== undefined || object.status !== undefined;
+    return (
+      object.name !== undefined ||
+      object.tamilName !== undefined ||
+      object.status !== undefined
+    );
   }
 
   defaultMessage(): string {
-    return `At least one of 'name' or 'status' must be provided`;
+    return `At least one of 'name' or 'status' or 'tamilName' must be provided`;
   }
 }
 
@@ -31,6 +36,12 @@ export class UpdateShopCategoryDto {
   @IsNotEmpty({ message: 'name is required' })
   @IsOptional()
   name?: string;
+
+  @ApiProperty({ description: 'Name is required', required: true })
+  @IsNotEmpty()
+  @IsString()
+  @IsOptional()
+  tamilName?: string;
 
   @ApiProperty({
     enum: Status,

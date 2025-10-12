@@ -13,7 +13,7 @@ export const CreateShopCategoryUtils = async ({
   shopCategoryService: ShopCategoryService;
   vendorTypeService: VendorTypeService;
 }) => {
-  const { name, status, vendorTypeId } = body;
+  const { name, status, vendorTypeId, tamilName } = body;
 
   const vendorType = await vendorTypeService.findVendorTypeById(vendorTypeId);
   if (!vendorType) {
@@ -36,6 +36,7 @@ export const CreateShopCategoryUtils = async ({
         id: vendorTypeId,
       },
     },
+    tamilName,
   };
 
   return { createQuery };

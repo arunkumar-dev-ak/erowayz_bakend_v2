@@ -12,6 +12,7 @@ enum DisclaimerType {
 model LicenseCategory {
     id               String             @id @default(uuid())
     name             String @unique
+    tamilName        String?
     status           Status             @default(ACTIVE)
 
     createdAt        DateTime           @default(now())
@@ -23,6 +24,7 @@ model LicenseCategory {
 model ProductUnit {
     id               String             @id @default(uuid())
     name             String @unique
+    tamilName        String?
     status           Status             @default(ACTIVE)
 
     createdAt        DateTime           @default(now())
@@ -34,6 +36,7 @@ model ProductUnit {
 model ShopCategory {
     id               String             @id @default(uuid())
     name             String
+    tamilName        String?
     vendorTypeId     String
     status           Status             @default(ACTIVE)
 
@@ -124,6 +127,7 @@ model PrivacyPolicy {
 model VideoLink {
     id               String             @id @default(uuid())
     heading          String
+    tamilHeading     String?
     link             String
     status           Status             @default(ACTIVE)
 

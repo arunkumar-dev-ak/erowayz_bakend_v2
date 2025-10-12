@@ -29,6 +29,8 @@ import { createServiceBookingUtils } from './utils/create-service-booking.utils'
 import { VendorServiceService } from 'src/vendor-service/vendor-service.service';
 import { FirebaseNotificationService } from 'src/firebase/firebase.notification.service';
 import { getNotificationContentForServiceBookingStatus } from './utils/update-service-booking-status.utils';
+import { GetAdminServiceBookingQueryDto } from './dto/service-booking-admin.dto';
+import { buildAdminServiceBookingWhereFilter } from './utils/get-admin-aervice-booking.utils';
 
 @Injectable()
 export class ServiceBookingService {
@@ -291,8 +293,8 @@ export class ServiceBookingService {
     const initialDate = new Date();
 
     const [booking, serviceBooking] = await Promise.all([
-      await this.getBookingById(bookingId, userId, vendorId),
-      await this.getServicBookingByBookingId(bookingId),
+      this.getBookingById(bookingId, userId, vendorId),
+      this.getServicBookingByBookingId(bookingId),
     ]);
 
     if (!booking) {
@@ -306,6 +308,93 @@ export class ServiceBookingService {
       res,
       message: 'Order Items received successfully',
       data: { booking, serviceBooking },
+      statusCode: 200,
+    });
+  }
+
+  async getServiceBookingForAdmin({
+    res,
+    query,
+    offset,
+    limit,
+  }: {
+    res: Response;
+    query: GetAdminServiceBookingQueryDto;
+    offset: number;
+    limit: number;
+  }) {
+    const initialDate = new Date();
+
+    const where: Prisma.BookingWhereInput = buildAdminServiceBookingWhereFilter(
+      {
+        query,
+      },
+    );
+
+    const totalCount = await this.prisma.booking.count({ where });
+
+    const orders = await this.prisma.booking.findMany({
+      where,
+      skip: Number(offset),
+      take: Number(limit),
+      orderBy: {
+        createdAt: 'asc',
+      },
+      include: {
+        serviceBooking: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+          include: {
+            vendorSubService: {
+              include: {
+                service: {
+                  include: {
+                    serviceOption: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                    vendor: {
+                      include: { shopInfo: true, User: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        bookedUser: true,
+      },
+    });
+
+    const { vendorName, startDate, endDate, userName, shopName, bookingId } =
+      query;
+
+    const queries = buildQueryParams({
+      vendorName,
+      startDate,
+      endDate,
+      userName,
+      shopName,
+      bookingId,
+    });
+
+    const meta = this.metaDataService.createMetaData({
+      totalCount,
+      offset,
+      limit,
+      path: 'service-booking/admin',
+      queries,
+    });
+
+    return this.response.successResponse({
+      initialDate,
+      res,
+      data: orders,
+      meta,
+      message: 'Booking retrieved successfully',
       statusCode: 200,
     });
   }

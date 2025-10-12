@@ -29,6 +29,7 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import { GetAdminBannnerBookingQueryDto } from './dto/banner-booking-admin.dto';
 
 @ApiTags('Banner Booking')
 @Controller('banner-booking')
@@ -95,6 +96,24 @@ export class BannerBookingController {
       bookingId,
       userId: currentUser.id,
       vendorId: currentUser.vendor?.id,
+    });
+  }
+
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard, RoleGuard)
+  @Get('admin')
+  @ApiOperation({ summary: 'Get banner booking by ID' })
+  @ApiParam({ name: 'id', type: String, description: 'Booking ID' })
+  async getBannerBookingForAdmin(
+    @Query() query: GetAdminBannnerBookingQueryDto,
+    @Res() res: Response,
+  ) {
+    await this.bannerBookingService.getBannerBookingForAdmin({
+      res,
+      query,
+      offset: Number(query.offset ?? '0'),
+      limit: Number(query.limit ?? '0'),
     });
   }
 

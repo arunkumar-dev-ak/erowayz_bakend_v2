@@ -28,6 +28,8 @@ import { buildQueryParams } from 'src/common/functions/buildQueryParams';
 import { BannerBookingGateway } from './banner-booking.gateway';
 import { FirebaseNotificationService } from 'src/firebase/firebase.notification.service';
 import { getNotificationContentForBannerBookingStatus } from './utils/update-banner-booking-status.utils';
+import { GetAdminBannnerBookingQueryDto } from './dto/banner-booking-admin.dto';
+import { buildAdminBannerBookingWhereFilter } from './utils/get-admin-banner-booking.utils';
 
 @Injectable()
 export class BannerBookingService {
@@ -194,6 +196,82 @@ export class BannerBookingService {
       data: orders,
       meta,
       message: 'Banner retrieved successfully',
+      statusCode: 200,
+    });
+  }
+
+  async getBannerBookingForAdmin({
+    res,
+    query,
+    offset,
+    limit,
+  }: {
+    res: Response;
+    query: GetAdminBannnerBookingQueryDto;
+    offset: number;
+    limit: number;
+  }) {
+    const initialDate = new Date();
+
+    const where: Prisma.BookingWhereInput = buildAdminBannerBookingWhereFilter({
+      query,
+    });
+
+    const totalCount = await this.prisma.booking.count({ where });
+
+    const orders = await this.prisma.booking.findMany({
+      where,
+      skip: Number(offset),
+      take: Number(limit),
+      orderBy: {
+        createdAt: 'asc',
+      },
+      include: {
+        bannerBooking: {
+          include: {
+            vendor: {
+              include: {
+                shopInfo: {
+                  include: {
+                    shopCategory: true,
+                    shopCity: true,
+                  },
+                },
+                User: true,
+              },
+            },
+          },
+        },
+        bookedUser: true,
+      },
+    });
+
+    const { vendorName, startDate, endDate, userName, shopName, bookingId } =
+      query;
+
+    const queries = buildQueryParams({
+      vendorName,
+      startDate,
+      endDate,
+      userName,
+      shopName,
+      bookingId,
+    });
+
+    const meta = this.metaDataService.createMetaData({
+      totalCount,
+      offset,
+      limit,
+      path: 'banner-booking/admin',
+      queries,
+    });
+
+    return this.response.successResponse({
+      initialDate,
+      res,
+      data: orders,
+      meta,
+      message: 'Booking retrieved successfully',
       statusCode: 200,
     });
   }

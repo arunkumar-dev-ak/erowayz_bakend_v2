@@ -1,4 +1,9 @@
-import { Payment, Prisma, WalletTransactionType } from '@prisma/client';
+import {
+  Payment,
+  Prisma,
+  VendorSubscription,
+  WalletTransactionType,
+} from '@prisma/client';
 import { VendorTopUpDto } from '../dto/vendor-topup.dto';
 import { WalletService } from '../wallet.service';
 import { BadRequestException } from '@nestjs/common';
@@ -113,4 +118,19 @@ export async function VendorTopUpUtils({
     wallet,
     adminvendorLimit,
   };
+}
+
+export function getCoinsLimit({
+  currentSubscription,
+}: {
+  currentSubscription: VendorSubscription;
+}) {
+  const coinsLimit = (currentSubscription.planFeatures as Record<string, any>)[
+    'coinsLimitations'
+  ] as number | null;
+  if (!coinsLimit) {
+    throw new BadRequestException('You are not allowed to use the coins');
+  }
+
+  return coinsLimit;
 }

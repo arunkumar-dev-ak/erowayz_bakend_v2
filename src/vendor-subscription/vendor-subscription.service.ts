@@ -1,4 +1,9 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseService } from 'src/response/response.service';
 import { CreateVendorSubscriptionDto } from './dto/create-vendor-sub.dto';
@@ -115,6 +120,31 @@ export class VendorSubscriptionService {
       res,
       message: 'Current subscription fetched sucessfully',
       data: currentVendorSubscription,
+      statusCode: 200,
+    });
+  }
+
+  async getCurrentAndFutureSubOfVendor({
+    vendorId,
+    res,
+  }: {
+    vendorId: string;
+    res: Response;
+  }) {
+    const initialDate = new Date();
+
+    const currentVendorSubscription = await this.checkCurrentVendorSubscription(
+      { vendorId },
+    );
+    const futureVendorSubscription = await this.checkFutureVendorSubscription({
+      vendorId,
+    });
+
+    return this.responseService.successResponse({
+      initialDate,
+      res,
+      message: 'Current subscription fetched sucessfully',
+      data: { currentVendorSubscription, futureVendorSubscription },
       statusCode: 200,
     });
   }
@@ -236,17 +266,6 @@ export class VendorSubscriptionService {
         vendorId,
       });
     if (existingSubscriptionPlan && futureVendorSubscription) {
-      // await createManualRefund({
-      //   payment,
-      //   reason: 'ExistingPlan and future Plan  exists',
-      //   prismaService: this.prisma,
-      //   tx,
-      //   metaData: {
-      //     existingSubscriptionPlan,
-      //     futureVendorSubscription,
-      //   },
-      //   userId,
-      // });
       throw new PaymentError(
         'You already have an active and an upcoming subscription. New subscription cannot be created.',
         false,
@@ -374,9 +393,9 @@ export class VendorSubscriptionService {
   }
 
   /*----- helper func -----*/
+
   async checkCurrentVendorSubscription({ vendorId }: { vendorId: string }) {
     const currentDate = new Date();
-    console.log(currentDate);
     return await this.prisma.vendorSubscription.findFirst({
       where: {
         vendorId,
@@ -390,8 +409,39 @@ export class VendorSubscriptionService {
             User: true,
           },
         },
+        plan: true,
       },
     });
+  }
+
+  async checkCurrentVendorSubscriptionForPlanFeatures({
+    vendorId,
+  }: {
+    vendorId: string;
+  }) {
+    const currentDate = new Date();
+    const currentSub = await this.prisma.vendorSubscription.findFirst({
+      where: {
+        vendorId,
+        isActive: true,
+        startDate: { lte: currentDate },
+        endDate: { gt: currentDate },
+      },
+      include: {
+        vendor: {
+          include: {
+            User: true,
+          },
+        },
+        plan: true,
+      },
+    });
+    if (!currentSub || !currentSub.planFeatures) {
+      throw new BadRequestException(
+        'Currently vendor not accepting order.Try again sometime',
+      );
+    }
+    return currentSub;
   }
 
   async checkFutureVendorSubscription({ vendorId }: { vendorId: string }) {
@@ -438,5 +488,72 @@ export class VendorSubscriptionService {
       },
     });
     return payments;
+  }
+
+  async getOrCreateFeatureUsage({
+    vendorSubscriptionId,
+    itemId,
+    feature,
+    shopId,
+  }: {
+    vendorSubscriptionId: string;
+    itemId?: string;
+    feature: string;
+    shopId?: string;
+  }) {
+    const whereFilter: Prisma.VendorFeatureUsageWhereInput = {
+      vendorSubscriptionId,
+      feature,
+    };
+
+    if (itemId) {
+      whereFilter.itemId = itemId;
+    }
+    if (shopId) {
+      whereFilter.shopId = shopId;
+    }
+
+    const vendorFeatureUsage = await this.prisma.vendorFeatureUsage.findFirst({
+      where: whereFilter,
+      include: {
+        vendorSubscription: true,
+      },
+    });
+
+    if (vendorFeatureUsage) {
+      return vendorFeatureUsage;
+    }
+
+    const createFeatureUsage: Prisma.VendorFeatureUsageCreateInput = {
+      vendorSubscription: {
+        connect: {
+          id: vendorSubscriptionId,
+        },
+      },
+      feature,
+      ...(shopId && {
+        shopInfo: {
+          connect: {
+            id: shopId,
+          },
+        },
+      }),
+      ...(itemId && {
+        item: {
+          connect: {
+            id: itemId,
+          },
+        },
+      }),
+    };
+
+    const newVendorFeatureUsage = await this.prisma.vendorFeatureUsage.create({
+      data: createFeatureUsage,
+      include: {
+        vendorSubscription: true,
+      },
+    });
+
+    return newVendorFeatureUsage;
   }
 }

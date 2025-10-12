@@ -10,7 +10,7 @@ export const CreateLicenseCategoryUtils = async ({
   body: CreateLicenseCategoryDto;
   licenseCategoryService: LicenseCategoryService;
 }) => {
-  const { name, status } = body;
+  const { name, status, tamilName } = body;
 
   const existingLicenseCategory =
     await licenseCategoryService.getLicenseCategoryByName(name);
@@ -21,6 +21,7 @@ export const CreateLicenseCategoryUtils = async ({
   const createQuery: Prisma.LicenseCategoryCreateInput = {
     name,
     status,
+    tamilName,
   };
 
   return { createQuery };

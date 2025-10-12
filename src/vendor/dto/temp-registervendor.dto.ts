@@ -47,6 +47,12 @@ export class TempRegisterVendorDto {
   @IsNotEmpty({ message: 'Name is required' })
   name: string;
 
+  @ApiProperty({ description: 'Referral Code is required', required: true })
+  @IsString()
+  @IsNotEmpty({ message: 'Referral Code is required' })
+  @IsOptional()
+  referralCode?: string;
+
   @ApiProperty({ description: 'ReferralId is required', required: true })
   @IsString()
   @IsOptional()

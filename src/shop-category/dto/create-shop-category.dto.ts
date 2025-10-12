@@ -7,6 +7,11 @@ export class CreateShopCategoryDto {
   @IsNotEmpty({ message: 'name is required' })
   name: string;
 
+  @ApiProperty({ description: 'Name is required', required: true })
+  @IsNotEmpty()
+  @IsString()
+  tamilName: string;
+
   @ApiProperty()
   @IsString()
   @IsNotEmpty({ message: 'vendorTypeId is required' })

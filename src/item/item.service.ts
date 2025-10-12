@@ -16,7 +16,7 @@ import {
 import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { UpdateItemDto } from './dto/update-item.dto';
-import { Prisma, ProductStatus } from '@prisma/client';
+import { Prisma, ProductStatus, VendorSubscription } from '@prisma/client';
 import { UpdateProductStatusDto } from './dto/update-productstatus-item.dto';
 import { UpdateItemStatus } from './dto/update-itemstatus.dto';
 import { MetadataService } from 'src/metadata/metadata.service';
@@ -25,6 +25,7 @@ import { buildQueryParams } from 'src/common/functions/buildQueryParams';
 import { GetItemQueryDto } from './dto/get-item-query.dto';
 import { UpdateItemVerification } from './utils/update-item.utils';
 import { getItemWithAvgRating, includeItem } from './utils/get-item.utils';
+import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
 
 @Injectable()
 export class ItemService {
@@ -36,6 +37,7 @@ export class ItemService {
     private readonly vendorService: VendorService,
     private readonly fileUploadService: FileUploadService,
     private readonly metaDataService: MetadataService,
+    private readonly vendorSubscriptionService: VendorSubscriptionService,
   ) {}
 
   async getItem({
@@ -269,12 +271,14 @@ export class ItemService {
     res,
     itemImages,
     vendorId,
+    currentSubscription,
   }: {
     itemId: string;
     vendorId: string;
     body: UpdateItemDto;
     res: Response;
     itemImages?: Express.Multer.File[];
+    currentSubscription: VendorSubscription;
   }) {
     const initialDate = new Date();
     if (!body || Object.keys(body).length === 0) {
@@ -289,15 +293,21 @@ export class ItemService {
     }
 
     //verifications
-    const { updatedRemainingQty, totalQtyEditCount, deletedImages } =
-      await UpdateItemVerification({
-        body,
-        item,
-        categoryService: this.categoryService,
-        subCategoryService: this.subCategoryService,
-        itemService: this,
-        vendorId,
-      });
+    const {
+      updatedRemainingQty,
+      totalQtyEditCount,
+      deletedImages,
+      updateVendorUsageQuery,
+    } = await UpdateItemVerification({
+      body,
+      item,
+      categoryService: this.categoryService,
+      subCategoryService: this.subCategoryService,
+      itemService: this,
+      vendorId,
+      currentVendorSubscription: currentSubscription,
+      vendorSubscriptionService: this.vendorSubscriptionService,
+    });
 
     const uploadedImage: MultipleFileUploadInterface | undefined =
       itemImages && itemImages.length > 0
@@ -361,6 +371,10 @@ export class ItemService {
           });
         }
 
+        if (updateVendorUsageQuery) {
+          await tx.vendorFeatureUsage.update(updateVendorUsageQuery);
+        }
+
         return updatedItem;
       });
 
@@ -395,11 +409,13 @@ export class ItemService {
     vendorId,
     itemId,
     body,
+    currentVendorSubscription,
   }: {
     res: Response;
     vendorId: string;
     itemId: string;
     body: UpdateProductStatusDto;
+    currentVendorSubscription: VendorSubscription;
   }) {
     const initialDate = new Date();
 
@@ -419,11 +435,48 @@ export class ItemService {
       );
     }
 
-    const updatedItem = await this.prisma.item.update({
-      where: { id: itemId },
-      data: { productstatus: body.status },
-      include: { itemImage: true },
+    //checking product status limit
+    const vendorFeatureUsageForProductStatusUpdate =
+      await this.vendorSubscriptionService.getOrCreateFeatureUsage({
+        vendorSubscriptionId: currentVendorSubscription.id,
+        itemId: item.id,
+        feature: 'productStatusChangeLimit',
+      });
+    const planStatusUpdateLimit = (
+      vendorFeatureUsageForProductStatusUpdate.vendorSubscription
+        .planFeatures as Record<string, any>
+    )['productStatusChangeLimit'] as number | null;
+    if (!planStatusUpdateLimit) {
+      throw new BadRequestException('You are not allowed to update the Status');
+    }
+    if (
+      vendorFeatureUsageForProductStatusUpdate.usageCount >=
+      planStatusUpdateLimit
+    ) {
+      throw new BadRequestException(
+        'You have reached the limit to update the Status',
+      );
+    }
+
+    const updatedItem = await this.prisma.$transaction(async (tx) => {
+      await tx.vendorFeatureUsage.update({
+        where: {
+          id: vendorFeatureUsageForProductStatusUpdate.id,
+        },
+        data: {
+          usageCount: {
+            increment: 1,
+          },
+        },
+      });
+
+      return await tx.item.update({
+        where: { id: itemId },
+        data: { productstatus: body.status },
+        include: { itemImage: true },
+      });
     });
+
     return this.responseService.successResponse({
       initialDate,
       res,

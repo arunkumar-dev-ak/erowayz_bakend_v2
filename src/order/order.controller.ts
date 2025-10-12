@@ -27,6 +27,7 @@ import { extractUserIdFromRequest } from 'src/common/functions/extractUserId';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { GetAdminOrderQueryDto } from './dto/get-order-admin-query.dto';
 import { OrderPaymentDto } from './dto/order-payment.dto';
+import { GetOrderTransactionQueryForAdminDto } from './dto/get-order-transaction-query.dto';
 
 @Controller('order')
 export class OrderController {
@@ -71,6 +72,52 @@ export class OrderController {
       query,
       offset,
       limit,
+    });
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard, RoleGuard)
+  @ApiBearerAuth()
+  @Get('orderTransaction/admin')
+  async getWalletTransaction(
+    @Res() res: Response,
+    @Query() query: GetOrderTransactionQueryForAdminDto,
+  ) {
+    const offset = Number(query.offset ?? '0');
+    const limit = Number(query.limit ?? '10');
+    await this.orderService.getOrderTransaction({
+      query,
+      res,
+      offset,
+      limit,
+      origin: 'ADMIN',
+    });
+  }
+
+  @Roles(Role.ADMIN, Role.CUSTOMER)
+  @UseGuards(AuthGuard, RoleGuard)
+  @ApiBearerAuth()
+  @Get('walletTransaction/user')
+  async getOrderTransactionForUser(
+    @Res() res: Response,
+    @Query() query: GetOrderTransactionQueryForAdminDto,
+    @CurrentUser() currentUser: User & { vendor?: Vendor; staff?: Staff },
+  ) {
+    const userId = currentUser.id;
+    const vendorId =
+      currentUser.vendor?.id ?? currentUser.staff?.id ?? undefined;
+    const offset = Number(query.offset ?? '0');
+    const limit = Number(query.limit ?? '10');
+    await this.orderService.getOrderTransaction({
+      query: {
+        ...query,
+        userId,
+        vendorId,
+      },
+      res,
+      offset,
+      limit,
+      origin: 'USER',
     });
   }
 

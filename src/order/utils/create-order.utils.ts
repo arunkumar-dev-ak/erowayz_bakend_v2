@@ -10,6 +10,7 @@ export const lockVendorAndCustomerWallet = async ({
   tx,
   paymentService,
   payableAmount,
+  vendorWalletBalanceLimit,
 }: {
   customerUserId: string;
   vendorUserId: string;
@@ -17,6 +18,7 @@ export const lockVendorAndCustomerWallet = async ({
   paymentService: PaymentSerice;
   tx: Prisma.TransactionClient;
   payableAmount: number;
+  vendorWalletBalanceLimit: number;
 }) => {
   //check the customer wallet balance
   //check customer wallet is locked
@@ -29,7 +31,6 @@ export const lockVendorAndCustomerWallet = async ({
     walletService.createOrFindWallet(customerUserId, tx),
   ]);
 
-  const vendorWalletBalanceLimit = 2000;
   const finalPayableAmount = Math.round(payableAmount);
 
   //check customer wallet

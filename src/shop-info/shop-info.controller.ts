@@ -30,6 +30,7 @@ import { ShopOpenCloseDto } from './dto/shopopenclose-dto';
 import { FeaturePermission } from 'src/common/decorator/featurepermission.decorator';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UpdateLicenseInfo } from './dto/updateLicenseInfo.dto';
+import { extractVendorSubFromRequest } from 'src/common/functions/extact-sub';
 
 @ApiTags('Shop Info') // Swagger grouping
 @Controller('shop-info')
@@ -69,6 +70,7 @@ export class ShopInfoController {
     @Param('id') id: string,
     @Body() body: EditShopInfo,
     @Res() res: Response,
+    @Req() req: Request,
     @UploadedFiles()
     files: {
       shopImageRef?: Express.Multer.File[];
@@ -77,12 +79,14 @@ export class ShopInfoController {
   ) {
     const shopImage = files?.shopImageRef?.[0];
     const licenseImage = files?.licenseImage?.[0];
+    const currentVendorSub = extractVendorSubFromRequest(req);
     await this.shopInfoService.updateShopInfo({
       id,
       res,
       body,
       shopImage,
       licenseImage,
+      currentVendorSubscription: currentVendorSub,
     });
   }
 

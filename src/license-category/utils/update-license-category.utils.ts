@@ -12,7 +12,7 @@ export const UpdateLicenseCategoryUtils = async ({
   licenseCategoryService: LicenseCategoryService;
   licenseCategoryId: string;
 }) => {
-  const { name, status } = body;
+  const { name, status, tamilName } = body;
 
   const existingLicenseCategory =
     await licenseCategoryService.getLicenseCategoryById(licenseCategoryId);
@@ -45,6 +45,10 @@ export const UpdateLicenseCategoryUtils = async ({
 
   if (name !== undefined) {
     updateQuery.name = name;
+  }
+
+  if (tamilName !== undefined) {
+    updateQuery.tamilName = tamilName;
   }
 
   if (status !== undefined) {

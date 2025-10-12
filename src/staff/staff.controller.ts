@@ -28,6 +28,7 @@ import { LoginStaffDto } from './dto/loginstaff.dto';
 import { LogoutStaffDto } from './dto/logoutstaff.dto';
 import { extractStaffIdFromRequest } from 'src/common/functions/extractStaffId';
 import { Role } from '@prisma/client';
+import { extractVendorSubFromRequest } from 'src/common/functions/extact-sub';
 
 @ApiTags('Staff') // Grouping APIs under 'Staff' in Swagger
 @Controller('staff')
@@ -61,8 +62,14 @@ export class StaffController {
     @Body() body: CreateStaffDto,
     @Res() res: Response,
   ) {
+    const currentSub = extractVendorSubFromRequest(req);
     const vendorId = req['vendorId'] as string;
-    return await this.staffService.createStaffAccount({ vendorId, res, body });
+    return await this.staffService.createStaffAccount({
+      vendorId,
+      res,
+      body,
+      currentVendorSubscription: currentSub,
+    });
   }
 
   @Roles('VENDOR')

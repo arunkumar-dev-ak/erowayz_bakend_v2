@@ -28,6 +28,7 @@ import { GetSubscriptionPlanQueryDto } from './dto/get-subscription-query.dto';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { ChangeSubScriptionStatus } from './dto/change-subscription-status.dto';
+import { GetSubTransactionQueryForAdminDto } from './dto/get-sub-transaction-query.dto';
 
 @ApiTags('subscription')
 @Controller('subscription')
@@ -48,6 +49,24 @@ export class SubscriptionController {
       query,
       offset: Number(query.offset || '0'),
       limit: Number(query.limit || '10'),
+    });
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard, RoleGuard)
+  @ApiBearerAuth()
+  @Get('transaction')
+  async getTransaction(
+    @Res() res: Response,
+    @Query() query: GetSubTransactionQueryForAdminDto,
+  ) {
+    const offset = Number(query.offset ?? '0');
+    const limit = Number(query.limit ?? '10');
+    await this.subscriptionService.getSubTransaction({
+      query,
+      res,
+      offset,
+      limit,
     });
   }
 

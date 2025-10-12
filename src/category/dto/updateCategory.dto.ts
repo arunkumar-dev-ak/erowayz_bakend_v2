@@ -8,6 +8,12 @@ export class UpdateCategoryDto {
   @IsString()
   name?: string;
 
+  @ApiProperty({ description: 'Name is required', required: true })
+  @IsNotEmpty()
+  @IsString()
+  @IsOptional()
+  tamilName?: string;
+
   @ApiProperty({
     format: 'binary',
     required: false,

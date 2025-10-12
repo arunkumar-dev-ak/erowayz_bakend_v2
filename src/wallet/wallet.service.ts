@@ -1,11 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { Payment, PaymentPurpose, PaymentStatus, Prisma } from '@prisma/client';
+import {
+  Payment,
+  PaymentPurpose,
+  PaymentStatus,
+  Prisma,
+  VendorSubscription,
+} from '@prisma/client';
 import { Response } from 'express';
 import { MetadataService } from 'src/metadata/metadata.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseService } from 'src/response/response.service';
 import { VendorTopUpDto } from './dto/vendor-topup.dto';
 import {
+  getCoinsLimit,
   vendorTopUpPaymentInitiation,
   VendorTopUpUtils,
 } from './utils/vendor-topup.utils';
@@ -22,6 +29,10 @@ import { ConfigService } from '@nestjs/config';
 import { PaymentJuspayService } from 'src/payment/payment.juspay.service';
 import { JuspayOrderResponse } from 'src/payment/dto/juspay-webhook.dto';
 import { PaymentSerice } from 'src/payment/payment.service';
+import { GetWalletTransactionQueryForAdminDto } from './dto/get-wallet-transaction-query.dto';
+import { buildWalletTransactiontWhereFilter } from './utils/get-wallet-transaction.utils';
+import { buildQueryParams } from 'src/common/functions/buildQueryParams';
+import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
 
 @Injectable()
 export class WalletService {
@@ -35,6 +46,7 @@ export class WalletService {
     private readonly configService: ConfigService,
     private readonly paymentJuspayService: PaymentJuspayService,
     private readonly paymentService: PaymentSerice,
+    private readonly vendorSubscriptionService: VendorSubscriptionService,
   ) {
     this.MAX_RETRIES = parseInt(
       configService.get<string>('ISOLATION_LEVEL_MAX_RETRIES') || '3',
@@ -44,16 +56,117 @@ export class WalletService {
     );
   }
 
+  async getWalletTransaction({
+    res,
+    query,
+    offset,
+    limit,
+    origin,
+  }: {
+    res: Response;
+    query: GetWalletTransactionQueryForAdminDto;
+    offset: number;
+    limit: number;
+    origin: 'USER' | 'ADMIN';
+  }) {
+    const initialDate = new Date();
+    const { where } = buildWalletTransactiontWhereFilter({
+      query,
+    });
+
+    const totalCount = await this.prisma.walletTransaction.count({ where });
+
+    const walletTransaction = await this.prisma.walletTransaction.findMany({
+      where,
+      skip: Number(offset),
+      take: Number(limit),
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        orderPayment: {
+          include: {
+            order: true,
+          },
+        },
+        coinsSettlement: {
+          include: {
+            coinsSettlementFile: true,
+          },
+        },
+        senderWallet: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                nameTamil: true,
+                vendor: {
+                  include: {
+                    shopInfo: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        receiverWallet: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                nameTamil: true,
+                vendor: {
+                  include: {
+                    shopInfo: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const { shopName, vendorId, userId, userName, startDate, endDate } = query;
+    const queries = buildQueryParams({
+      shopName,
+      vendorId,
+      userId,
+      userName,
+      startDate,
+      endDate,
+    });
+
+    const meta = this.metaDataService.createMetaData({
+      totalCount,
+      offset,
+      limit,
+      path: `wallet/walletTransaction/${origin == 'ADMIN' ? 'admin' : 'user'}`,
+      queries,
+    });
+
+    return this.response.successResponse({
+      initialDate,
+      res,
+      data: walletTransaction,
+      meta,
+      message: 'Wallet Transaction retrieved successfully',
+      statusCode: 200,
+    });
+  }
+
   async walletTopUpReq({
     userId,
     vendorId,
     res,
     body,
+    currentSubscription,
   }: {
     userId: string;
     vendorId: string;
     res: Response;
     body: VendorTopUpDto;
+    currentSubscription: VendorSubscription;
   }) {
     const initialDate = new Date();
     for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
@@ -65,7 +178,7 @@ export class WalletService {
             vendorId,
             tx,
             walletService: this,
-            coinsLimit: 2000,
+            coinsLimit: getCoinsLimit({ currentSubscription }),
             maxWalletPaymentInitiationCount:
               this.maxWalletPaymentInitiationCount,
           });

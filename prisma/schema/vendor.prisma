@@ -26,7 +26,8 @@ model Vendor {
   serviceVendorKeyword  ServiceVendorKeyword[]
   review                Review[]
   bannerVendorItem      BannerVendorItem[]
-  vendorSubscription    VendorSubscription[]
+  vendorSubscription    VendorSubscription[]  @relation("VendorSubscriptionVendor")
+  referredSubscriptions VendorSubscription[] @relation("VendorSubscriptionReferredVendor")
   service               Service[]
   favouriteCustomerForVendor  FavouriteCustomerForVendor[]
   favouriteVendorForCustomer  FavouriteVendorForCustomer[]
@@ -136,6 +137,7 @@ model ShopInfo {
 
   license         License?
   shopWorkingHour ShopWorkingHour[]
+  vendorFeatureUsage  VendorFeatureUsage[]
   vendor          Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   shopCategory    ShopCategory?   @relation(fields: [shopCategoryId], references: [id], onDelete: Cascade)
   shopCity        ShopCity?   @relation(fields: [shopCityId], references: [id], onDelete: Cascade)

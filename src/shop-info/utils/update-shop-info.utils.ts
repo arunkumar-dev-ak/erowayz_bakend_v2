@@ -2,9 +2,10 @@ import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { ImageFiedlsInterface } from 'src/vendor/utils/update-vendor.utils';
 import { EditShopInfo } from '../dto/editshopinfo.dto';
-import { License, Prisma, Status } from '@prisma/client';
+import { License, Prisma, Status, VendorSubscription } from '@prisma/client';
 import { BadRequestException } from '@nestjs/common';
 import { LicenseCategoryService } from 'src/license-category/license-category.service';
+import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
 
 export async function UpdateShopInfoUtils({
   body,
@@ -13,6 +14,9 @@ export async function UpdateShopInfoUtils({
   fileUploadService,
   licenseCategoryService,
   license,
+  vendorSubscriptionService,
+  currentVendorSubscription,
+  shopId,
 }: {
   body: EditShopInfo;
   shopImage?: Express.Multer.File;
@@ -20,7 +24,12 @@ export async function UpdateShopInfoUtils({
   fileUploadService: FileUploadService;
   licenseCategoryService: LicenseCategoryService;
   license?: License | null;
+  vendorSubscriptionService: VendorSubscriptionService;
+  currentVendorSubscription: VendorSubscription;
+  shopId: string;
 }) {
+  let updateVendorUsageQuery: Prisma.VendorFeatureUsageUpdateArgs | null = null;
+
   const {
     shopName,
     address,
@@ -49,6 +58,43 @@ export async function UpdateShopInfoUtils({
     ...(addressTamil && { addressTamil }),
     ...(shopCategoryId && { shopCategoryId }),
   };
+
+  /*----- check shopLocation change limit -----*/
+  if (latitude || longitude) {
+    const vendorFeatureUsageForQtyUpdate =
+      await vendorSubscriptionService.getOrCreateFeatureUsage({
+        vendorSubscriptionId: currentVendorSubscription.id,
+        shopId,
+        feature: 'locationChangeLimit',
+      });
+    const locationChangeLimit = (
+      vendorFeatureUsageForQtyUpdate.vendorSubscription.planFeatures as Record<
+        string,
+        any
+      >
+    )['locationChangeLimit'] as number | null;
+    if (!locationChangeLimit) {
+      throw new BadRequestException(
+        'You are not allowed to update the shop location',
+      );
+    }
+    if (vendorFeatureUsageForQtyUpdate.usageCount >= locationChangeLimit) {
+      throw new BadRequestException(
+        'You have reached the limit to update the quantity',
+      );
+    }
+
+    updateVendorUsageQuery = {
+      where: {
+        id: vendorFeatureUsageForQtyUpdate.id,
+      },
+      data: {
+        usageCount: {
+          increment: 1,
+        },
+      },
+    };
+  }
 
   if (licenseCategoryId) {
     const licenseCategory =
@@ -155,5 +201,11 @@ export async function UpdateShopInfoUtils({
     };
   }
 
-  return { shopInfoData, licenseUpdate, shopImageUrl, licenseImageUrl };
+  return {
+    shopInfoData,
+    licenseUpdate,
+    shopImageUrl,
+    licenseImageUrl,
+    updateVendorUsageQuery,
+  };
 }

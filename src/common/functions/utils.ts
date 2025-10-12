@@ -199,3 +199,13 @@ export function getDayRange(shiftDate: Date) {
 
   return { start, end };
 }
+
+export function capitalize(val: string) {
+  if (val.length === 0) {
+    return '';
+  } else if (val.length === 1) {
+    return val.toUpperCase();
+  } else {
+    return `${val.charAt(0).toUpperCase()}${val.slice(1)}`;
+  }
+}

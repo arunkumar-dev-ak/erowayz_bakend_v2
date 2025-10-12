@@ -1,11 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Status } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateVideoLinkDto {
   @ApiProperty()
   @IsNotEmpty({ message: 'heading is required' })
   heading: string;
+
+  @ApiProperty({ description: 'Name is required', required: true })
+  @IsNotEmpty()
+  @IsString()
+  tamilHeading: string;
 
   @ApiProperty()
   @IsNotEmpty({ message: 'Link is required' })

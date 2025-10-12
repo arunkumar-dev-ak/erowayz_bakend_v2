@@ -31,6 +31,7 @@ import {
   groupedItem,
   handleItemVerification,
   handleVendorForOrder,
+  validatePreferredPaymentType,
 } from './utils/order.utils';
 import { VendorServiceOptionService } from 'src/vendor-service-option/vendor-service-option.service';
 import { ChangeOrderStatusDto } from './dto/change-order-status.dto';
@@ -65,6 +66,10 @@ import { OrderPaymentDto } from './dto/order-payment.dto';
 import { OrderPaymentUtils } from './utils/order-payment.utils';
 import { ErrorLogService } from 'src/error-log/error-log.service';
 import { PaymentJuspayService } from 'src/payment/payment.juspay.service';
+import { GetOrderTransactionQueryForAdminDto } from './dto/get-order-transaction-query.dto';
+import { buildOrderTransactiontWhereFilter } from './utils/get-order-transaction.utils';
+import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
+import { getCoinsLimit } from 'src/wallet/utils/vendor-topup.utils';
 
 @Injectable()
 export class OrderService {
@@ -87,6 +92,7 @@ export class OrderService {
     private readonly configService: ConfigService,
     private readonly errorLogService: ErrorLogService,
     private readonly paymentJuspayService: PaymentJuspayService,
+    private readonly vendorSubscriptionService: VendorSubscriptionService,
   ) {
     this.MAX_RETRIES = parseInt(
       configService.get<string>('ISOLATION_LEVEL_MAX_RETRIES') || '3',
@@ -444,8 +450,8 @@ export class OrderService {
     const initialDate = new Date();
 
     const [order, orderItems] = await Promise.all([
-      await this.getOrderById(orderId, userId, vendorId),
-      await this.getOrderItemsByOrder(orderId),
+      this.getOrderById(orderId, userId, vendorId),
+      this.getOrderItemsByOrder(orderId),
     ]);
 
     if (!order) {
@@ -459,6 +465,99 @@ export class OrderService {
       res,
       message: 'Order Items received successfully',
       data: { order, orderItems },
+      statusCode: 200,
+    });
+  }
+
+  /*----- transaction -----*/
+  async getOrderTransaction({
+    res,
+    query,
+    offset,
+    limit,
+    origin,
+  }: {
+    res: Response;
+    query: GetOrderTransactionQueryForAdminDto;
+    offset: number;
+    limit: number;
+    origin: 'USER' | 'ADMIN';
+  }) {
+    const initialDate = new Date();
+    const { where } = buildOrderTransactiontWhereFilter({
+      query,
+    });
+
+    const totalCount = await this.prisma.payment.count({ where });
+
+    const orderTransaction = await this.prisma.payment.findMany({
+      where,
+      skip: Number(offset),
+      take: Number(limit),
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        orderPayment: {
+          include: {
+            order: {
+              include: {
+                orderItems: {
+                  include: {
+                    item: {
+                      include: {
+                        vendor: {
+                          include: {
+                            shopInfo: true,
+                            User: {
+                              select: {
+                                name: true,
+                                nameTamil: true,
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+                orderedUser: {
+                  select: {
+                    name: true,
+                    nameTamil: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const { shopName, vendorId, userId, userName, startDate, endDate } = query;
+    const queries = buildQueryParams({
+      shopName,
+      vendorId,
+      userId,
+      userName,
+      startDate,
+      endDate,
+    });
+
+    const meta = this.metaDataService.createMetaData({
+      totalCount,
+      offset,
+      limit,
+      path: `origin/originTransaction/${origin == 'ADMIN' ? 'admin' : 'user'}`,
+      queries,
+    });
+
+    return this.response.successResponse({
+      initialDate,
+      res,
+      data: orderTransaction,
+      meta,
+      message: 'Order Transaction retrieved successfully',
       statusCode: 200,
     });
   }
@@ -680,6 +779,12 @@ export class OrderService {
 
     //check shop Open and vendor Active
     handleVendorForOrder({ vendor: cart.vendor });
+    //handle payment method
+    await validatePreferredPaymentType({
+      vendorSubscriptionService: this.vendorSubscriptionService,
+      preferredPaymentType: preferredPaymentMethod,
+      vendorId: cart.vendorId,
+    });
 
     const {
       totals,
@@ -720,6 +825,15 @@ export class OrderService {
           async (tx) => {
             //lock wallet
             if (preferredPaymentMethod === 'COINS') {
+              const currentSubscription =
+                await this.vendorSubscriptionService.checkCurrentVendorSubscriptionForPlanFeatures(
+                  {
+                    vendorId: cart.vendorId,
+                  },
+                );
+              const vendorCoinsLimit = getCoinsLimit({
+                currentSubscription,
+              });
               const { vendorWalletUpdateQuery, customerWalletUpdateQuery } =
                 await lockVendorAndCustomerWallet({
                   tx,
@@ -728,6 +842,7 @@ export class OrderService {
                   walletService: this.walletService,
                   paymentService: this.paymentService,
                   payableAmount: bestPrice,
+                  vendorWalletBalanceLimit: vendorCoinsLimit,
                 });
 
               console.log(vendorWalletUpdateQuery);

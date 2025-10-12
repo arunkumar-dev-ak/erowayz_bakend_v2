@@ -12,9 +12,10 @@ import { UpdateStaffDto } from './dto/updatestaff.dto';
 import { LoginStaffDto } from './dto/loginstaff.dto';
 import { LogoutStaffDto } from './dto/logoutstaff.dto';
 import { v4 as uuidv4 } from 'uuid';
-import { Prisma, Role } from '@prisma/client';
+import { Prisma, Role, VendorSubscription } from '@prisma/client';
 import { TokenService } from 'src/token/token.service';
 import { Response } from 'express';
+import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
 
 @Injectable()
 export class StaffService {
@@ -22,6 +23,7 @@ export class StaffService {
     private readonly prisma: PrismaService,
     private readonly response: ResponseService,
     private readonly tokenService: TokenService,
+    private readonly vendorSubscriptionService: VendorSubscriptionService,
   ) {}
 
   async getAllStaffByVendorId({
@@ -54,16 +56,39 @@ export class StaffService {
     vendorId,
     res,
     body,
+    currentVendorSubscription,
   }: {
     vendorId: string;
     res: Response;
     body: CreateStaffDto;
+    currentVendorSubscription: VendorSubscription;
   }) {
     const initialDate = new Date();
     const { email, password, name, status } = body;
     if (await this.findStaffByName(email)) {
       throw new ConflictException('Username already exists');
     }
+
+    const staffAccountLimit = (
+      currentVendorSubscription.planFeatures as Record<string, any>
+    )['staffAccountLimit'] as number | null;
+    if (!staffAccountLimit) {
+      throw new BadRequestException(
+        'You are not allowed to create a Staff account',
+      );
+    }
+
+    const currentStaffAccountCount = await this.prisma.staff.count({
+      where: {
+        vendorId,
+      },
+    });
+    if (currentStaffAccountCount >= staffAccountLimit) {
+      throw new BadRequestException(
+        `You can able to create only ${staffAccountLimit} staff accounts`,
+      );
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await this.prisma.user.create({
       data: {

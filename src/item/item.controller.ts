@@ -38,6 +38,7 @@ import { GetPopularItemQueryDto } from './dto/get-popularitem-query.dto';
 import { FetchUserGuard } from 'src/common/guards/fetch-user.guard';
 import { extractUserFromRequest } from 'src/common/functions/extractUserId';
 import { FeaturePermission } from 'src/common/decorator/featurepermission.decorator';
+import { extractVendorSubFromRequest } from 'src/common/functions/extact-sub';
 
 @ApiTags('Items')
 @Controller('item')
@@ -125,12 +126,14 @@ export class ItemController {
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
     const vendorId = extractVendorIdFromRequest(req);
+    const vendorSub = extractVendorSubFromRequest(req);
     return await this.itemService.updateItem({
       itemId,
       vendorId,
       res,
       body,
       itemImages: files,
+      currentSubscription: vendorSub,
     });
   }
 
@@ -146,11 +149,13 @@ export class ItemController {
     @Param('itemId') itemId: string,
   ) {
     const vendorId = extractVendorIdFromRequest(req);
+    const vendorSub = extractVendorSubFromRequest(req);
     return await this.itemService.changeProductStatus({
       res,
       vendorId,
       itemId,
       body,
+      currentVendorSubscription: vendorSub,
     });
   }
 

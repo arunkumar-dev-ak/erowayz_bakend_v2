@@ -9,13 +9,16 @@ import {
   Item,
   ItemImage,
   OrderItem,
+  Prisma,
   SubCategory,
   Vendor,
+  VendorSubscription,
 } from '@prisma/client';
 import { CategoryService } from 'src/category/category.service';
 import { SubCategoryService } from 'src/sub-category/sub-category.service';
 import { calculateQtyDifference } from '../function/calculateQtydifference';
 import { ItemService } from '../item.service';
+import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
 
 export const UpdateItemVerification = async ({
   body,
@@ -24,6 +27,8 @@ export const UpdateItemVerification = async ({
   subCategoryService,
   itemService,
   vendorId,
+  vendorSubscriptionService,
+  currentVendorSubscription,
 }: {
   body: UpdateItemDto;
   item: Item & {
@@ -37,7 +42,11 @@ export const UpdateItemVerification = async ({
   subCategoryService: SubCategoryService;
   itemService: ItemService;
   vendorId: string;
+  vendorSubscriptionService: VendorSubscriptionService;
+  currentVendorSubscription: VendorSubscription;
 }) => {
+  let updateVendorUsageQuery: Prisma.VendorFeatureUsageUpdateArgs | null = null;
+
   //check unique name
   if (body.name) {
     const existingNameItem = await itemService.findItemByName(
@@ -114,6 +123,43 @@ export const UpdateItemVerification = async ({
     }
   }
 
+  //handle item count update
+  if (body.dailyTotalQty) {
+    const vendorFeatureUsageForQtyUpdate =
+      await vendorSubscriptionService.getOrCreateFeatureUsage({
+        vendorSubscriptionId: currentVendorSubscription.id,
+        itemId: item.id,
+        feature: 'qtyUpdateLimit',
+      });
+    const planQtyUpdateLimit = (
+      vendorFeatureUsageForQtyUpdate.vendorSubscription.planFeatures as Record<
+        string,
+        any
+      >
+    )['qtyUpdateLimit'] as number | null;
+    if (!planQtyUpdateLimit) {
+      throw new BadRequestException(
+        'You are not allowed to update the quantity',
+      );
+    }
+    if (vendorFeatureUsageForQtyUpdate.usageCount >= planQtyUpdateLimit) {
+      throw new BadRequestException(
+        'You have reached the limit to update the quantity',
+      );
+    }
+
+    updateVendorUsageQuery = {
+      where: {
+        id: vendorFeatureUsageForQtyUpdate.id,
+      },
+      data: {
+        usageCount: {
+          increment: 1,
+        },
+      },
+    };
+  }
+
   // Determine remainingQty change
   let updatedRemainingQty = item.remainingQty;
   let totalQtyEditCount: number = item.totalQtyEditCount;
@@ -138,5 +184,10 @@ export const UpdateItemVerification = async ({
     );
   }
 
-  return { updatedRemainingQty, totalQtyEditCount, deletedImages };
+  return {
+    updatedRemainingQty,
+    totalQtyEditCount,
+    deletedImages,
+    updateVendorUsageQuery,
+  };
 };

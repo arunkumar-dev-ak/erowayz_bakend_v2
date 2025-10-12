@@ -40,6 +40,12 @@ export class TestRegisterVendorDto {
   @IsNotEmpty({ message: 'Mobile is required' })
   mobile: string;
 
+  @ApiProperty({ description: 'ReferralId is required', required: true })
+  @IsString()
+  @IsOptional()
+  @IsNotEmpty({ message: 'ReferralId is required' })
+  referralCode?: string;
+
   @ApiProperty({ description: 'Name is required', required: true })
   @IsString()
   @IsNotEmpty({ message: 'Name is required' })

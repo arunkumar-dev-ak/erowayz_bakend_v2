@@ -10,6 +10,7 @@ model VendorSubscription {
   planBillingPeriod  BillingPeriod
   planPrice          Int
   planDiscountPrice  Int?
+  referredVendorId   String?
 
   startDate          DateTime
   endDate            DateTime
@@ -19,7 +20,28 @@ model VendorSubscription {
   updatedAt          DateTime   @updatedAt
 
   // Relations
-  vendor             Vendor   @relation(fields: [vendorId], references: [id])
+  vendor             Vendor   @relation(name: "VendorSubscriptionVendor", fields: [vendorId], references: [id])
+  referredVendor     Vendor?  @relation(name: "VendorSubscriptionReferredVendor", fields: [referredVendorId], references: [id])
+
   payment            Payment?  @relation(fields: [paymentId], references: [id])
   plan               SubscriptionPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  vendorFeatureUsage  VendorFeatureUsage[]
+}
+
+model VendorFeatureUsage {
+  id         String   @id @default(uuid())
+  itemId     String?
+  shopId     String?
+  feature    String
+  usageCount Int      @default(0)
+  vendorSubscriptionId  String
+
+  vendorSubscription     VendorSubscription   @relation(fields: [vendorSubscriptionId], references: [id])
+  shopInfo   ShopInfo?  @relation(fields: [shopId], references: [id])
+  item       Item?  @relation(fields: [itemId], references: [id])
+
+  @@unique([feature,vendorSubscriptionId])
+  @@index([itemId])
+  @@index([shopId])
 }

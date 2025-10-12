@@ -10,12 +10,13 @@ import { ResponseService } from 'src/response/response.service';
 import { ShopOpenCloseDto, ShopStatus } from './dto/shopopenclose-dto';
 import { UpdateShopInfoUtils } from './utils/update-shop-info.utils';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
-import { Status, VendorCategoryType } from '@prisma/client';
+import { Status, VendorCategoryType, VendorSubscription } from '@prisma/client';
 import { UpdateLicenseInfo } from './dto/updateLicenseInfo.dto';
 import { ApprovedOrPendingMap } from 'src/vendor/dto/get-vendor-admin-query.dto';
 import { LicenseCategoryService } from 'src/license-category/license-category.service';
 import { ShopCategoryService } from 'src/shop-category/shop-category.service';
 import { CityService } from 'src/city/city.service';
+import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
 // import { UpdateLicenseInfo } from './dto/updateLicenseInfo.dto';
 
 @Injectable()
@@ -27,6 +28,7 @@ export class ShopInfoService {
     private readonly licenseCategoryService: LicenseCategoryService,
     private readonly shopCategoryService: ShopCategoryService,
     private readonly shopCityService: CityService,
+    private readonly vendorSubscriptionService: VendorSubscriptionService,
   ) {}
 
   async getShopInfoByVendorId({ res, id }: { res: Response; id: string }) {
@@ -52,12 +54,14 @@ export class ShopInfoService {
     body,
     shopImage,
     licenseImage,
+    currentVendorSubscription,
   }: {
     id: string;
     res: Response;
     body: EditShopInfo;
     shopImage?: Express.Multer.File;
     licenseImage?: Express.Multer.File;
+    currentVendorSubscription: VendorSubscription;
   }) {
     const initialDate = new Date();
 
@@ -114,15 +118,23 @@ export class ShopInfoService {
       }
     }
 
-    const { shopInfoData, licenseUpdate, shopImageUrl, licenseImageUrl } =
-      await UpdateShopInfoUtils({
-        body,
-        shopImage,
-        licenseImage,
-        fileUploadService: this.fileUploadService,
-        license: existingShop.license,
-        licenseCategoryService: this.licenseCategoryService,
-      });
+    const {
+      shopInfoData,
+      licenseUpdate,
+      shopImageUrl,
+      licenseImageUrl,
+      updateVendorUsageQuery,
+    } = await UpdateShopInfoUtils({
+      body,
+      shopImage,
+      licenseImage,
+      fileUploadService: this.fileUploadService,
+      license: existingShop.license,
+      licenseCategoryService: this.licenseCategoryService,
+      shopId: id,
+      vendorSubscriptionService: this.vendorSubscriptionService,
+      currentVendorSubscription,
+    });
 
     try {
       const result = await this.prisma.$transaction(async (tx) => {
@@ -135,6 +147,10 @@ export class ShopInfoService {
           SET "location" = ST_SetSRID(ST_MakePoint(${updatingLongitude}, ${updatingLatitude}), 4326)::geography
           WHERE "id" = ${id}
         `;
+        }
+
+        if (updateVendorUsageQuery) {
+          await tx.vendorFeatureUsage.update(updateVendorUsageQuery);
         }
 
         return await tx.shopInfo.update({

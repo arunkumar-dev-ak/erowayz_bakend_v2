@@ -62,6 +62,21 @@ export class VendorSubscriptionController {
   @Roles(Role.VENDOR)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
+  @Get('currentAndFutureVendorSubscription')
+  async getCurrentAndFutureVendorSubscription(
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const vendorId = extractVendorIdFromRequest(req);
+    await this.vendorSubscriptionService.getCurrentAndFutureSubOfVendor({
+      res,
+      vendorId,
+    });
+  }
+
+  @Roles(Role.VENDOR)
+  @UseGuards(AuthGuard, RoleGuard)
+  @ApiBearerAuth()
   @Post('initiate')
   async initiateVendorSubscription(
     @Req() req: Request,

@@ -10,7 +10,7 @@ export const CreateProductUnitUtils = async ({
   body: CreateProductUnitDto;
   productUnitService: ProductUnitService;
 }) => {
-  const { name, status } = body;
+  const { name, status, tamilName } = body;
 
   const existingProductUnit =
     await productUnitService.getProductUnitByName(name);
@@ -21,6 +21,7 @@ export const CreateProductUnitUtils = async ({
   const createQuery: Prisma.ProductUnitCreateInput = {
     name,
     status,
+    tamilName,
   };
 
   return { createQuery };

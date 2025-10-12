@@ -14,6 +14,8 @@ import { GetSubscriptionPlanQueryDto } from './dto/get-subscription-query.dto';
 import { buildSubscriptionPlanWhereFilter } from './utils/get-subscription.utils';
 import { buildQueryParams } from 'src/common/functions/buildQueryParams';
 import { BillingPeriod } from '@prisma/client';
+import { GetSubTransactionQueryForAdminDto } from './dto/get-sub-transaction-query.dto';
+import { buildSubTransactiontWhereFilter } from './utils/get-sub-transaction.utils';
 
 @Injectable()
 export class SubscriptionService {
@@ -85,6 +87,79 @@ export class SubscriptionService {
       data: subscriptionPlans,
       meta,
       message: 'Subscription plans retrieved successfully',
+      statusCode: 200,
+    });
+  }
+
+  async getSubTransaction({
+    res,
+    query,
+    offset,
+    limit,
+  }: {
+    res: Response;
+    query: GetSubTransactionQueryForAdminDto;
+    offset: number;
+    limit: number;
+  }) {
+    const initialDate = new Date();
+    const { where } = buildSubTransactiontWhereFilter({
+      query,
+    });
+
+    const totalCount = await this.prisma.payment.count({ where });
+
+    const walletTransaction = await this.prisma.payment.findMany({
+      where,
+      skip: Number(offset),
+      take: Number(limit),
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        vendorSubscription: {
+          include: {
+            vendor: {
+              include: {
+                shopInfo: true,
+                User: {
+                  select: {
+                    name: true,
+                    nameTamil: true,
+                  },
+                },
+              },
+            },
+            plan: true,
+          },
+        },
+      },
+    });
+
+    const { shopName, vendorId, userId, userName, startDate, endDate } = query;
+    const queries = buildQueryParams({
+      shopName,
+      vendorId,
+      userId,
+      userName,
+      startDate,
+      endDate,
+    });
+
+    const meta = this.metaDataService.createMetaData({
+      totalCount,
+      offset,
+      limit,
+      path: `subscription/transaction`,
+      queries,
+    });
+
+    return this.responseService.successResponse({
+      initialDate,
+      res,
+      data: walletTransaction,
+      meta,
+      message: 'Subscription Transaction retrieved successfully',
       statusCode: 200,
     });
   }

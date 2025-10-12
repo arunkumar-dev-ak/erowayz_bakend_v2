@@ -80,13 +80,14 @@ export class VideoLinkService {
   }) {
     const initialDate = new Date();
 
-    const { link, status, heading } = body;
+    const { link, status, heading, tamilHeading } = body;
 
     const newVideoLink = await this.prismaService.videoLink.create({
       data: {
         link,
         status,
         heading,
+        tamilHeading,
       },
     });
 
@@ -117,7 +118,7 @@ export class VideoLinkService {
       throw new BadRequestException('VideoLink Not Found');
     }
 
-    const { link, status, heading } = body;
+    const { link, status, heading, tamilHeading } = body;
 
     const updatedVideoLink = await this.prismaService.videoLink.update({
       where: {
@@ -127,6 +128,7 @@ export class VideoLinkService {
         ...(link && { link }),
         ...(status && { status }),
         ...(heading && { heading }),
+        ...(tamilHeading && { tamilHeading }),
       },
     });
 

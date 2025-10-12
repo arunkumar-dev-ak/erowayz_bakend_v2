@@ -55,6 +55,7 @@ import { RegisterUtils } from './utils/register-utils';
 import { LicenseCategoryService } from 'src/license-category/license-category.service';
 import { ShopCategoryService } from 'src/shop-category/shop-category.service';
 import { CityService } from 'src/city/city.service';
+import { ReferralService } from 'src/referral/referral.service';
 
 export interface MultipleFileUploadInterface {
   filePaths: ImageFiedlsInterface[];
@@ -88,6 +89,7 @@ export class VendorService {
     private readonly licenseCategoryService: LicenseCategoryService,
     private readonly shopCategoryService: ShopCategoryService,
     private readonly shopCityService: CityService,
+    private readonly referralService: ReferralService,
   ) {
     this.WHATSAPP_OTP_REQUEST = configService.get<string>(
       'WHATSAPP_OTP_REQUEST',
@@ -460,6 +462,13 @@ export class VendorService {
           this.WHATSAPP_INTEGRATION_TOKEN,
         );
 
+      if (body.referralCode) {
+        await this.referralService.getSubInfoForReferral({
+          referralCode: body.referralCode,
+          isQueryNeeded: false,
+        });
+      }
+
       const cacheKey = await TempRegisterUtils.cacheVendorData(
         this.redisService,
         body,
@@ -549,6 +558,21 @@ export class VendorService {
         existingOtp,
       });
 
+      let createVendorSub: Prisma.VendorSubscriptionCreateInput | undefined =
+        undefined;
+
+      if (parsedValue.referralCode) {
+        const createQuery = await this.referralService.getSubInfoForReferral({
+          referralCode: parsedValue.referralCode,
+          isQueryNeeded: true,
+        });
+        createVendorSub = createQuery?.createVendorSubscriptionQuery;
+      }
+
+      if (!createVendorSub) {
+        throw new BadRequestException('Referal code not found');
+      }
+
       // 4. Create user & vendor inside a transaction
       const result = await this.prisma.$transaction(async (tx) => {
         const newUser = await tx.user.create({
@@ -595,6 +619,15 @@ export class VendorService {
             },
           },
         });
+
+        if (createVendorSub) {
+          await tx.vendorSubscription.create({
+            data: {
+              ...createVendorSub,
+              referredVendor: { connect: { id: user.vendor!.id } },
+            },
+          });
+        }
 
         const { accessToken, refreshToken } =
           await this.tokenService.generateTokenPair({

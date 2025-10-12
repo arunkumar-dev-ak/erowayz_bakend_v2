@@ -12,7 +12,7 @@ export const UpdateShopCategoryUtils = async ({
   shopCategoryService: ShopCategoryService;
   shopCategoryId: string;
 }) => {
-  const { name, status } = body;
+  const { name, status, tamilName } = body;
 
   const existingShopCategory =
     await shopCategoryService.getShopCategoryById(shopCategoryId);
@@ -38,6 +38,10 @@ export const UpdateShopCategoryUtils = async ({
 
   if (name !== undefined) {
     updateQuery.name = name;
+  }
+
+  if (tamilName !== undefined) {
+    updateQuery.tamilName = tamilName;
   }
 
   if (status !== undefined) {

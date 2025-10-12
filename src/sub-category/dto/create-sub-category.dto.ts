@@ -11,6 +11,11 @@ export class CreateSubCategoryDto {
   @IsString()
   name: string;
 
+  @ApiProperty({ description: 'Name is required', required: true })
+  @IsNotEmpty()
+  @IsString()
+  tamilName: string;
+
   @ApiProperty({
     description: 'Name is required',
     required: true,

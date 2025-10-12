@@ -6,7 +6,7 @@ export class UpdateServiceOptionDto {
   @ApiProperty({ description: 'Name is required, if defined', required: false })
   @IsNotEmpty({ message: 'Name is required' })
   @IsString()
-  name: string;
+  name?: string;
 
   @IsOptional()
   @ApiProperty({
@@ -15,7 +15,7 @@ export class UpdateServiceOptionDto {
   })
   @IsNotEmpty({ message: 'Description is required' })
   @IsString()
-  description: string;
+  description?: string;
 
   @ApiProperty({ description: 'Vendor Type ID is required', required: true })
   @IsNotEmpty({ message: 'Vendor Type ID is required' })
