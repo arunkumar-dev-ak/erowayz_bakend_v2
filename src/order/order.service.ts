@@ -1399,6 +1399,10 @@ export class OrderService {
             },
           });
 
+          if (orderPaymentCreateQuery) {
+            await tx.orderPayment.create({ data: orderPaymentCreateQuery });
+          }
+
           return updatedOrder;
         });
       } catch (err: any) {
