@@ -63,6 +63,7 @@ export class ItemController {
       offset: Number(offset),
       limit: Number(limit),
       userId: user?.id,
+      userRole: user?.role,
     });
   }
 
@@ -101,6 +102,7 @@ export class ItemController {
         'At least one item image is required in (files field)',
       );
     }
+    extractVendorSubFromRequest(req);
     const vendorId = extractVendorIdFromRequest(req);
     return await this.itemService.createItem({
       vendorId,
@@ -171,6 +173,7 @@ export class ItemController {
     @Param('itemId') itemId: string,
   ) {
     const vendorId = extractVendorIdFromRequest(req);
+    extractVendorSubFromRequest(req);
     return await this.itemService.changeItemStatus({
       res,
       vendorId,

@@ -16,7 +16,12 @@ import {
 import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { UpdateItemDto } from './dto/update-item.dto';
-import { Prisma, ProductStatus, VendorSubscription } from '@prisma/client';
+import {
+  Prisma,
+  ProductStatus,
+  Role,
+  VendorSubscription,
+} from '@prisma/client';
 import { UpdateProductStatusDto } from './dto/update-productstatus-item.dto';
 import { UpdateItemStatus } from './dto/update-itemstatus.dto';
 import { MetadataService } from 'src/metadata/metadata.service';
@@ -46,17 +51,20 @@ export class ItemService {
     limit,
     query,
     userId,
+    userRole,
   }: {
     res: Response;
     offset: number;
     limit: number;
     query: GetItemQueryDto;
     userId?: string;
+    userRole?: Role;
   }) {
     const initialDate = new Date();
 
     const where = buildItemWhereFilter({
       query,
+      userRole,
     });
 
     const totalCount = await this.prisma.item.count({ where });

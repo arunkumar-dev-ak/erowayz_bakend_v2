@@ -94,7 +94,7 @@ export const CreateBannerValidation = async ({
   );
   if (keywordsCount !== body.keyWordIds.length) {
     throw new BadRequestException(
-      `Aplogies for the eason,Some of the Keywords is not associated with ${vendor.vendorType.name}`,
+      `Aplogies for the reason,Some of the Keywords is not associated with ${vendor.vendorType.name}`,
     );
   }
 

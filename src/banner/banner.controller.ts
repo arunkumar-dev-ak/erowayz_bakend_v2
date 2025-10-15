@@ -17,7 +17,7 @@ import {
 } from '@nestjs/common';
 import { BannerService } from './banner.service';
 import { Request, Response } from 'express';
-import { BannerType, Role } from '@prisma/client';
+import { BannerType, Role, User } from '@prisma/client';
 import { Roles } from 'src/common/roles/roles.docorator';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -39,6 +39,8 @@ import { GetBannerQuery } from './dto/get-banner-query.dto';
 import { GetPopularBannerQueryDto } from './dto/get-popularbanner-query.dto';
 import { GetBannerForAdminQueryDto } from './dto/get-banner-for-admin.dto';
 import { extractVendorSubFromRequest } from 'src/common/functions/extact-sub';
+import { FetchUserGuard } from 'src/common/guards/fetch-user.guard';
+import { extractUserFromRequest } from 'src/common/functions/extractUserId';
 
 @ApiTags('banner')
 @Controller('banner')
@@ -47,7 +49,14 @@ export class BannerController {
 
   @ApiOperation({ summary: 'Get regular banners with filtering options' })
   @Get('regular')
-  async getRegularBanner(@Res() res: Response, @Query() query: GetBannerQuery) {
+  @UseGuards(FetchUserGuard)
+  async getRegularBanner(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query() query: GetBannerQuery,
+  ) {
+    const user: User | undefined = extractUserFromRequest(req);
+
     const parsedQuery = Object.assign(new GetBannerQuery(), query);
     const inDateRange =
       query.inDateRange === undefined ? true : query.inDateRange === 'true';
@@ -57,13 +66,19 @@ export class BannerController {
       offset: Number(parsedQuery.offset),
       limit: Number(parsedQuery.limit),
       res,
+      userRole: user?.role,
     });
   }
 
   @ApiOperation({ summary: 'Get product banners with filtering options' })
   @Get('product')
-  async getBanner(@Res() res: Response, @Query() query: GetBannerQuery) {
+  async getBanner(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query() query: GetBannerQuery,
+  ) {
     const inDateRange = query.inDateRange === 'true';
+    const user: User | undefined = extractUserFromRequest(req);
 
     return await this.bannerService.getProductBanner({
       ...query,
@@ -71,6 +86,7 @@ export class BannerController {
       offset: Number(query.offset),
       limit: Number(query.limit),
       res,
+      userRole: user?.role,
     });
   }
 
@@ -246,6 +262,7 @@ export class BannerController {
         'if bgImage is sended as null and fgImage must present',
       );
     }
+    extractVendorSubFromRequest(req);
 
     return await this.bannerService.updateBanner({
       res,
@@ -275,6 +292,8 @@ export class BannerController {
     @Param('id') bannerId: string,
     @Body() body: UpdateBannerStatusDto,
   ) {
+    extractVendorSubFromRequest(req);
+
     return await this.bannerService.updatedBannerStatus({
       res,
       body,

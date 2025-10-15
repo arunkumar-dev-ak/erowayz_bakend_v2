@@ -1,12 +1,16 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { GetServiceQueryDto } from '../dto/get-vendor-service-query.dto';
 
 export function buildVendorServiceWhereFilter({
   query,
+  userRole,
 }: {
   query: GetServiceQueryDto;
+  userRole?: Role;
 }) {
   const { vendorId, name, status, keywordId } = query;
+
+  const currentDate = new Date();
 
   const where: Prisma.ServiceWhereInput = {};
 
@@ -30,6 +34,30 @@ export function buildVendorServiceWhereFilter({
       serviceVendorKeyword: {
         some: {
           keywordId,
+        },
+      },
+      ...(userRole !== 'VENDOR' && userRole !== 'STAFF'
+        ? {
+            vendorSubscription: {
+              some: {
+                endDate: {
+                  gte: currentDate,
+                },
+                isActive: true,
+              },
+            },
+          }
+        : {}),
+    };
+  } else if (userRole !== 'VENDOR' && userRole !== 'STAFF') {
+    // If keywordId is not provided, still apply subscription filter
+    where.vendor = {
+      vendorSubscription: {
+        some: {
+          endDate: {
+            gte: currentDate,
+          },
+          isActive: true,
         },
       },
     };

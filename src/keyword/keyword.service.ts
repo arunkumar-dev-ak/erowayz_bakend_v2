@@ -93,8 +93,8 @@ export class KeywordService {
     const { name, vendorTypeId, keyWordType, status } = body;
 
     const [existingKeyword, VendorType] = await Promise.all([
-      await this.checkKeyWordByName({ vendorTypeId, name, keyWordType }),
-      await this.vendorTypeService.findVendorTypeById(vendorTypeId),
+      this.checkKeyWordByName({ vendorTypeId, name, keyWordType }),
+      this.vendorTypeService.findVendorTypeById(vendorTypeId),
     ]);
 
     //check for unique name

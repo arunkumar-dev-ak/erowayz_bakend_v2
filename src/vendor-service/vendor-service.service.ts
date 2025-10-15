@@ -13,6 +13,7 @@ import { updateVendorServiceUtils } from './utils/update-vendor-service.utils';
 import { buildVendorServiceWhereFilter } from './utils/get-vendor-service.utils';
 import { buildQueryParams } from 'src/common/functions/buildQueryParams';
 import { GetServiceQueryDto } from './dto/get-vendor-service-query.dto';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class VendorServiceService {
@@ -30,16 +31,19 @@ export class VendorServiceService {
     query,
     offset,
     limit,
+    userRole,
   }: {
     res: Response;
     query: GetServiceQueryDto;
     offset: number;
     limit: number;
+    userRole?: Role;
   }) {
     const initialDate = new Date();
 
     const { where } = buildVendorServiceWhereFilter({
       query,
+      userRole,
     });
 
     const totalCount = await this.prisma.service.count({ where });

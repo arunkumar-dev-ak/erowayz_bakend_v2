@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { GetItemQueryDto } from '../dto/get-item-query.dto';
 import {
   ShopStatusBooleanMap,
@@ -7,8 +7,10 @@ import {
 
 export function buildItemWhereFilter({
   query,
+  userRole,
 }: {
   query: GetItemQueryDto;
+  userRole?: Role;
 }): Prisma.ItemWhereInput {
   const {
     categoryName,
@@ -24,11 +26,25 @@ export function buildItemWhereFilter({
     itemId,
   } = query;
 
+  const currentDate = new Date();
+
   const where: Prisma.ItemWhereInput = {
     vendor: {
       User: {
         status: true,
       },
+      ...(userRole !== 'VENDOR' && userRole !== 'STAFF'
+        ? {
+            vendorSubscription: {
+              some: {
+                endDate: {
+                  gte: currentDate,
+                },
+                isActive: true,
+              },
+            },
+          }
+        : {}),
     },
   };
 

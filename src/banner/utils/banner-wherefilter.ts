@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { BannerStatus, BannerType, Prisma } from '@prisma/client';
+import { BannerStatus, BannerType, Prisma, Role } from '@prisma/client';
 import { KeywordService } from 'src/keyword/keyword.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -17,6 +17,7 @@ export async function buildBannerWhereFilter({
   prisma,
   limit = 50,
   offset = 0,
+  userRole,
 }: {
   name?: string;
   status?: BannerStatus | 'ALL';
@@ -31,10 +32,25 @@ export async function buildBannerWhereFilter({
   prisma: PrismaService;
   limit?: number;
   offset?: number;
+  userRole?: Role;
 }): Promise<Prisma.BannerWhereInput> {
   const currentDate = new Date();
   const where: Prisma.BannerWhereInput = {
     bannerType,
+    ...(userRole !== 'VENDOR' && userRole !== 'STAFF'
+      ? {
+          vendor: {
+            vendorSubscription: {
+              some: {
+                endDate: {
+                  gte: currentDate,
+                },
+                isActive: true,
+              },
+            },
+          },
+        }
+      : {}),
   };
 
   // Basic filters
@@ -57,6 +73,18 @@ export async function buildBannerWhereFilter({
 
   if (shopName) {
     where.vendor = {
+      ...(userRole !== 'VENDOR' && userRole !== 'STAFF'
+        ? {
+            vendorSubscription: {
+              some: {
+                endDate: {
+                  gte: currentDate,
+                },
+                isActive: true,
+              },
+            },
+          }
+        : {}),
       shopInfo: {
         name: {
           contains: shopName,

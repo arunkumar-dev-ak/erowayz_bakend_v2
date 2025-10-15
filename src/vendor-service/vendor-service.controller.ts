@@ -26,23 +26,30 @@ import { VendorServiceService } from './vendor-service.service';
 import { CreateVendorServiceDto } from './dto/create-vendor-service.dto';
 import { UpdateVendorServiceDto } from './dto/update-vendor-service.dto';
 import { GetServiceQueryDto } from './dto/get-vendor-service-query.dto';
+import { extractVendorSubFromRequest } from 'src/common/functions/extact-sub';
+import { FetchUserGuard } from 'src/common/guards/fetch-user.guard';
+import { extractUserFromRequest } from 'src/common/functions/extractUserId';
 
 @Controller('vendor-service')
 export class VendorServiceController {
   constructor(private readonly vendorServiceService: VendorServiceService) {}
 
   @ApiOperation({ summary: 'Get vendor services with filters' })
+  @UseGuards(FetchUserGuard)
   @Get()
   async getVendorSubServicesForVendor(
+    @Req() req: Request,
     @Res() res: Response,
     @Query() query: GetServiceQueryDto,
   ) {
     const { offset = 0, limit = 10 } = query;
+    const user = extractUserFromRequest(req);
     return await this.vendorServiceService.getService({
       res,
       query,
       offset: Number(offset),
       limit: Number(limit),
+      userRole: user?.role,
     });
   }
 
@@ -63,6 +70,7 @@ export class VendorServiceController {
       throw new BadRequestException('At least one image is required.');
     }
     const vendorId = extractVendorIdFromRequest(req);
+    extractVendorSubFromRequest(req);
     return await this.vendorServiceService.createService({
       body,
       res,
@@ -86,6 +94,7 @@ export class VendorServiceController {
     @UploadedFiles() images: Express.Multer.File[],
   ) {
     const vendorId = extractVendorIdFromRequest(req);
+    extractVendorSubFromRequest(req);
     return await this.vendorServiceService.updateService({
       res,
       body,

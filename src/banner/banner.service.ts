@@ -14,6 +14,7 @@ import {
   BannerStatus,
   BannerType,
   Prisma,
+  Role,
   VendorSubscription,
 } from '@prisma/client';
 import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
@@ -66,6 +67,7 @@ export class BannerService {
     keywordId,
     latitude,
     longitude,
+    userRole,
   }: {
     res: Response;
     name?: string;
@@ -78,6 +80,7 @@ export class BannerService {
     keywordId?: string;
     latitude?: number;
     longitude?: number;
+    userRole?: Role;
   }) {
     const initialDate = new Date();
 
@@ -92,6 +95,7 @@ export class BannerService {
       latitude,
       longitude,
       prisma: this.prisma,
+      userRole,
     });
 
     const totalCount = await this.prisma.banner.count({ where });
@@ -163,6 +167,7 @@ export class BannerService {
     keywordId,
     latitude,
     longitude,
+    userRole,
   }: {
     res: Response;
     name?: string;
@@ -175,6 +180,7 @@ export class BannerService {
     keywordId?: string;
     latitude?: number;
     longitude?: number;
+    userRole?: Role;
   }) {
     const initialDate = new Date();
     const where = await buildBannerWhereFilter({
@@ -189,6 +195,7 @@ export class BannerService {
       latitude,
       longitude,
       prisma: this.prisma,
+      userRole,
     });
 
     const totalCount = await this.prisma.banner.count({ where });
