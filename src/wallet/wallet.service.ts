@@ -56,6 +56,24 @@ export class WalletService {
     );
   }
 
+  async getWalletForUser({ userId, res }: { userId: string; res: Response }) {
+    const initialDate = new Date();
+
+    const wallet = await this.prisma.wallet.findUnique({
+      where: {
+        userId,
+      },
+    });
+
+    return this.response.successResponse({
+      initialDate,
+      data: wallet,
+      res,
+      message: 'Wallet retrieved successfully',
+      statusCode: 201,
+    });
+  }
+
   async getWalletTransaction({
     res,
     query,

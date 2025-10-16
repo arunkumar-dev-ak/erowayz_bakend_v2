@@ -20,10 +20,23 @@ import { Request, Response } from 'express';
 import { VendorTransferToCustomerDto } from './dto/vendor-to-customer.dto';
 import { GetWalletTransactionQueryForAdminDto } from './dto/get-wallet-transaction-query.dto';
 import { extractVendorSubFromRequest } from 'src/common/functions/extact-sub';
+import { extractUserIdFromRequest } from 'src/common/functions/extractUserId';
 
 @Controller('wallet')
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @Get()
+  async getWallet(@Req() req: Request, @Res() res: Response) {
+    const userId = extractUserIdFromRequest(req);
+
+    await this.walletService.getWalletForUser({
+      res,
+      userId,
+    });
+  }
 
   @Roles(Role.VENDOR)
   @UseGuards(AuthGuard, RoleGuard)
