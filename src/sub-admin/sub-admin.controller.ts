@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -27,6 +28,7 @@ import { UpdateSubAdminDto } from './dto/update-sub-admin.dto';
 import { LoginSubAdminDto } from './dto/login-sub-admin.dto';
 import { LogoutSubAdminDto } from './dto/logout-sub-admin.dto';
 import { Role } from '@prisma/client';
+import { GetSubAdminQueryDto } from './dto/get-sub-admin.dto';
 
 @ApiTags('SubAdmin') // Grouping APIs under 'SubAdmin' in Swagger
 @Controller('sub-admin')
@@ -35,14 +37,22 @@ export class SubAdminController {
 
   @Roles('ADMIN')
   @UseGuards(AuthGuard, RoleGuard)
-  @Get('getAllSubAdminByVendorId')
+  @Get()
   @ApiOperation({
     summary: 'Get all sub-admins by vendor ID',
     description: 'Retrieves all sub-admin members associated with a vendor.',
   })
   @ApiBearerAuth()
-  async getAllSubAdminByVendorId(@Res() res: Response) {
-    return await this.subAdminService.getAllSubAdminByVendorId({ res });
+  async getAllSubAdminByVendorId(
+    @Res() res: Response,
+    @Query() query: GetSubAdminQueryDto,
+  ) {
+    return await this.subAdminService.getAllSubAdmin({
+      res,
+      query,
+      offset: Number(query.offset ?? '0'),
+      limit: Number(query.limit ?? '10'),
+    });
   }
 
   @Roles('ADMIN')

@@ -98,6 +98,11 @@ export async function VendorTopUpUtils({
     receiverWallet: {
       connect: { id: wallet.id },
     },
+    payment: {
+      connect: {
+        id: payment.id,
+      },
+    },
     amount: coinsCount,
     transactionType: WalletTransactionType.ADMIN_TO_VENDOR,
     reason: 'VENDOR_TOP_UP',

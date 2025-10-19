@@ -35,7 +35,7 @@ import { extractVendorIdFromRequest } from 'src/common/functions/extractVendorid
 export class BankDetailController {
   constructor(private readonly bankDetailService: BankDetailService) {}
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @UseGuards(RoleGuard)
   @Get('admin')
@@ -106,7 +106,7 @@ export class BankDetailController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @UseGuards(RoleGuard)
   @Put('status/:bankDetailId')

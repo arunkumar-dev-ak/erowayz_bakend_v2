@@ -82,6 +82,7 @@ model Payment {
 
   vendorSubscription  VendorSubscription?
   orderPayment        OrderPayment?
+  walletTransaction   WalletTransaction?
 
   /// --- Timestamp Metadata ---
   createdAt         DateTime @default(now())

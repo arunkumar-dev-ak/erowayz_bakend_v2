@@ -99,7 +99,7 @@ export class BannerBookingController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @UseGuards(AuthGuard, RoleGuard)
   @Get('admin')

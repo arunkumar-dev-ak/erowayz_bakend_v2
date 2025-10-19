@@ -19,7 +19,7 @@ export const UpdateBankPaymentTypeUtils = async ({
   file?: Express.Multer.File;
   fileUploadService: FileUploadService;
 }) => {
-  const { name, status } = body;
+  const { name, status, tamilName } = body;
 
   const existingPaymentType =
     await bankPaymentTypeService.getBankPaymentTypeById(bankPaymentTypeId);
@@ -58,6 +58,10 @@ export const UpdateBankPaymentTypeUtils = async ({
 
   if (name !== undefined) {
     updateQuery.name = name;
+  }
+
+  if (tamilName !== undefined) {
+    updateQuery.tamilName = tamilName;
   }
 
   if (status !== undefined) {

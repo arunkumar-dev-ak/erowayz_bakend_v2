@@ -28,7 +28,7 @@ export class VendorSubscriptionController {
     private readonly vendorSubscriptionService: VendorSubscriptionService,
   ) {}
 
-  @Roles(Role.VENDOR, Role.ADMIN)
+  @Roles(Role.VENDOR, Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @Get('forAdmin')

@@ -49,7 +49,7 @@ export class LicenseCategoryController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create new License Category' })
   @UseGuards(AuthGuard, RoleGuard)
@@ -64,7 +64,7 @@ export class LicenseCategoryController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update License Category by ID' })
   @ApiParam({ name: 'licenseCategoryId', type: String })
@@ -82,7 +82,7 @@ export class LicenseCategoryController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete License Category by ID' })
   @ApiParam({ name: 'licenseCategoryId', type: String })

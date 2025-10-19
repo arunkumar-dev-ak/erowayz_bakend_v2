@@ -16,7 +16,7 @@ export const CreateBankPaymentTypeUtils = async ({
   file: Express.Multer.File;
   fileUploadService: FileUploadService;
 }) => {
-  const { name, status } = body;
+  const { name, status, tamilName } = body;
 
   const existingBankPaymentType =
     await bankPaymentTypeService.getBankPaymentTypeByName(name);
@@ -32,6 +32,7 @@ export const CreateBankPaymentTypeUtils = async ({
   const createQuery: Prisma.BankPaymentTypeCreateInput = {
     name,
     status,
+    tamilName,
     image: uploadedFile.relativePath,
   };
 

@@ -50,7 +50,7 @@ export class PrivacyPolicyController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create Privacy Policy' })
   @ApiBody({ type: CreatePrivacyPolicyDto })
@@ -66,7 +66,7 @@ export class PrivacyPolicyController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update Privacy Policy' })
   @ApiParam({ name: 'privacyPolicyId', type: String })
@@ -85,7 +85,7 @@ export class PrivacyPolicyController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete Privacy Policy by ID' })
   @ApiParam({ name: 'privacyPolicyId', type: String })

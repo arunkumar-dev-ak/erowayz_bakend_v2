@@ -72,7 +72,7 @@ export class SubCategoryController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @Post('create')
   @ApiBearerAuth()
@@ -95,7 +95,7 @@ export class SubCategoryController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @Put('update/:subCategoryId')
   @ApiBearerAuth()
@@ -117,7 +117,7 @@ export class SubCategoryController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @Delete('delete/:subCategoryId')
   @ApiBearerAuth()

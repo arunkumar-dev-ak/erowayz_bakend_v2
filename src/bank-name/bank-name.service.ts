@@ -126,8 +126,10 @@ export class BankNameNameService {
   }) {
     const initialDate = new Date();
 
-    if (!body || !file) {
-      throw new BadRequestException('File or name,status is required');
+    if (!body && !file) {
+      throw new BadRequestException(
+        'File or name,status,tamilName is required',
+      );
     }
 
     //verification, query generation

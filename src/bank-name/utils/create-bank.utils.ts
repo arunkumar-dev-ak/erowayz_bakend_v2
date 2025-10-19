@@ -16,7 +16,7 @@ export const CreateBankNameUtils = async ({
   file: Express.Multer.File;
   fileUploadService: FileUploadService;
 }) => {
-  const { name, status } = body;
+  const { name, status, tamilName } = body;
 
   const existingBankName = await bankNameService.getBankNameByName(name);
   if (existingBankName) {
@@ -33,6 +33,7 @@ export const CreateBankNameUtils = async ({
   const createQuery: Prisma.BankNameCreateInput = {
     name,
     status,
+    tamilName,
     image: uploadedImage.relativePath,
   };
 

@@ -75,7 +75,7 @@ export class OrderController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @Get('orderTransaction/admin')
@@ -94,10 +94,10 @@ export class OrderController {
     });
   }
 
-  @Roles(Role.ADMIN, Role.CUSTOMER)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN, Role.CUSTOMER)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
-  @Get('walletTransaction/user')
+  @Get('orderTransaction/user')
   async getOrderTransactionForUser(
     @Res() res: Response,
     @Query() query: GetOrderTransactionQueryForAdminDto,
@@ -121,7 +121,7 @@ export class OrderController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @Get('admin')

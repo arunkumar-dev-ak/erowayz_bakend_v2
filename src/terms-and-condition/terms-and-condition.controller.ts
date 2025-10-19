@@ -51,7 +51,7 @@ export class TermsAndConditionController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create Terms and Condition' })
   @UseGuards(AuthGuard, RoleGuard)
@@ -66,7 +66,7 @@ export class TermsAndConditionController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update Terms and Condition' })
   @ApiParam({ name: 'termsId', type: String, description: 'Terms ID' })
@@ -84,7 +84,7 @@ export class TermsAndConditionController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete Terms and Condition by ID' })
   @ApiParam({ name: 'termsAndConditionId', type: String })

@@ -49,7 +49,7 @@ export class KeywordController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @ApiOperation({
@@ -67,7 +67,7 @@ export class KeywordController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @ApiOperation({
@@ -87,7 +87,7 @@ export class KeywordController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @ApiOperation({

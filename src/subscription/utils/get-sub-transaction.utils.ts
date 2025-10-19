@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { PaymentPurpose, Prisma } from '@prisma/client';
 import { getDayRange } from 'src/common/functions/utils';
 import { GetSubTransactionQueryForAdminDto } from '../dto/get-sub-transaction-query.dto';
 
@@ -9,7 +9,9 @@ export function buildSubTransactiontWhereFilter({
 }) {
   const { shopName, vendorId, userId, userName, startDate, endDate } = query;
 
-  const where: Prisma.PaymentWhereInput = {};
+  const where: Prisma.PaymentWhereInput = {
+    purpose: PaymentPurpose.SUBSCRIPTION_PURCHASE,
+  };
 
   if (vendorId || shopName || userName || userId) {
     where.vendorSubscription = {

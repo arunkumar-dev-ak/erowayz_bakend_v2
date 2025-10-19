@@ -73,7 +73,7 @@ export class VendorController {
 
   @Get('getAllVendors/admin')
   @ApiOperation({ summary: 'Retrieve all registered vendors' })
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   async getAllVendorsForAdmin(
     @Req() req: Request,

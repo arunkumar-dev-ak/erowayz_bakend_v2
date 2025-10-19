@@ -47,7 +47,7 @@ export class ShopCategoryController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create Shop Category' })
   @UseGuards(AuthGuard, RoleGuard)
@@ -59,7 +59,7 @@ export class ShopCategoryController {
     return await this.shopCategoryService.createShopCategory({ res, body });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update Shop Category by ID' })
   @ApiParam({ name: 'shopCategoryId', type: String })
@@ -77,7 +77,7 @@ export class ShopCategoryController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete Shop Category by ID' })
   @ApiParam({ name: 'shopCategoryId', type: String })

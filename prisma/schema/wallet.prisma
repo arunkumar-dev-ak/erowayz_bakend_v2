@@ -27,12 +27,14 @@ model WalletTransaction {
     transactionType         WalletTransactionType
     reason                  String?
     metadata                Json?
+    paymentId               String? @unique
 
     orderPayment        OrderPayment?
     coinsSettlement     CoinsSettlement?
 
     senderWallet        Wallet?      @relation("SenderWallet", fields: [senderWalletId], references: [id])
     receiverWallet      Wallet?      @relation("ReceiverWallet", fields: [receiverWalletId], references: [id])
+    payment             Payment?     @relation(fields: [paymentId], references: [id])
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

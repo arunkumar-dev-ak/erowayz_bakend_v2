@@ -71,6 +71,12 @@ export class CoinsSettlementService {
                             name: true,
                           },
                         },
+                        bankDetail: {
+                          include: {
+                            bankNameRel: true,
+                            bankPaymentRel: true,
+                          },
+                        },
                       },
                     },
                   },
@@ -159,6 +165,12 @@ export class CoinsSettlementService {
                     shopInfo: {
                       select: {
                         name: true,
+                      },
+                    },
+                    bankDetail: {
+                      include: {
+                        bankNameRel: true,
+                        bankPaymentRel: true,
                       },
                     },
                   },

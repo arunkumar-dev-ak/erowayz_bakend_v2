@@ -9,6 +9,8 @@ export function buildOrderTransactiontWhereFilter({
 }) {
   const { shopName, vendorId, userId, userName, startDate, endDate } = query;
 
+  console.log(query);
+
   const where: Prisma.PaymentWhereInput = {
     purpose: PaymentPurpose.PRODUCT_PURCHASE,
   };

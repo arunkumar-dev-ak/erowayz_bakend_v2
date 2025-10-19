@@ -63,6 +63,12 @@ export function getIncludeVendorUtilsForAdmin(): Prisma.VendorInclude {
         shopCity: true,
       },
     },
+    bankDetail: {
+      include: {
+        bankNameRel: true,
+        bankPaymentRel: true,
+      },
+    },
   };
 
   return include;

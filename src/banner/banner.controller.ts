@@ -91,7 +91,7 @@ export class BannerController {
   }
 
   @ApiBearerAuth()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @Get('admin/:bannerType')
   async getBannerForAdmin(

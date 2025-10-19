@@ -1,13 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
-  IsBoolean,
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
   Matches,
 } from 'class-validator';
+import { TrueOrFalseStatus } from 'src/user/dto/edit-user.dto';
 
 export class UpdateSubAdminDto {
   @ApiProperty({ description: 'Name Should not be empty, if defined' })
@@ -44,7 +45,9 @@ export class UpdateSubAdminDto {
     description: 'Status should contain either true or false, if defined',
   })
   @IsOptional()
-  @IsBoolean({ message: 'status is either true or false' })
+  @IsEnum(TrueOrFalseStatus, {
+    message: `isDonor must be either '${TrueOrFalseStatus.TRUE}' or '${TrueOrFalseStatus.FALSE}'`,
+  })
   @IsNotEmpty({ message: 'status is required' })
-  status?: boolean;
+  status?: TrueOrFalseStatus;
 }

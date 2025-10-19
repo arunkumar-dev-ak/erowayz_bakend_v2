@@ -90,7 +90,7 @@ export class ShopInfoController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @Patch('updateLicenseStatus')

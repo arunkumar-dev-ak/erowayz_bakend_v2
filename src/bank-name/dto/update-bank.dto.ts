@@ -8,6 +8,11 @@ export class UpdateBankNameDto {
   @IsOptional()
   name?: string;
 
+  @ApiProperty()
+  @IsNotEmpty({ message: 'tamilName is required' })
+  @IsOptional()
+  tamilName?: string;
+
   @ApiProperty({
     enum: Status,
   })

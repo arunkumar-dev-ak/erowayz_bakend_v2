@@ -18,11 +18,15 @@ export class ValidUpdateBankPaymentTypeConstraint
     const object = args.object as UpdateBankPaymentTypeDto;
 
     // Check that at least one of these fields is provided
-    return object.name !== undefined || object.status !== undefined;
+    return (
+      object.name !== undefined ||
+      object.status !== undefined ||
+      object.tamilName !== undefined
+    );
   }
 
   defaultMessage(): string {
-    return `At least one of 'name' or 'status' must be provided`;
+    return `At least one of 'name' or 'status' or 'tamilName' must be provided`;
   }
 }
 
@@ -31,6 +35,11 @@ export class UpdateBankPaymentTypeDto {
   @IsNotEmpty({ message: 'name is required' })
   @IsOptional()
   name?: string;
+
+  @ApiProperty()
+  @IsNotEmpty({ message: 'tamilName is required' })
+  @IsOptional()
+  tamilName?: string;
 
   @ApiProperty({
     enum: Status,

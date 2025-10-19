@@ -53,6 +53,7 @@ model ShopCategory {
 model BankName {
     id               String             @id @default(uuid())
     name             String @unique
+    tamilName        String?
     status           Status             @default(ACTIVE)
     image            String
 
@@ -65,6 +66,7 @@ model BankName {
 model BankPaymentType {
     id               String             @id @default(uuid())
     name             String @unique
+    tamilName        String?
     status           Status             @default(ACTIVE)
     image            String
 

@@ -42,6 +42,13 @@ export function getSettlements({
       u.name AS "vendorName",
       u.id AS "userId",
       si.name AS "shopName",
+      bd."accountHolderName",
+      bd."accountNumber",
+      bd."ifscCode",
+      bd."linkedPhoneNumber",
+      bd."bankPlatformType",
+      bn.name AS bankName,
+      bpt.name AS bankPaymentType,
       COALESCE(SUM(op."paidedAmount"),0) AS totalAmount,
       COALESCE(SUM(os."amount"),0) AS totalPaid,
       COALESCE(os.status, 'UNPAID') AS "settlementStatus"
@@ -52,12 +59,21 @@ export function getSettlements({
     INNER JOIN "VendorServiceOption" AS vso ON vso.id = oivs."vendorServiceOptionId"
     INNER JOIN "Vendor" AS v ON v.id = vso."vendorId"
     INNER JOIN "ShopInfo" AS si on si."vendorId" = v.id
+    INNER JOIN "BankDetail" AS bd ON bd."vendorId" = v.id
+    LEFT JOIN "BankPaymentType" AS bpt ON bpt.id = bd."bankPaymentTypeId"
+    LEFT JOIN "BankName" AS bn ON bn.id = bd."bankNameId"
     INNER JOIN "User" AS u ON u.id = v."userId"
     LEFT JOIN "OrderSettlement" AS os 
       ON os."vendorId" = vso."vendorId"
       AND os.date::date = DATE('${settlementDateISO}')
     WHERE ${conditions.join(' AND ')}
-    GROUP BY vso."vendorId", u.name, os.status, si.name, u.id
+    GROUP BY vso."vendorId", u.name, os.status, si.name, u.id, bd."accountHolderName",
+      bd."accountNumber",
+      bd."ifscCode",
+      bd."linkedPhoneNumber",
+      bd."bankPlatformType",
+      bn.name,
+      bpt.name
     LIMIT ${limit} OFFSET ${offset};
   `;
 
@@ -72,12 +88,21 @@ export function getSettlements({
       INNER JOIN "VendorServiceOption" AS vso ON vso.id = oivs."vendorServiceOptionId"
       INNER JOIN "Vendor" AS v ON v.id = vso."vendorId"
       INNER JOIN "ShopInfo" AS si on si."vendorId" = v.id
+      INNER JOIN "BankDetail" AS bd ON bd."vendorId" = v.id
+      LEFT JOIN "BankPaymentType" AS bpt ON bpt.id = bd."bankPaymentTypeId"
+      LEFT JOIN "BankName" AS bn ON bn.id = bd."bankNameId"
       INNER JOIN "User" AS u ON u.id = v."userId"
       LEFT JOIN "OrderSettlement" AS os 
         ON os."vendorId" = vso."vendorId"
         AND os.date::date = DATE('${settlementDateISO}')
       WHERE ${conditions.join(' AND ')}
-      GROUP BY vso."vendorId", u.name, os.status, si.name
+      GROUP BY vso."vendorId", u.name, os.status, si.name, bd."accountHolderName",
+      bd."accountNumber",
+      bd."ifscCode",
+      bd."linkedPhoneNumber",
+      bd."bankPlatformType",
+      bn.name,
+      bpt.name
     ) AS subquery;
   `;
 

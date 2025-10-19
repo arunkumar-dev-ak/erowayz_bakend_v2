@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Response } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseService } from 'src/response/response.service';
@@ -23,6 +27,11 @@ export class AdminService {
     const admin = await this.findAdminByEmail(email);
     if (!admin) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+    if (!admin.status) {
+      throw new BadRequestException(
+        'Your account is Inactive.Ask the Admin to Active',
+      );
     }
 
     const isMatch =
@@ -108,7 +117,7 @@ export class AdminService {
 
   async findAdminByEmail(email: string) {
     const user = await this.prisma.user.findUnique({
-      where: { email, role: Role.ADMIN },
+      where: { email, role: Role.ADMIN || Role.SUB_ADMIN },
     });
     return user;
   }

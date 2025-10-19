@@ -19,7 +19,7 @@ export const UpdateBankNameUtils = async ({
   file?: Express.Multer.File;
   fileUploadService: FileUploadService;
 }) => {
-  const { name, status } = body;
+  const { name, status, tamilName } = body;
 
   const existingBankName = await bankNameService.getBankNameById(bankNameId);
   if (!existingBankName) {
@@ -56,6 +56,10 @@ export const UpdateBankNameUtils = async ({
 
   if (name !== undefined) {
     updateQuery.name = name;
+  }
+
+  if (tamilName !== undefined) {
+    updateQuery.tamilName = tamilName;
   }
 
   if (status !== undefined) {

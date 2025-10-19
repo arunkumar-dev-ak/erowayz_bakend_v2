@@ -90,7 +90,7 @@ export class CategoryController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Create a new category' })
@@ -118,7 +118,7 @@ export class CategoryController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Update an existing category' })
@@ -144,7 +144,7 @@ export class CategoryController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a category' })
   @ApiParam({ name: 'categoryId', type: String, description: 'Category ID' })

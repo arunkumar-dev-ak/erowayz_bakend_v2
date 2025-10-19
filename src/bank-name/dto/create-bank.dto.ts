@@ -7,6 +7,10 @@ export class CreateBankNameDto {
   @IsNotEmpty({ message: 'name is required' })
   name: string;
 
+  @ApiProperty()
+  @IsNotEmpty({ message: 'tamilName is required' })
+  tamilName: string;
+
   @ApiProperty({
     enum: Status,
   })

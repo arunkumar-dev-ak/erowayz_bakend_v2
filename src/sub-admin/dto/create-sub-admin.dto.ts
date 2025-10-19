@@ -1,23 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
-  IsBoolean,
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsString,
   Matches,
 } from 'class-validator';
+import { TrueOrFalseStatus } from 'src/user/dto/edit-user.dto';
 
 export class CreateSubAdminDto {
   @ApiProperty({ description: 'Name is required', required: true })
   @IsString()
   @IsNotEmpty({ message: 'Name is required' })
   name: string;
-
-  @ApiProperty({ description: 'userName is required', required: true })
-  @IsString()
-  @IsNotEmpty({ message: 'userName is required' })
-  userName: string;
 
   @ApiProperty({ description: 'Email is required', required: true })
   @IsEmail()
@@ -44,7 +40,9 @@ export class CreateSubAdminDto {
   password: string;
 
   @ApiProperty({ description: 'Status is either true or false' })
-  @IsBoolean({ message: 'status is either true or false' })
+  @IsEnum(TrueOrFalseStatus, {
+    message: `Status must be either '${TrueOrFalseStatus.TRUE}' or '${TrueOrFalseStatus.FALSE}'`,
+  })
   @IsNotEmpty({ message: 'status is required' })
-  status: boolean;
+  status: TrueOrFalseStatus;
 }

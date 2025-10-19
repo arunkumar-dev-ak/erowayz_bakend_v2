@@ -47,7 +47,7 @@ export class DisclaimerController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create Disclaimer' })
   @ApiBody({ type: CreateDisclaimerDto })
@@ -60,7 +60,7 @@ export class DisclaimerController {
     return await this.disclaimerService.createDisclaimer({ res, body });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update Disclaimer' })
   @ApiBody({ type: UpdateDisclaimerDto })
@@ -74,7 +74,7 @@ export class DisclaimerController {
     return await this.disclaimerService.updateDisclaimer({ res, id, body });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete Disclaimer' })
   @ApiParam({ name: 'disclaimerId', type: String })

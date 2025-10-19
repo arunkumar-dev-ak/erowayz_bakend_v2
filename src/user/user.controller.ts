@@ -32,7 +32,7 @@ export class UserController {
 
   @Get('getAll')
   @ApiBearerAuth()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   async getAllUser(
     @Req() req: Request,
@@ -95,7 +95,7 @@ export class UserController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @Patch('update/status')
   @ApiOperation({ summary: 'Update User status' })

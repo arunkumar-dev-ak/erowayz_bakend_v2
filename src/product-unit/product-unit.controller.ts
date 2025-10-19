@@ -47,7 +47,7 @@ export class ProductUnitController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create Product Unit' })
   @UseGuards(AuthGuard, RoleGuard)
@@ -59,7 +59,7 @@ export class ProductUnitController {
     return await this.productUnitService.createProductUnit({ res, body });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update Product Unit by ID' })
   @ApiParam({ name: 'productUnitId', type: String })
@@ -77,7 +77,7 @@ export class ProductUnitController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete Product Unit by ID' })
   @ApiParam({ name: 'productUnitId', type: String })

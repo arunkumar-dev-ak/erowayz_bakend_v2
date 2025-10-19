@@ -46,7 +46,7 @@ export class VideoLinkController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create Video Link' })
   @UseGuards(AuthGuard, RoleGuard)
@@ -58,7 +58,7 @@ export class VideoLinkController {
     return await this.videoLinkService.createVideoLink({ body, res });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update Video Link' })
   @ApiParam({ name: 'videoLinkId', type: String })
@@ -76,7 +76,7 @@ export class VideoLinkController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete Video Link by ID' })
   @ApiParam({ name: 'videoLinkId', type: String })

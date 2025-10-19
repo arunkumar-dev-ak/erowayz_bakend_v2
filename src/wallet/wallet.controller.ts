@@ -58,7 +58,7 @@ export class WalletController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @Get('walletTransaction/admin')
@@ -77,7 +77,7 @@ export class WalletController {
     });
   }
 
-  @Roles(Role.ADMIN, Role.CUSTOMER)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN, Role.CUSTOMER)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @Get('walletTransaction/user')

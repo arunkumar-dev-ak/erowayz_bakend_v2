@@ -329,6 +329,7 @@ export class VendorService {
             countryCode: true,
             mobile: true,
             email: true,
+            referralCode: true,
           },
         },
         shopInfo: {

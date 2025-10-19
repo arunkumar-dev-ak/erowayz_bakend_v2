@@ -52,7 +52,7 @@ export class BankNameController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new Bank Name' })
   @ApiConsumes('multipart/form-data')
@@ -78,7 +78,7 @@ export class BankNameController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Update an existing Bank Name' })
@@ -104,7 +104,7 @@ export class BankNameController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a Bank Name' })
   @ApiParam({ name: 'bankNameId', type: String, description: 'Bank Name ID' })

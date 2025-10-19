@@ -16,6 +16,10 @@ import { UpdateSubAdminDto } from './dto/update-sub-admin.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { LoginSubAdminDto } from './dto/login-sub-admin.dto';
 import { LogoutSubAdminDto } from './dto/logout-sub-admin.dto';
+import { TrueOrFalseMap, TrueOrFalseStatus } from 'src/user/dto/edit-user.dto';
+import { GetSubAdminQueryDto } from './dto/get-sub-admin.dto';
+import { MetadataService } from 'src/metadata/metadata.service';
+import { buildQueryParams } from 'src/common/functions/buildQueryParams';
 
 @Injectable()
 export class SubAdminService {
@@ -24,21 +28,67 @@ export class SubAdminService {
     private readonly response: ResponseService,
     private readonly tokenService: TokenService,
     private readonly vendorSubscriptionService: VendorSubscriptionService,
+    private readonly metaDataService: MetadataService,
   ) {}
 
-  async getAllSubAdminByVendorId({ res }: { res: Response }) {
+  async getAllSubAdmin({
+    res,
+    query,
+    offset,
+    limit,
+  }: {
+    res: Response;
+    query: GetSubAdminQueryDto;
+    offset: number;
+    limit: number;
+  }) {
     const initialDate = new Date();
+
+    const totalCount = await this.prisma.user.count({
+      where: {
+        role: 'SUB_ADMIN',
+        email: query.email
+          ? {
+              contains: query.email,
+              mode: 'insensitive',
+            }
+          : undefined,
+      },
+    });
+
     const subAdmin = await this.prisma.user.findMany({
       where: {
         role: 'SUB_ADMIN',
+        email: query.email
+          ? {
+              contains: query.email,
+              mode: 'insensitive',
+            }
+          : undefined,
       },
+      take: limit,
+      skip: offset,
     });
+
+    const queries = buildQueryParams({
+      email: query.email,
+    });
+
+    const meta = this.metaDataService.createMetaData({
+      totalCount,
+      offset,
+      limit,
+      path: 'user/getAll',
+      queries,
+    });
+
     return this.response.successResponse({
       res,
       data: subAdmin,
       message: 'SubAdmin fetched successfully',
       statusCode: 200,
       initialDate,
+      meta,
     });
   }
 
@@ -52,7 +102,7 @@ export class SubAdminService {
     const initialDate = new Date();
     const { email, password, name, status } = body;
     if (await this.findSubAdminByName(email)) {
-      throw new ConflictException('Username already exists');
+      throw new ConflictException('Email already exists');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -62,7 +112,7 @@ export class SubAdminService {
         email,
         password: hashedPassword,
         role: Role.SUB_ADMIN,
-        status,
+        status: status ? TrueOrFalseMap[status] : true,
       },
     });
     return this.response.successResponse({
@@ -105,13 +155,20 @@ export class SubAdminService {
       body.password = await bcrypt.hash(password, 10);
     }
     // Set a new salt if username or password is changed
-    if (password || email || status !== existingSubAdmin.status) {
+    if (
+      password ||
+      email ||
+      (status && TrueOrFalseStatus[status] !== existingSubAdmin.status)
+    ) {
       body['salt'] = uuidv4();
     }
     const result = await this.prisma.$transaction(async (tx) => {
       const updatedSubAdmin = await this.prisma.user.update({
         where: { id },
-        data: body,
+        data: {
+          ...body,
+          status: status ? TrueOrFalseMap[status] : true,
+        },
       });
       if (body['salt'] !== undefined) {
         await this.logoutSubAdminAccountBySubAdminId({
@@ -169,6 +226,11 @@ export class SubAdminService {
     const existingUser = await this.findSubAdminByEmail(email);
     if (!existingUser) {
       throw new BadRequestException('Invalid Username');
+    }
+    if (!existingUser.status) {
+      throw new BadRequestException(
+        'Your account is Inactive.Ask the Admin to Active',
+      );
     }
     const isMatch =
       typeof existingUser.password === 'string'
@@ -308,7 +370,7 @@ export class SubAdminService {
     const subAdmin = await this.prisma.user.findUnique({
       where: {
         email,
-        role: Role.STAFF,
+        role: Role.SUB_ADMIN,
       },
     });
     return subAdmin;

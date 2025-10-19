@@ -59,7 +59,7 @@ export class CityController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new City' })
   @ApiBody({
@@ -76,7 +76,7 @@ export class CityController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update an existing City' })
   @ApiParam({ name: 'cityId', type: String, description: 'City ID' })
@@ -98,7 +98,7 @@ export class CityController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a City' })
   @ApiParam({ name: 'cityId', type: String, description: 'City ID' })

@@ -56,7 +56,7 @@ export class PosterController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new Poster' })
   @ApiConsumes('multipart/form-data')
@@ -80,7 +80,7 @@ export class PosterController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update an existing Poster' })
   @ApiConsumes('multipart/form-data')
@@ -106,7 +106,7 @@ export class PosterController {
     });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a Poster' })
   @ApiParam({ name: 'posterId', type: String, description: 'Poster ID' })

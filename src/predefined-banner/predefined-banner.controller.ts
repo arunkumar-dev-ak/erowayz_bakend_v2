@@ -78,7 +78,7 @@ export class PredefinedBannerController {
   @ApiOperation({ summary: 'Create a new predefined banner' })
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @UseInterceptors(
     FileFieldsInterceptor([
@@ -119,7 +119,7 @@ export class PredefinedBannerController {
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiParam({ name: 'bannerId', type: String, required: true })
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @UseInterceptors(
     FileFieldsInterceptor([
@@ -186,7 +186,7 @@ export class PredefinedBannerController {
   @ApiOperation({ summary: 'Change the status of a predefined banner' })
   @ApiBearerAuth()
   @ApiParam({ name: 'bannerId', type: String, required: true })
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @Patch('changeStatus/:bannerId')
   async changeStatus(
@@ -204,7 +204,7 @@ export class PredefinedBannerController {
   @ApiOperation({ summary: 'Delete a predefined banner' })
   @ApiBearerAuth()
   @ApiParam({ name: 'bannerId', type: String, required: true })
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @Delete('delete/:bannerId')
   async deletePredefinedBanner(

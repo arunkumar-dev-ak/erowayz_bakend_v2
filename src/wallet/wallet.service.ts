@@ -142,6 +142,7 @@ export class WalletService {
             },
           },
         },
+        payment: true,
       },
     });
 
