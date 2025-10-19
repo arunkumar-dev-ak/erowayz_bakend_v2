@@ -42,13 +42,19 @@ export class UserService {
     query: GetUserQueryDto;
   }) {
     const initialDate = new Date();
-    const { name } = query;
+    const { name, mobile } = query;
     const where: Prisma.UserWhereInput = {
       role: Role.CUSTOMER,
     };
     if (name) {
       where.name = {
         contains: name,
+        mode: 'insensitive',
+      };
+    }
+    if (mobile) {
+      where.mobile = {
+        contains: mobile,
         mode: 'insensitive',
       };
     }
@@ -69,6 +75,7 @@ export class UserService {
 
     const queries = buildQueryParams({
       name,
+      mobile,
     });
 
     const meta = this.metaDataService.createMetaData({

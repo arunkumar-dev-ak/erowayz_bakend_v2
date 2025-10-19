@@ -11,6 +11,14 @@ export class GetUserQueryDto {
   name?: string;
 
   @ApiPropertyOptional({
+    description: 'mobile',
+    type: String,
+  })
+  @IsString()
+  @IsOptional()
+  mobile?: string;
+
+  @ApiPropertyOptional({
     type: Number,
     description: 'Pagination offset, defaults to 0',
     example: 0,
