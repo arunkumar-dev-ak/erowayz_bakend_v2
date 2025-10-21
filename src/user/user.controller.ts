@@ -32,7 +32,7 @@ export class UserController {
 
   @Get('getAll')
   @ApiBearerAuth()
-  @Roles(Role.ADMIN, Role.SUB_ADMIN)
+  @Roles(Role.ADMIN, Role.SUB_ADMIN, Role.VENDOR)
   @UseGuards(AuthGuard, RoleGuard)
   async getAllUser(
     @Req() req: Request,
