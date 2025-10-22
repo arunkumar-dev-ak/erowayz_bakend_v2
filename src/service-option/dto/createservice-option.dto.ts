@@ -7,6 +7,10 @@ export class CreateServiceOptionDto {
   @IsString()
   name: string;
 
+  @ApiProperty()
+  @IsNotEmpty({ message: 'tamilName is required' })
+  tamilName: string;
+
   @ApiProperty({ description: 'Description is required', required: true })
   @IsString()
   @IsNotEmpty({ message: 'Description is required' })

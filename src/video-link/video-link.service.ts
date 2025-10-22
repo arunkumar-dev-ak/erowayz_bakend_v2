@@ -47,10 +47,14 @@ export class VideoLinkService {
       orderBy: {
         createdAt: 'desc',
       },
+      include: {
+        vendorType: true,
+      },
     });
 
     const queries = buildQueryParams({
       heading: query.heading,
+      vendorTypeId: query.vendorTypeId,
     });
 
     const meta = this.metaDataService.createMetaData({
@@ -80,7 +84,16 @@ export class VideoLinkService {
   }) {
     const initialDate = new Date();
 
-    const { link, status, heading, tamilHeading } = body;
+    const { link, status, heading, tamilHeading, vendorTypeId } = body;
+
+    const vendorType = await this.prismaService.vendorType.findUnique({
+      where: {
+        id: vendorTypeId,
+      },
+    });
+    if (!vendorType) {
+      throw new BadRequestException('Vendor Type not found');
+    }
 
     const newVideoLink = await this.prismaService.videoLink.create({
       data: {
@@ -88,6 +101,7 @@ export class VideoLinkService {
         status,
         heading,
         tamilHeading,
+        vendorTypeId,
       },
     });
 
@@ -118,7 +132,17 @@ export class VideoLinkService {
       throw new BadRequestException('VideoLink Not Found');
     }
 
-    const { link, status, heading, tamilHeading } = body;
+    const { link, status, heading, tamilHeading, vendorTypeId } = body;
+    if (vendorTypeId) {
+      const vendorType = await this.prismaService.vendorType.findUnique({
+        where: {
+          id: vendorTypeId,
+        },
+      });
+      if (!vendorType) {
+        throw new BadRequestException('Vendor Type not found');
+      }
+    }
 
     const updatedVideoLink = await this.prismaService.videoLink.update({
       where: {
@@ -126,6 +150,7 @@ export class VideoLinkService {
       },
       data: {
         ...(link && { link }),
+        ...(vendorTypeId && { vendorTypeId }),
         ...(status && { status }),
         ...(heading && { heading }),
         ...(tamilHeading && { tamilHeading }),

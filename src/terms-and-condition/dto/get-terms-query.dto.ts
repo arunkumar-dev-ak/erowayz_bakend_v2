@@ -1,6 +1,6 @@
 // dto/get-terms-and-condition.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserType } from '@prisma/client';
+import { TermsAndConditionType, UserType } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class GetTermsAndConditionQueryDto {
@@ -15,6 +15,17 @@ export class GetTermsAndConditionQueryDto {
     message: `userType must be either '${UserType.CUSTOMER}' or '${UserType.VENDOR}'`,
   })
   userType?: UserType;
+
+  @ApiProperty({
+    description: 'Privacy Policy type for privacy policy',
+    enum: TermsAndConditionType,
+    example: TermsAndConditionType.BLOOD,
+  })
+  @IsEnum(TermsAndConditionType, {
+    message: `TermsAndConditionType must be one of the '${Object.values(TermsAndConditionType).join(', ')}'`,
+  })
+  @IsOptional()
+  type?: TermsAndConditionType;
 
   @ApiProperty({
     description: 'Filter by vendor type ID',

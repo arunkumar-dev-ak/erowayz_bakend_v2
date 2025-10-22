@@ -59,7 +59,7 @@ export function getSettlements({
     INNER JOIN "VendorServiceOption" AS vso ON vso.id = oivs."vendorServiceOptionId"
     INNER JOIN "Vendor" AS v ON v.id = vso."vendorId"
     INNER JOIN "ShopInfo" AS si on si."vendorId" = v.id
-    INNER JOIN "BankDetail" AS bd ON bd."vendorId" = v.id
+    LEFT JOIN "BankDetail" AS bd ON bd."vendorId" = v.id
     LEFT JOIN "BankPaymentType" AS bpt ON bpt.id = bd."bankPaymentTypeId"
     LEFT JOIN "BankName" AS bn ON bn.id = bd."bankNameId"
     INNER JOIN "User" AS u ON u.id = v."userId"
@@ -88,7 +88,7 @@ export function getSettlements({
       INNER JOIN "VendorServiceOption" AS vso ON vso.id = oivs."vendorServiceOptionId"
       INNER JOIN "Vendor" AS v ON v.id = vso."vendorId"
       INNER JOIN "ShopInfo" AS si on si."vendorId" = v.id
-      INNER JOIN "BankDetail" AS bd ON bd."vendorId" = v.id
+      LEFT JOIN "BankDetail" AS bd ON bd."vendorId" = v.id
       LEFT JOIN "BankPaymentType" AS bpt ON bpt.id = bd."bankPaymentTypeId"
       LEFT JOIN "BankName" AS bn ON bn.id = bd."bankNameId"
       INNER JOIN "User" AS u ON u.id = v."userId"

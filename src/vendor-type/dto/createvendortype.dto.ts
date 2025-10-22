@@ -8,6 +8,10 @@ export class CreateVendorTypeDto {
   @IsNotEmpty({ message: 'name should not be empty' })
   name: string;
 
+  @ApiProperty()
+  @IsNotEmpty({ message: 'tamilName is required' })
+  tamilName: string;
+
   @ApiProperty({
     format: 'binary',
     required: true,

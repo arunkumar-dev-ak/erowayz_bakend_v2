@@ -9,13 +9,17 @@ export function buildPrivacyPolicyWhereFilter({
 }): Prisma.PrivacyPolicyWhereInput {
   const where: Prisma.PrivacyPolicyWhereInput = {};
 
-  const { userType, vendorTypeId, vendorTypeName } = query;
+  const { userType, vendorTypeId, vendorTypeName, type } = query;
   if (userType) {
     where.userType = userType;
   }
 
   if (vendorTypeId) {
     where.vendorTypeId = vendorTypeId;
+  }
+
+  if (type) {
+    where.type = type;
   }
 
   if (vendorTypeName) {

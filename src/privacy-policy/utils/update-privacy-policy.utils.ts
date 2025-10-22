@@ -39,6 +39,25 @@ export async function validateUpdatePrivacyPolicy(
     throw new BadRequestException('Vendor Type Is Required');
   }
 
+  //check privacy policy with type
+  if (body.type) {
+    const existingCustomerPolicy = await prismaService.privacyPolicy.findFirst({
+      where: {
+        userType: UserType.CUSTOMER,
+        type: body.type,
+      },
+    });
+
+    if (
+      existingCustomerPolicy &&
+      existingCustomerPolicy.id !== privacyPolicy.id
+    ) {
+      throw new BadRequestException(
+        `Privacy Policy already exists for ${body.type}`,
+      );
+    }
+  }
+
   // Check uniqueness if vendorTypeId is being changed
   if (body.vendorTypeId) {
     const existingPolicy = await prismaService.privacyPolicy.findFirst({

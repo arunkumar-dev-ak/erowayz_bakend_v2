@@ -12,6 +12,15 @@ export class CreateVideoLinkDto {
   @IsString()
   tamilHeading: string;
 
+  @ApiProperty({
+    description: 'VendorTypeId should not be empty',
+    required: true,
+    example: 'Your vendorTypeId here',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'VendorTypeId should not be empty' })
+  vendorTypeId: string;
+
   @ApiProperty()
   @IsNotEmpty({ message: 'Link is required' })
   link: string;

@@ -8,13 +8,17 @@ export function buildVideoLinkWhereFilter({
 }): Prisma.VideoLinkWhereInput {
   const where: Prisma.VideoLinkWhereInput = {};
 
-  const { heading } = query;
+  const { heading, vendorTypeId } = query;
 
   if (heading) {
     where.heading = {
       contains: heading,
       mode: 'insensitive',
     };
+  }
+
+  if (vendorTypeId) {
+    where.vendorTypeId = vendorTypeId;
   }
 
   return where;

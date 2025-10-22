@@ -8,6 +8,11 @@ export class UpdateServiceOptionDto {
   @IsString()
   name?: string;
 
+  @ApiProperty()
+  @IsOptional()
+  @IsNotEmpty({ message: 'tamilName is required' })
+  tamilName?: string;
+
   @IsOptional()
   @ApiProperty({
     description: 'Description is required, if defined',

@@ -6,6 +6,7 @@ enum KeyWordType {
 model keyWord {
     id                      String              @id @default(uuid())
     name                    String
+    tamilName               String?
     vendorTypeId            String
     keyWordType             KeyWordType
     status                  Status  @default(ACTIVE)

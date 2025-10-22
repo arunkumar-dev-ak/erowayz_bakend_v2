@@ -12,6 +12,10 @@ export class createKeyWordDto {
   @IsNotEmpty({ message: 'Name should not be empty' })
   name: string;
 
+  @ApiProperty()
+  @IsNotEmpty({ message: 'tamilName is required' })
+  tamilName: string;
+
   @ApiProperty({
     description: 'VendorTypeId should not be empty',
     required: true,

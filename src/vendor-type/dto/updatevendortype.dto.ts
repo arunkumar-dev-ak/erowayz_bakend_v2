@@ -12,6 +12,11 @@ export class UpdateVendorTypeDto {
   @IsNotEmpty({ message: 'Name should not be empty' })
   name?: string;
 
+  @ApiProperty()
+  @IsNotEmpty({ message: 'tamilName is required' })
+  @IsOptional()
+  tamilName?: string;
+
   @ApiProperty({
     description: 'Type should be either SERVICE or PRODUCT, if defined',
     required: false,

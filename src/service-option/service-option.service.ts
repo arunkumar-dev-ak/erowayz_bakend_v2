@@ -115,7 +115,7 @@ export class ServiceOptionService {
     serviceImage: Express.Multer.File;
   }) {
     const initialDate = new Date();
-    const { name, vendorTypeId, description } = body;
+    const { name, vendorTypeId, description, tamilName } = body;
     const vendorType =
       await this.vendorTypeService.findVendorTypeById(vendorTypeId);
     if (!vendorType || vendorType.type === VendorCategoryType.BANNER) {
@@ -141,6 +141,7 @@ export class ServiceOptionService {
           description,
           serviceOptImageRef: imageUrl,
           relativeUrl: relativePath,
+          tamilName,
         },
       });
 
@@ -169,8 +170,8 @@ export class ServiceOptionService {
     serviceImage?: Express.Multer.File;
   }) {
     const initialDate = new Date();
-    const { name, vendorTypeId, description } = body;
-    if (!name && !description && !serviceImage) {
+    const { name, vendorTypeId, description, tamilName } = body;
+    if (!name && !description && !serviceImage && !tamilName) {
       throw new BadRequestException('No valid fields provided for update');
     }
 
@@ -215,6 +216,7 @@ export class ServiceOptionService {
       description: description ?? undefined,
       serviceOptImageRef: uploadedImage?.imageUrl ?? undefined,
       relativeUrl: uploadedImage?.relativePath ?? undefined,
+      tamilName: tamilName ?? undefined,
     };
 
     try {

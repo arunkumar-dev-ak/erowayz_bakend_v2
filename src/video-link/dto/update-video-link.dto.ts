@@ -14,6 +14,16 @@ export class UpdateVideoLinkDto {
   @IsOptional()
   tamilHeading?: string;
 
+  @ApiProperty({
+    description: 'VendorTypeId should not be empty',
+    required: true,
+    example: 'Your vendorTypeId here',
+  })
+  @IsString()
+  @IsOptional()
+  @IsNotEmpty({ message: 'VendorTypeId should not be empty' })
+  vendorTypeId?: string;
+
   @ApiProperty()
   @IsNotEmpty({ message: 'Link is required' })
   @IsOptional()

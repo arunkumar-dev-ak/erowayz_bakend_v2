@@ -56,6 +56,7 @@ export class TermsAndConditionService {
       userType: query.userType,
       vendorTypeName: query.vendorTypeName,
       vendorTypeId: query.vendorTypeId,
+      type: query.type,
     });
 
     const meta = this.metaDataService.createMetaData({
@@ -95,6 +96,7 @@ export class TermsAndConditionService {
           vendorTypeId: body.vendorTypeId || null,
           termsAndConditionHtml: body.termsAndConditionHtml,
           termsAndConditionHtmlTa: body.termsAndConditionHtmlTa,
+          type: body.type,
         },
         include: {
           vendorType: true,
@@ -138,6 +140,9 @@ export class TermsAndConditionService {
         where: { id: termsId },
         data: {
           ...(body.userType && { userType: body.userType }),
+          ...(body.type && {
+            type: body.type,
+          }),
 
           // If CUSTOMER, force null. Else update only if vendorTypeId is provided.
           ...(body.userType === 'CUSTOMER'

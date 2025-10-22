@@ -36,6 +36,22 @@ export async function validateUpdateTermsAndCondition(
     }
   }
 
+  if (body.type) {
+    const existingCustomerPolicy =
+      await prismaService.termsAndCondition.findFirst({
+        where: {
+          userType: UserType.CUSTOMER,
+          type: body.type,
+        },
+      });
+
+    if (existingCustomerPolicy && existingCustomerPolicy.id !== terms.id) {
+      throw new BadRequestException(
+        `Terms and condition already exists for ${body.type}`,
+      );
+    }
+  }
+
   if (body.vendorTypeId) {
     // Check uniqueness if vendorTypeId is being changed
     const existingTerms = await prismaService.termsAndCondition.findFirst({

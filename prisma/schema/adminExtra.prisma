@@ -7,6 +7,21 @@ enum DisclaimerType {
     PRODUCT_ORDER
     SERVICE_BOOK
     BANNER_BOOK
+    COINS
+    UPI
+    BLOOD
+}
+
+enum PrivacyPolicyType {
+    COINS
+    UPI
+    BLOOD
+}
+
+enum TermsAndConditionType {
+    COINS
+    UPI
+    BLOOD
 }
 
 model LicenseCategory {
@@ -101,6 +116,7 @@ model Disclaimer {
 model TermsAndCondition {
     id               String             @id @default(uuid())
     userType         UserType
+    type             TermsAndConditionType?
     vendorTypeId     String?
     termsAndConditionHtml    String    @db.Text
     termsAndConditionHtmlTa  String    @db.Text
@@ -115,6 +131,7 @@ model TermsAndCondition {
 model PrivacyPolicy {
     id               String             @id @default(uuid())
     userType         UserType
+    type             PrivacyPolicyType?
     vendorTypeId     String?
     privacyPolicyHtml    String    @db.Text
     privacyPolicyHtmlTa  String    @db.Text
@@ -130,11 +147,15 @@ model VideoLink {
     id               String             @id @default(uuid())
     heading          String
     tamilHeading     String?
+    vendorTypeId     String?
     link             String
     status           Status             @default(ACTIVE)
 
     createdAt        DateTime           @default(now())
     updatedAt        DateTime           @updatedAt
+    vendorType      VendorType?  @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
+
+    
 }
 
 model Poster {

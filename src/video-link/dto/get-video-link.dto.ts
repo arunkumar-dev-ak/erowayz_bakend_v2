@@ -11,6 +11,15 @@ export class GetVideoQueryDto {
   heading?: string;
 
   @ApiPropertyOptional({
+    description: 'VendorTypeId should not be empty',
+    required: true,
+    example: 'Your vendorTypeId here',
+  })
+  @IsString()
+  @IsOptional()
+  vendorTypeId?: string;
+
+  @ApiPropertyOptional({
     description: 'Number of records to skip (for pagination), default is 0',
     type: Number,
   })

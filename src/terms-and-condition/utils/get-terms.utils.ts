@@ -9,7 +9,7 @@ export function buildTermsAndConditionWhereFilter({
 }): Prisma.TermsAndConditionWhereInput {
   const where: Prisma.TermsAndConditionWhereInput = {};
 
-  const { userType, vendorTypeId, vendorTypeName } = query;
+  const { userType, vendorTypeId, vendorTypeName, type } = query;
 
   if (userType) {
     where.userType = userType;
@@ -17,6 +17,10 @@ export function buildTermsAndConditionWhereFilter({
 
   if (vendorTypeId) {
     where.vendorTypeId = vendorTypeId;
+  }
+
+  if (type) {
+    where.type = type;
   }
 
   if (vendorTypeName) {

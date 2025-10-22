@@ -39,8 +39,24 @@ export async function validateCreateTermsAndCondition(
     }
   }
 
+  if (body.userType === UserType.CUSTOMER && body.type) {
+    const existingCustomerPolicy =
+      await prismaService.termsAndCondition.findFirst({
+        where: {
+          userType: UserType.CUSTOMER,
+          type: body.type,
+        },
+      });
+
+    if (existingCustomerPolicy) {
+      throw new BadRequestException(
+        `Terms and condition already exists for ${body.type}`,
+      );
+    }
+  }
+
   // For CUSTOMER type, check if general terms already exist
-  if (body.userType === UserType.CUSTOMER && !body.vendorTypeId) {
+  if (body.userType === UserType.CUSTOMER && !body.vendorTypeId && !body.type) {
     const existingCustomerTerms =
       await prismaService.termsAndCondition.findFirst({
         where: {

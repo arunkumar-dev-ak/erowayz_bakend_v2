@@ -90,7 +90,7 @@ export class KeywordService {
   }) {
     const initialDate = new Date();
 
-    const { name, vendorTypeId, keyWordType, status } = body;
+    const { name, vendorTypeId, keyWordType, status, tamilName } = body;
 
     const [existingKeyword, VendorType] = await Promise.all([
       this.checkKeyWordByName({ vendorTypeId, name, keyWordType }),
@@ -112,6 +112,7 @@ export class KeywordService {
         vendorTypeId,
         keyWordType,
         status,
+        tamilName,
       },
     });
 
@@ -138,7 +139,7 @@ export class KeywordService {
       throw new BadRequestException('No valid fields provided to update');
     }
     //need to check that body
-    const { name, vendorTypeId, keyWordType, status } = body;
+    const { name, vendorTypeId, keyWordType, status, tamilName } = body;
 
     const existingKeyWord = await this.findKeyWordById(keyWordId);
     if (!existingKeyWord) {
@@ -155,6 +156,7 @@ export class KeywordService {
 
     const updatePayload: Prisma.keyWordUpdateInput = {};
     if (name !== undefined) updatePayload.name = name;
+    if (tamilName !== undefined) updatePayload.tamilName = tamilName;
     if (vendorTypeId !== undefined)
       updatePayload.vendorType = {
         connect: { id: vendorTypeId },

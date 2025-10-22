@@ -39,8 +39,23 @@ export async function validateCreatePrivacyPolicy(
     }
   }
 
-  // For CUSTOMER type, check if general privacy policy already exists
-  if (body.userType === UserType.CUSTOMER && !body.vendorTypeId) {
+  if (body.userType === UserType.CUSTOMER && body.type) {
+    const existingCustomerPolicy = await prismaService.privacyPolicy.findFirst({
+      where: {
+        userType: UserType.CUSTOMER,
+        type: body.type,
+      },
+    });
+
+    if (existingCustomerPolicy) {
+      throw new BadRequestException(
+        `Privacy Policy already exists for ${body.type}`,
+      );
+    }
+  }
+
+  if (body.userType === UserType.CUSTOMER && !body.vendorTypeId && !body.type) {
+    // For CUSTOMER type, check if general privacy policy already exists
     const existingCustomerPolicy = await prismaService.privacyPolicy.findFirst({
       where: {
         userType: UserType.CUSTOMER,

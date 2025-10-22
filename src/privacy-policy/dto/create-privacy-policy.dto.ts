@@ -1,6 +1,6 @@
 // dto/create-privacy-policy.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
-import { UserType } from '@prisma/client';
+import { PrivacyPolicyType, UserType } from '@prisma/client';
 import {
   IsEnum,
   IsString,
@@ -45,4 +45,15 @@ export class CreatePrivacyPolicyDto {
   @IsString()
   @IsNotEmpty({ message: 'Privacy policy HTML content in Tamil is required' })
   privacyPolicyHtmlTa: string;
+
+  @ApiProperty({
+    description: 'Privacy Policy type for privacy policy',
+    enum: PrivacyPolicyType,
+    example: PrivacyPolicyType.BLOOD,
+  })
+  @IsEnum(PrivacyPolicyType, {
+    message: `userType must be one of the '${Object.values(PrivacyPolicyType).join(', ')}'`,
+  })
+  @IsOptional()
+  type?: PrivacyPolicyType;
 }

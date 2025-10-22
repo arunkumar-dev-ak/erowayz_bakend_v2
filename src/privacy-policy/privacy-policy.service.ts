@@ -93,6 +93,7 @@ export class PrivacyPolicyService {
         vendorTypeId: body.vendorTypeId || null,
         privacyPolicyHtml: body.privacyPolicyHtml,
         privacyPolicyHtmlTa: body.privacyPolicyHtmlTa,
+        type: body.type || null,
       },
       include: {
         vendorType: true,
@@ -130,6 +131,7 @@ export class PrivacyPolicyService {
       where: { id: privacyPolicyId },
       data: {
         ...(body.userType && { userType: body.userType }),
+        ...(body.type && { type: body.type }),
 
         // If CUSTOMER, force null. Else update only if vendorTypeId is provided.
         ...(body.userType === 'CUSTOMER'

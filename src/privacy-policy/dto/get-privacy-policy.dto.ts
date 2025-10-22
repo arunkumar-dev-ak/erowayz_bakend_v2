@@ -1,6 +1,6 @@
 // dto/get-privacy-policy.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserType } from '@prisma/client';
+import { PrivacyPolicyType, UserType } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class GetPrivacyPolicyQueryDto {
@@ -15,6 +15,19 @@ export class GetPrivacyPolicyQueryDto {
     message: `userType must be either '${UserType.CUSTOMER}' or '${UserType.VENDOR}'`,
   })
   userType?: UserType;
+
+  @ApiProperty({
+    description: 'Filter by Privacy Policy type',
+    enum: PrivacyPolicyType,
+    required: false,
+    example: PrivacyPolicyType.BLOOD,
+  })
+  @IsOptional()
+  @IsEnum(PrivacyPolicyType, {
+    message: `userType must be one of the '${Object.values(PrivacyPolicyType).join(', ')}'`,
+  })
+  @IsOptional()
+  type?: PrivacyPolicyType;
 
   @ApiProperty({
     description: 'Filter by vendor type ID',

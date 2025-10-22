@@ -108,6 +108,7 @@ export class VendorTypeService {
             imageRef: imageUrl,
             relativeUrl: relativePath,
             type: body.type,
+            tamilName: body.tamilName,
           },
         });
       });
@@ -136,9 +137,9 @@ export class VendorTypeService {
     image?: Express.Multer.File;
   }) {
     const initialDate = new Date();
-    const { name, type } = body;
+    const { name, type, tamilName } = body;
 
-    if (!name && !type && !image) {
+    if (!name && !type && !tamilName && !image) {
       throw new BadRequestException('No valid fields provided for update');
     }
 
@@ -161,6 +162,7 @@ export class VendorTypeService {
       type: type ?? undefined,
       imageRef: uploadedImage?.imageUrl ?? undefined,
       relativeUrl: uploadedImage?.relativePath ?? undefined,
+      tamilName: tamilName ?? undefined,
     };
 
     try {
