@@ -35,36 +35,4 @@ export async function validateUpdateTermsAndCondition(
       throw new BadRequestException('Vendor type not found');
     }
   }
-
-  if (body.type) {
-    const existingCustomerPolicy =
-      await prismaService.termsAndCondition.findFirst({
-        where: {
-          userType: UserType.CUSTOMER,
-          type: body.type,
-        },
-      });
-
-    if (existingCustomerPolicy && existingCustomerPolicy.id !== terms.id) {
-      throw new BadRequestException(
-        `Terms and condition already exists for ${body.type}`,
-      );
-    }
-  }
-
-  if (body.vendorTypeId) {
-    // Check uniqueness if vendorTypeId is being changed
-    const existingTerms = await prismaService.termsAndCondition.findFirst({
-      where: {
-        vendorTypeId: body.vendorTypeId,
-        id: { not: termsId },
-      },
-    });
-
-    if (existingTerms) {
-      throw new BadRequestException(
-        'Terms and conditions already exist for this vendor type',
-      );
-    }
-  }
 }

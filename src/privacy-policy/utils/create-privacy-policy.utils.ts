@@ -25,48 +25,4 @@ export async function validateCreatePrivacyPolicy(
       'vendorTypeId is required for VENDOR user type',
     );
   }
-
-  // Check uniqueness - only one privacy policy per vendorTypeId
-  if (body.vendorTypeId) {
-    const existingPolicy = await prismaService.privacyPolicy.findFirst({
-      where: { vendorTypeId: body.vendorTypeId },
-    });
-
-    if (existingPolicy) {
-      throw new BadRequestException(
-        'Privacy policy already exists for this vendor type',
-      );
-    }
-  }
-
-  if (body.userType === UserType.CUSTOMER && body.type) {
-    const existingCustomerPolicy = await prismaService.privacyPolicy.findFirst({
-      where: {
-        userType: UserType.CUSTOMER,
-        type: body.type,
-      },
-    });
-
-    if (existingCustomerPolicy) {
-      throw new BadRequestException(
-        `Privacy Policy already exists for ${body.type}`,
-      );
-    }
-  }
-
-  if (body.userType === UserType.CUSTOMER && !body.vendorTypeId && !body.type) {
-    // For CUSTOMER type, check if general privacy policy already exists
-    const existingCustomerPolicy = await prismaService.privacyPolicy.findFirst({
-      where: {
-        userType: UserType.CUSTOMER,
-        vendorTypeId: null,
-      },
-    });
-
-    if (existingCustomerPolicy) {
-      throw new BadRequestException(
-        'General privacy policy for customers already exists',
-      );
-    }
-  }
 }

@@ -154,7 +154,6 @@ model VideoLink {
     createdAt        DateTime           @default(now())
     updatedAt        DateTime           @updatedAt
     vendorType      VendorType?  @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
-
     
 }
 
