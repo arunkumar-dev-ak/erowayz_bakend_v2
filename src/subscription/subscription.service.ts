@@ -126,6 +126,12 @@ export class SubscriptionService {
                   select: {
                     name: true,
                     nameTamil: true,
+                    referrer: {
+                      select: {
+                        name: true,
+                        nameTamil: true,
+                      },
+                    },
                   },
                 },
               },
