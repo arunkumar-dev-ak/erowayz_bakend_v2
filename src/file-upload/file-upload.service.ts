@@ -81,11 +81,17 @@ export class FileUploadService {
         case 'poster':
           uploadPath = path.join(this.baseUploadPath, 'poster');
           break;
+        case 'coinsImage':
+          uploadPath = path.join(this.baseUploadPath, 'coinsImage');
+          break;
         case 'termsAndCondition':
           uploadPath = path.join(this.baseUploadPath, 'termsAndCondition');
           break;
         case 'settlementImage':
           uploadPath = path.join(this.baseUploadPath, 'settlementImage');
+          break;
+        case 'errorLogImage':
+          uploadPath = path.join(this.baseUploadPath, 'errorLogImage');
           break;
         case 'coinsSettlementImage':
           uploadPath = path.join(this.baseUploadPath, 'coinsSettlementImage');

@@ -65,10 +65,20 @@ export interface VerifyOtpInterface {
 }
 
 export interface WhatsappErrorResponse {
-  status: boolean;
-  message: string;
-  statusCode: number;
-  errors: unknown;
+  status?: string;
+  error?: {
+    code?: string;
+    message?: string;
+    suggestion?: string;
+    details?: {
+      phoneNumber?: string;
+      blockUntil?: string;
+      retryAfter?: number;
+      reason?: string;
+    };
+  };
+  message?: string;
+  timestamp?: string;
 }
 
 @Injectable()

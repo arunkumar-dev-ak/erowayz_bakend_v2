@@ -25,6 +25,8 @@ export enum ImageTypeEnum {
   POSTER = 'poster',
   SETTLEMENT_IMAGE = 'settlementImage',
   COINS_SETTLEMENT_IMAGE = 'coinsSettlementImage',
+  COIN_IMAGE = 'coinsImage',
+  ERROR_LOG_IMAGE = 'errorLogImage',
 }
 export class FileUploadDto {
   @ApiProperty({

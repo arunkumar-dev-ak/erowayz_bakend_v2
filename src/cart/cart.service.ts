@@ -18,6 +18,7 @@ import { UpdateCartServiceDto } from './dto/update-cart-service.dto';
 import { BestOfferItemDto } from './dto/bestoffer-item.dto';
 import { calculateBestPriceForItem } from './utils/cart.utils';
 import { CartItemWithItem } from './utils/cartItem_raw_types.utils';
+import { PlatformFeeService } from 'src/platform-fee/platform-fee.service';
 
 type CartTotals = {
   total: number;
@@ -33,6 +34,7 @@ export class CartService {
     private readonly bannerService: BannerService,
     private readonly metaDataService: MetadataService,
     private readonly vendorSerOptSer: VendorServiceOptionService,
+    private readonly platformFeeService: PlatformFeeService,
   ) {}
 
   async getCartItemByUser({
@@ -79,6 +81,10 @@ export class CartService {
 
     const totalAmount = totals[0]?.total ?? 0;
     const discountedAmount = totals[0]?.discountTotal ?? 0;
+
+    const platformFee = await this.platformFeeService.getFeesForOrdering({
+      amount: discountedAmount,
+    });
 
     const cartItems = await this.prisma.cartItem.findMany({
       where: {
@@ -129,6 +135,7 @@ export class CartService {
         cartItems,
         totalAmount,
         bestPrice,
+        platformFee: platformFee ? platformFee.fee : 0,
         vendor: cart.vendor,
         offerAppliedBanner:
           bestBanner && bestPrice === finalTotal ? bestBanner : null,

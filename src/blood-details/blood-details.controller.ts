@@ -30,6 +30,10 @@ import {
 } from 'src/common/functions/extractUserId';
 import { RequestBloodDetailDto } from './dto/request-blood-details.dto';
 import { FetchUserGuard } from 'src/common/guards/fetch-user.guard';
+import { RoleGuard } from 'src/common/guards/role.guard';
+import { Roles } from 'src/common/roles/roles.docorator';
+import { Role } from '@prisma/client';
+import { GetAdminBloodDetailQueryDto } from './dto/get-blood-detail-admin.dto';
 
 @ApiTags('blood-details')
 @Controller('blood-details')
@@ -48,6 +52,23 @@ export class BloodDetailsController {
     const user = extractUserFromRequest(req);
     await this.bloodDetailsService.getBloodDetail({
       userId: user?.id,
+      res,
+      query,
+      offset: Number(query.offset || '0'),
+      limit: Number(query.limit || '10'),
+    });
+  }
+
+  @ApiBearerAuth()
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
+  @UseGuards(AuthGuard, RoleGuard)
+  @ApiOperation({ summary: 'Get all blood request' })
+  @Get('blood-request')
+  async getBloodRequest(
+    @Res() res: Response,
+    @Query() query: GetAdminBloodDetailQueryDto,
+  ) {
+    await this.bloodDetailsService.getBloodDetailRequest({
       res,
       query,
       offset: Number(query.offset || '0'),

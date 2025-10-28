@@ -16,6 +16,8 @@ import {
   RequestBloodDetailsVerification,
 } from './utils/request-blood-details.utils';
 import { TrueOrFalseMap } from 'src/user/dto/edit-user.dto';
+import { GetAdminBloodDetailQueryDto } from './dto/get-blood-detail-admin.dto';
+import { GetBloodDetailAdminUtils } from './utils/get-blood-detail-admin.utils';
 
 @Injectable()
 export class BloodDetailsService {
@@ -75,6 +77,73 @@ export class BloodDetailsService {
       data: bloodDetails,
       meta,
       message: 'BloodDetails retrieved successfully',
+      statusCode: 200,
+    });
+  }
+
+  async getBloodDetailRequest({
+    res,
+    query,
+    offset,
+    limit,
+  }: {
+    res: Response;
+    query: GetAdminBloodDetailQueryDto;
+    offset: number;
+    limit: number;
+    userId?: string;
+  }) {
+    const initialDate = new Date();
+
+    const { where } = GetBloodDetailAdminUtils({
+      query,
+    });
+
+    const totalCount = await this.prisma.bloodRequest.count({ where });
+
+    const bloodRequest = await this.prisma.bloodRequest.findMany({
+      where,
+      skip: offset,
+      take: limit,
+      include: {
+        user: {
+          select: {
+            name: true,
+            nameTamil: true,
+          },
+        },
+        donor: {
+          select: {
+            name: true,
+            nameTamil: true,
+          },
+        },
+      },
+    });
+
+    const { startDate, endDate, requesterName, donorName } = query;
+
+    const queries = buildQueryParams({
+      startDate,
+      endDate,
+      requesterName,
+      donorName,
+    });
+
+    const meta = this.metaDataService.createMetaData({
+      totalCount,
+      offset,
+      limit,
+      path: 'blood-details/blood-request',
+      queries,
+    });
+
+    return this.response.successResponse({
+      initialDate,
+      res,
+      data: bloodRequest,
+      meta,
+      message: 'BloodRequest retrieved successfully',
       statusCode: 200,
     });
   }

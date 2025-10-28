@@ -100,6 +100,24 @@ export class ServiceBookingService {
                             shopCity: true,
                           },
                         },
+                        User: {
+                          select: {
+                            name: true,
+                            nameTamil: true,
+                            mobile: true,
+                            email: true,
+                          },
+                        },
+                        serviceVendorKeyword: {
+                          select: {
+                            keyword: {
+                              select: {
+                                name: true,
+                                tamilName: true,
+                              },
+                            },
+                          },
+                        },
                       },
                     },
                   },

@@ -78,6 +78,10 @@ import { PosterModule } from './poster/poster.module';
 import { OrderSettlementModule } from './order-settlement/order-settlement.module';
 import { CoinsSettlementModule } from './coins-settlement/coins-settlement.module';
 import { SubAdminModule } from './sub-admin/sub-admin.module';
+import { PlatformFeeModule } from './platform-fee/platform-fee.module';
+import { UserReportModule } from './user-report/user-report.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { CoinImageModule } from './coin-image/coin-image.module';
 
 @Module({
   imports: [
@@ -153,6 +157,10 @@ import { SubAdminModule } from './sub-admin/sub-admin.module';
     OrderSettlementModule,
     CoinsSettlementModule,
     SubAdminModule,
+    PlatformFeeModule,
+    UserReportModule,
+    DashboardModule,
+    CoinImageModule,
   ],
   controllers: [AppController],
   providers: [

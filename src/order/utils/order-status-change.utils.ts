@@ -202,6 +202,7 @@ export const DeliveredOrderUtils = async ({
       },
     };
   }
+
   return {
     orderPaymentCreateQuery,
     updateVendorWalletQuery,

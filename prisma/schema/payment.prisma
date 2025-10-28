@@ -29,6 +29,11 @@ enum BillingPeriod {
   MONTHLY
 }
 
+enum ErrorLogStatus {
+  PENDING
+  RESOLVED
+}
+
 enum PaymentStatus {
   CHARGED
   PENDING
@@ -146,9 +151,28 @@ model PaymentErrorLog {
   referenceId     String
   vendorUserId    String
   purpose         PaymentPurpose?
+  status          ErrorLogStatus  @default(PENDING)
   customerUserId  String?
   errorType       String
   message         String
   metaData        Json?
   createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+   // 🔹 Relations
+  vendorUser      User     @relation("VendorPaymentErrorLogs", fields: [vendorUserId], references: [id], onDelete: Cascade)
+  customerUser    User?    @relation("CustomerPaymentErrorLogs", fields: [customerUserId], references: [id], onDelete: SetNull)
+
+  paymentErrorLogFile PaymentErrorLogFile[]
+}
+
+model PaymentErrorLogFile {
+  id              String   @id @default(uuid())
+  image           String
+  paymentErrorLogId  String?
+
+  createdAt       DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  paymentErrorLog PaymentErrorLog? @relation(fields: [paymentErrorLogId], references: [id], onDelete: Cascade)
 }

@@ -153,7 +153,7 @@ model VideoLink {
 
     createdAt        DateTime           @default(now())
     updatedAt        DateTime           @updatedAt
-    vendorType      VendorType?  @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
+    vendorType      VendorType?         @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
     
 }
 
@@ -168,4 +168,25 @@ model Poster {
     createdAt        DateTime           @default(now())
     updatedAt        DateTime           @updatedAt
     vendorType       VendorType?  @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
+}
+
+model CoinImage {
+    id               String             @id @default(uuid())
+    image            String
+
+    createdAt        DateTime           @default(now())
+    updatedAt        DateTime           @updatedAt
+}
+
+model PlatformFees {
+    id               String             @id @default(uuid())
+    startAmount      Int
+    endAmount        Int
+    fee              Int
+
+    createdAt        DateTime           @default(now())
+    updatedAt        DateTime           @updatedAt
+
+    @@index([startAmount])
+    @@index([endAmount])
 }

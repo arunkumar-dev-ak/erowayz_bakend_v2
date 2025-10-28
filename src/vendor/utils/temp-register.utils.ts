@@ -97,9 +97,15 @@ export class TempRegisterUtils {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError<WhatsappErrorResponse>;
-        if (axiosError.response?.data.message) {
-          throw new BadRequestException(axiosError.response?.data?.message);
-        }
+        const responseData = axiosError.response?.data;
+
+        // 🧠 Look for the nested message
+        const message =
+          responseData?.error?.message ||
+          responseData?.message ||
+          'Failed to send OTP via WhatsApp';
+
+        throw new BadRequestException(message);
       }
       throw new BadRequestException('Failed to send OTP via WhatsApp');
     }

@@ -91,7 +91,7 @@ export const OrderPaymentUtils = async ({
     // Placeholder: Juspay logic
     const jusPayOrder: JuspayOrderResponse | undefined =
       await paymentJuspayService.createOrder({
-        amount: existingOrder.finalPayableAmount,
+        amount: existingOrder.finalPayableAmount + existingOrder.platformFee,
         user: existingOrder.orderedUser,
         referenceId: existingOrder.id,
         paymentPurpose: PaymentPurpose.PRODUCT_PURCHASE,

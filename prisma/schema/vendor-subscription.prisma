@@ -41,7 +41,7 @@ model VendorFeatureUsage {
   shopInfo   ShopInfo?  @relation(fields: [shopId], references: [id])
   item       Item?  @relation(fields: [itemId], references: [id])
 
-  @@unique([feature,vendorSubscriptionId])
+  @@unique([feature,vendorSubscriptionId,itemId])
   @@index([itemId])
   @@index([shopId])
 }

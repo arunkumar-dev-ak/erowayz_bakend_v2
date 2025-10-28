@@ -70,6 +70,7 @@ import { GetOrderTransactionQueryForAdminDto } from './dto/get-order-transaction
 import { buildOrderTransactiontWhereFilter } from './utils/get-order-transaction.utils';
 import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
 import { getCoinsLimit } from 'src/wallet/utils/vendor-topup.utils';
+import { PlatformFeeService } from 'src/platform-fee/platform-fee.service';
 
 @Injectable()
 export class OrderService {
@@ -93,6 +94,7 @@ export class OrderService {
     private readonly errorLogService: ErrorLogService,
     private readonly paymentJuspayService: PaymentJuspayService,
     private readonly vendorSubscriptionService: VendorSubscriptionService,
+    private readonly platformFeeService: PlatformFeeService,
   ) {
     this.MAX_RETRIES = parseInt(
       configService.get<string>('ISOLATION_LEVEL_MAX_RETRIES') || '3',
@@ -583,15 +585,16 @@ export class OrderService {
     } = body;
 
     if (itemId && totalQty && vendorServiceOptionIds) {
-      return this.handleItemOrder({
-        userId,
-        res,
-        itemId,
-        totalQty,
-        preferredPaymentMethod,
-        bannerId,
-        vendorServiceOptionIds,
-      });
+      // return this.handleItemOrder({
+      //   userId,
+      //   res,
+      //   itemId,
+      //   totalQty,
+      //   preferredPaymentMethod,
+      //   bannerId,
+      //   vendorServiceOptionIds,
+      // });
+      throw new BadRequestException('Single Item order is still in processing');
     } else if (cartId) {
       return this.handleCartOrder({
         userId,
@@ -681,6 +684,14 @@ export class OrderService {
           remainingQty: item.remainingQty - totalQty,
         },
       });
+
+      const platformFee =
+        preferredPaymentMethod === 'JUSPAY'
+          ? await this.platformFeeService.getFeesForOrdering({
+              amount: discountedAmount,
+            })
+          : null;
+
       //update order
       const order = await tx.order.create({
         data: {
@@ -703,6 +714,7 @@ export class OrderService {
             },
           },
           totalPrice: totalAmount,
+          platformFee: platformFee?.fee ?? 0,
           finalPayableAmount: bestPrice,
           expiryAt,
           bannerId: banner?.id ?? null,
@@ -846,8 +858,6 @@ export class OrderService {
                   vendorWalletBalanceLimit: vendorCoinsLimit,
                 });
 
-              console.log(vendorWalletUpdateQuery);
-
               //vendor wallet update
               await tx.wallet.update({
                 where: {
@@ -866,6 +876,12 @@ export class OrderService {
             }
 
             //create order
+            const platformFee =
+              preferredPaymentMethod === 'JUSPAY'
+                ? await this.platformFeeService.getFeesForOrdering({
+                    amount: bestPrice,
+                  })
+                : null;
             const order = await tx.order.create({
               data: {
                 orderId,
@@ -874,6 +890,7 @@ export class OrderService {
                 orderItems: {
                   create: orderItemsData,
                 },
+                platformFee: platformFee?.fee ?? 0,
                 totalPrice: totals.total,
                 finalPayableAmount: bestPrice,
                 expiryAt,

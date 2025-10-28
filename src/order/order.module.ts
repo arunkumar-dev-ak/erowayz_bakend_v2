@@ -9,6 +9,7 @@ import { VendorModule } from 'src/vendor/vendor.module';
 import { OrderGatewayModule } from 'src/order-gateway/order-gateway.module';
 import { PaymentModule } from 'src/payment/payment.module';
 import { WalletModule } from 'src/wallet/wallet.module';
+import { PlatformFeeModule } from 'src/platform-fee/platform-fee.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { WalletModule } from 'src/wallet/wallet.module';
     PaymentModule,
     WalletModule,
     PaymentModule,
+    PlatformFeeModule,
   ],
   controllers: [OrderController],
   providers: [OrderService],

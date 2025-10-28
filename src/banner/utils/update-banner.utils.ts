@@ -5,21 +5,25 @@ import {
   Banner,
   BannerItemImages,
   BannerType,
+  KeyWordType,
   OfferType,
   Prisma,
   VendorType,
 } from '@prisma/client';
 import { createBannerItemImages } from './create-banner.utils';
 import { MultipleFileUploadInterface } from 'src/vendor/vendor.service';
+import { KeywordService } from 'src/keyword/keyword.service';
 
 export const UpdateBannerValidation = async ({
   bannerService,
   body,
   vendorId,
   bannerId,
+  keywordService,
 }: {
   bannerService: BannerService;
   body: UpdateBannerDto;
+  keywordService: KeywordService;
   vendorId: string;
   bannerId: string;
 }) => {
@@ -84,6 +88,20 @@ export const UpdateBannerValidation = async ({
       );
     }
     deletedBannerItemImages = deletedImages;
+  }
+
+  //checking keyWords
+  if (body.keyWordIds) {
+    const keywordsCount = await keywordService.checkKeyWordCountForRegistration(
+      body.keyWordIds,
+      banner.vendor.vendorTypeId,
+      KeyWordType.BANNER,
+    );
+    if (keywordsCount !== body.keyWordIds.length) {
+      throw new BadRequestException(
+        `Aplogies for the reason,Some of the Keywords is not associated with ${banner.vendor.vendorType.name}`,
+      );
+    }
   }
 
   return { banner, deletedBannerItemImages };

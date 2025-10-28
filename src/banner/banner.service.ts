@@ -534,6 +534,7 @@ export class BannerService {
 
     //verification
     const { banner, deletedBannerItemImages } = await UpdateBannerValidation({
+      keywordService: this.keywordService,
       bannerService: this,
       body,
       vendorId,

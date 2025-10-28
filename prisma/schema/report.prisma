@@ -1,0 +1,22 @@
+enum UserReportStatusType {
+    PENDING
+    RESOLVED
+}
+
+model UserReport {
+    id               String             @id @default(uuid())
+    orderId          String?
+    bookingId        String?
+    userId           String
+    report           String
+    status           UserReportStatusType   @default(PENDING)
+
+    createdAt        DateTime           @default(now())
+    updatedAt        DateTime           @updatedAt
+
+    user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+    order            Order?              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+    booking          Booking?            @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+}
