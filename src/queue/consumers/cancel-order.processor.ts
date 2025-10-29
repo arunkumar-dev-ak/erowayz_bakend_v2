@@ -1,9 +1,32 @@
 import { OnQueueFailed, Process, Processor } from '@nestjs/bull';
 import { Injectable } from '@nestjs/common';
-import { Order } from '@prisma/client';
 import { Job } from 'bull';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { QueueService } from '../queue.service';
+import { Prisma } from '@prisma/client';
+
+type ExpiredOrderWithRelations = Prisma.OrderGetPayload<{
+  include: {
+    orderItems: {
+      select: {
+        itemId: true;
+        quantity: true;
+        item: {
+          select: {
+            vendor: {
+              select: {
+                userId: true;
+              };
+            };
+          };
+        };
+      };
+    };
+    orderedUser: {
+      select: { id: true };
+    };
+  };
+}>;
 
 @Processor('cancelOrder')
 @Injectable()
@@ -20,30 +43,109 @@ export class CancelOrderProcessor {
     let lastId: string | null = null;
 
     while (hasMore) {
-      const expiredOrders: Order[] = await this.prisma.order.findMany({
-        ...(lastId ? { skip: 1, cursor: { id: lastId } } : {}),
-        where: {
-          orderStatus: 'PENDING',
-          expiryAt: { lt: new Date() },
-        },
-        take: batchSize,
-        orderBy: { id: 'asc' },
-      });
+      const expiredOrders: ExpiredOrderWithRelations[] =
+        await this.prisma.order.findMany({
+          ...(lastId ? { skip: 1, cursor: { id: lastId } } : {}),
+          where: {
+            orderStatus: 'PENDING',
+            expiryAt: { lt: new Date() },
+          },
+          include: {
+            orderItems: {
+              select: {
+                itemId: true,
+                quantity: true,
+                item: {
+                  select: {
+                    vendor: {
+                      select: {
+                        userId: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            orderedUser: {
+              select: { id: true },
+            },
+          },
+          take: batchSize,
+          orderBy: { id: 'asc' },
+        });
 
       if (expiredOrders.length === 0) {
         hasMore = false;
         break;
       }
 
-      const ids = expiredOrders.map((o) => o.id);
+      for (const order of expiredOrders) {
+        await this.prisma.$transaction(async (tx) => {
+          // 1️⃣ Cancel order
+          await tx.order.update({
+            where: { id: order.id },
+            data: {
+              orderStatus: 'CANCELLED',
+              declineType: 'SYSTEM',
+            },
+          });
 
-      await this.prisma.order.updateMany({
-        where: { id: { in: ids } },
-        data: {
-          orderStatus: 'CANCELLED',
-          declineType: 'SYSTEM',
-        },
-      });
+          // 2️⃣ Revert item quantities
+          await Promise.all(
+            order.orderItems.map((orderItem) =>
+              tx.item.update({
+                where: { id: orderItem.itemId },
+                data: {
+                  remainingQty: { increment: orderItem.quantity },
+                },
+              }),
+            ),
+          );
+
+          // 3️⃣ Unlock wallets if payment method is COINS
+          if (order.preferredPaymentMethod === 'COINS') {
+            // Get all unique vendor userIds from this order (in case multiple vendors somehow exist)
+            const vendorUserIds = [
+              ...new Set(
+                order.orderItems.map(
+                  (orderItem) => orderItem.item.vendor.userId,
+                ),
+              ),
+            ];
+
+            const [customerWallet, vendorWallets] = await Promise.all([
+              tx.wallet.findUnique({
+                where: { userId: order.userId },
+              }),
+              tx.wallet.findMany({
+                where: { userId: { in: vendorUserIds } },
+              }),
+            ]);
+
+            // Unlock customer wallet
+            if (customerWallet) {
+              await tx.wallet.update({
+                where: { id: customerWallet.id },
+                data: { locked: false },
+              });
+            }
+
+            // Decrement locked balance for each vendor
+            await Promise.all(
+              vendorWallets.map((vWallet) =>
+                tx.wallet.update({
+                  where: { id: vWallet.id },
+                  data: {
+                    lockedBalance: {
+                      decrement: Math.round(order.finalPayableAmount),
+                    },
+                  },
+                }),
+              ),
+            );
+          }
+        });
+      }
 
       lastId = expiredOrders[expiredOrders.length - 1]?.id ?? null;
     }
