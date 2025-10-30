@@ -116,8 +116,13 @@ export class AdminService {
   }
 
   async findAdminByEmail(email: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { email, role: Role.ADMIN || Role.SUB_ADMIN },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        email,
+        role: {
+          in: [Role.ADMIN, Role.SUB_ADMIN], // this filters role in array
+        },
+      },
     });
     return user;
   }
