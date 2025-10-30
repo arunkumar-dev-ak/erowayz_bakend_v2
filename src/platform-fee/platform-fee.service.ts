@@ -209,10 +209,10 @@ export class PlatformFeeService {
     return await this.prismaService.platformFees.findFirst({
       where: {
         startAmount: {
-          gte: amount,
+          lte: amount,
         },
         endAmount: {
-          lte: amount,
+          gte: amount,
         },
       },
     });

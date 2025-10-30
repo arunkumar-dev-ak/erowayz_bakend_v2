@@ -116,8 +116,9 @@ export class UpdateItemDto {
     example: 'Your ProductUnitId here',
   })
   @IsString()
+  @IsOptional()
   @IsNotEmpty({ message: 'ProductUnitId should not be empty' })
-  productUnitId: string;
+  productUnitId?: string;
 
   @ApiPropertyOptional({
     description: 'Expiry Date of the product',

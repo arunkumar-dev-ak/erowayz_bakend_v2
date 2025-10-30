@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { GetAdminBannnerBookingQueryDto } from '../dto/banner-booking-admin.dto';
-import { getIstTimeRange } from 'src/subscription/utils/get-sub-transaction.utils';
+import { getDayRange } from 'src/common/functions/utils';
 
 export function buildAdminBannerBookingWhereFilter({
   query,
@@ -55,10 +55,10 @@ export function buildAdminBannerBookingWhereFilter({
   if (startDate || endDate) {
     where.createdAt = {
       ...(startDate && {
-        gte: getIstTimeRange(new Date(startDate)).startIst,
+        gte: getDayRange(new Date(startDate)).start,
       }),
       ...(endDate && {
-        lte: getIstTimeRange(new Date(endDate)).endIst,
+        lte: getDayRange(new Date(endDate)).end,
       }),
     };
   }

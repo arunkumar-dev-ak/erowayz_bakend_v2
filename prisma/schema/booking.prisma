@@ -1,6 +1,12 @@
+enum BookingPaymentMethod {
+  CASH
+  JUSPAY
+}
+
 model Booking {
   id             String           @id @default(uuid())
   bookedId       String           @unique
+  preferredPaymentMethod          BookingPaymentMethod      @default(CASH)
   userId         String
   bookingStatus  OrderStatus      @default(PENDING)
   createdAt      DateTime         @default(now())

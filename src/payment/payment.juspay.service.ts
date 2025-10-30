@@ -164,9 +164,6 @@ export class PaymentJuspayService {
   }) {
     const mappedStatus = paymentStatusMap[order.status];
 
-    console.log('mapped status');
-    console.log(mappedStatus);
-
     if (!mappedStatus) {
       console.warn(`Unhandled Juspay status: ${order.status}`);
       return;
@@ -242,8 +239,6 @@ export class PaymentJuspayService {
       });
     });
 
-    console.log('payment');
-    console.log(payment);
     // Only enqueue payment for further processing if it’s CHARGED
     if (
       payment &&

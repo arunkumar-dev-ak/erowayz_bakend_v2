@@ -58,7 +58,6 @@ export class QueueService {
   }
 
   async processPaymentJob(paymentId: string) {
-    console.log('in processPayment queue');
     await this.processPaymentQueue.add(
       'process-payment-job',
       { paymentId },

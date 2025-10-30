@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
-import { getIstTimeRange } from 'src/subscription/utils/get-sub-transaction.utils';
 import { GetAdminServiceBookingQueryDto } from '../dto/service-booking-admin.dto';
+import { getDayRange } from 'src/common/functions/utils';
 
 export function buildAdminServiceBookingWhereFilter({
   query,
@@ -61,10 +61,10 @@ export function buildAdminServiceBookingWhereFilter({
   if (startDate || endDate) {
     where.createdAt = {
       ...(startDate && {
-        gte: getIstTimeRange(new Date(startDate)).startIst,
+        gte: getDayRange(new Date(startDate)).start,
       }),
       ...(endDate && {
-        lte: getIstTimeRange(new Date(endDate)).endIst,
+        lte: getDayRange(new Date(endDate)).end,
       }),
     };
   }

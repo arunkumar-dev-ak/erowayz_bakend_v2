@@ -347,7 +347,7 @@ export class BannerBookingService {
     userId: string;
   }) {
     const initialDate = new Date();
-    const { bannerId, arrivalDateTime } = body;
+    const { bannerId, arrivalDateTime, preferredPaymentMethod } = body;
 
     const banner = await this.bannerService.findBannerForBooking(bannerId);
 
@@ -374,6 +374,7 @@ export class BannerBookingService {
       data: {
         bookedId,
         userId,
+        preferredPaymentMethod,
         bannerBooking: {
           create: {
             bannerId: banner.id,

@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { GetAdminOrderQueryDto } from '../dto/get-order-admin-query.dto';
+import { getDayRange } from 'src/common/functions/utils';
 
 export function buildAdminOrderWhereFilter({
   query,
@@ -69,18 +70,23 @@ export function buildAdminOrderWhereFilter({
     };
   }
 
+  console.log(startDate, endDate);
+  if (startDate) {
+    console.log('finalStartDate', getDayRange(new Date(startDate)));
+  }
+
   if (startDate && endDate) {
     where.createdAt = {
-      gte: new Date(startDate),
-      lte: new Date(endDate),
+      gte: getDayRange(new Date(startDate)).start,
+      lte: getDayRange(new Date(endDate)).end,
     };
   } else if (startDate) {
     where.createdAt = {
-      gte: new Date(startDate),
+      gte: getDayRange(new Date(startDate)).start,
     };
   } else if (endDate) {
     where.createdAt = {
-      lte: new Date(endDate),
+      lte: getDayRange(new Date(endDate)).end,
     };
   }
 

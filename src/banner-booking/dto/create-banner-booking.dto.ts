@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { BookingPaymentMethod } from '@prisma/client';
 import {
   IsDate,
+  IsEnum,
   IsNotEmpty,
   IsString,
   Validate,
@@ -37,4 +39,14 @@ export class CreateBannerBookingDto {
   @IsDate()
   @Validate(AtLeastTwoMinutesAheadConstraint)
   arrivalDateTime: Date;
+
+  @ApiProperty({
+    description: 'paymentStatus',
+    required: true,
+    enum: BookingPaymentMethod,
+  })
+  @IsEnum(BookingPaymentMethod, {
+    message: `Payment Method must be one of ${Object.values(BookingPaymentMethod).join(', ')}`,
+  })
+  preferredPaymentMethod: BookingPaymentMethod;
 }

@@ -443,6 +443,7 @@ export class ServiceBookingService {
         serviceBooking: {
           create: serviceBookingsData,
         },
+        preferredPaymentMethod: body.preferredPaymentMethod,
       },
       include: {
         serviceBooking: true,

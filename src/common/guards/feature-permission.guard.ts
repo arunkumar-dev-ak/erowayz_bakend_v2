@@ -58,8 +58,6 @@ export class FeatureGuard implements CanActivate {
 
     const planFeatures = rawPlanFeatures as PlanFeatures | undefined;
 
-    console.log(user?.vendor);
-
     if (!planFeatures || !(requiredFeature in planFeatures)) {
       throw new ForbiddenException(
         `Missing feature permission: ${requiredFeature}`,
@@ -78,7 +76,6 @@ export class FeatureGuard implements CanActivate {
   private isValidFeatureValue(
     val: unknown,
   ): val is string[] | number | 'unlimited' | boolean {
-    console.log(`val === true is  ${val === true}`);
     // console.log(`val === unlimited is  ${val === 'unlimited'}`);
     // console.log(
     //   `(Array.isArray(val) && val.length > 0) is  ${Array.isArray(val) && val.length > 0}`,

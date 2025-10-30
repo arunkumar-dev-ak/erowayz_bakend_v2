@@ -28,8 +28,6 @@ export class ProcessPaymentProcessor {
 
   @Process('process-payment-job')
   async handleProcessPayment(job: Job) {
-    console.log('prismaInstace', !!this.prisma);
-    console.log('in process job');
     const { paymentId } = job.data as { paymentId: string };
     const payment = await this.prisma.payment.findUnique({
       where: {
@@ -43,8 +41,6 @@ export class ProcessPaymentProcessor {
         },
       },
     });
-
-    console.log(`payment is`, payment);
 
     if (!payment) {
       // TODO: log or move to dead letter queue

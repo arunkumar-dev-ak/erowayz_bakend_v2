@@ -27,7 +27,6 @@ export class PaymentController {
       txn_detail,
       card,
     });
-    console.log('webhook received and sended as success');
     return res.status(200).json({ success: true, message: 'Webhook received' });
   }
 }

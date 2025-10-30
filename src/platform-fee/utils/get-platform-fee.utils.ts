@@ -11,10 +11,10 @@ export function buildPlatformFeeWhereFilter({
   const { amount } = query;
 
   if (amount) {
-    where.startAmount = {
+    where.fee = {
       lte: amount,
     };
-    where.endAmount = {
+    where.fee = {
       gte: amount,
     };
   }

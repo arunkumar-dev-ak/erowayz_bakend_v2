@@ -20,6 +20,5 @@ export async function createOrderId(prisma: PrismaService) {
   });
 
   const incremented = (count + 1).toString().padStart(3, '0'); // e.g., 001, 002, ...
-  console.log(`${prefix}${incremented}`);
   return `${prefix}${incremented}`;
 }

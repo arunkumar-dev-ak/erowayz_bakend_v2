@@ -17,7 +17,6 @@ export class HomeApiController {
     @Param('vendorId') vendorId: string,
     @Query() body: HomeApiDto,
   ) {
-    console.log('vendorId');
     return await this.homeApiService.getBarChartData({
       res,
       vendorId,
