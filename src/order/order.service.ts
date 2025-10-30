@@ -157,6 +157,7 @@ export class OrderService {
               item: {
                 include: {
                   itemImage: true,
+                  productUnit: true,
                 },
               },
               orderItemVendorServiceOption: {
