@@ -11,7 +11,7 @@ export function buildUserReportWhereFilter({
 }): Prisma.UserReportWhereInput {
   const where: Prisma.UserReportWhereInput = {};
 
-  const { shopName, userName, startDate, endDate } = query;
+  const { shopName, userName, startDate, endDate, orderId, bookingId } = query;
 
   if (userId) {
     where.userId = userId;
@@ -46,6 +46,14 @@ export function buildUserReportWhereFilter({
       gte: start,
       lte: end,
     };
+  }
+
+  if (orderId) {
+    where.orderId = orderId;
+  }
+
+  if (bookingId) {
+    where.bookingId = bookingId;
   }
 
   return where;

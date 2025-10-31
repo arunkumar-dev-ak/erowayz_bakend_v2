@@ -131,6 +131,8 @@ export class UserReportService {
       userName: query.userName,
       startDate: query.startDate?.toString(),
       endDate: query.endDate?.toString(),
+      orderId: query.orderId,
+      bookingId: query.bookingId,
     });
 
     const meta = this.metaDataService.createMetaData({
