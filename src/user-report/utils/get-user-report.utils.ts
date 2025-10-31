@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { GetUserReportQueryDto } from '../dto/get-user-report.dto';
-import { getIstTimeRange } from 'src/subscription/utils/get-sub-transaction.utils';
+import { getDayRange } from 'src/common/functions/utils';
 
 export function buildUserReportWhereFilter({
   query,
@@ -11,7 +11,7 @@ export function buildUserReportWhereFilter({
 }): Prisma.UserReportWhereInput {
   const where: Prisma.UserReportWhereInput = {};
 
-  const { shopName, userName, date } = query;
+  const { shopName, userName, startDate, endDate } = query;
 
   if (userId) {
     where.userId = userId;
@@ -38,12 +38,13 @@ export function buildUserReportWhereFilter({
     };
   }
 
-  if (date) {
-    const { startIst, endIst } = getIstTimeRange(new Date(date));
+  if (startDate && endDate) {
+    const { start } = getDayRange(new Date(startDate));
+    const { end } = getDayRange(new Date(endDate));
 
     where.createdAt = {
-      gte: startIst,
-      lte: endIst,
+      gte: start,
+      lte: end,
     };
   }
 

@@ -41,7 +41,16 @@ export class GetUserReportQueryDto {
   })
   @IsDate()
   @IsOptional()
-  date?: Date;
+  startDate?: Date;
+
+  @ApiProperty({
+    description: 'Start date and time of the banner',
+    example: '2024-09-01T00:00:00.000Z',
+    required: false,
+  })
+  @IsDate()
+  @IsOptional()
+  endDate?: Date;
 
   @ApiPropertyOptional({
     description: 'Number of records to skip (for pagination), default is 0',

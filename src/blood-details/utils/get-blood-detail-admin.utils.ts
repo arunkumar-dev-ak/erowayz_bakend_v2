@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
-import { getIstTimeRange } from 'src/subscription/utils/get-sub-transaction.utils';
 import { GetAdminBloodDetailQueryDto } from '../dto/get-blood-detail-admin.dto';
+import { getDayRange } from 'src/common/functions/utils';
 
 export const GetBloodDetailAdminUtils = ({
   query,
@@ -30,12 +30,12 @@ export const GetBloodDetailAdminUtils = ({
   }
 
   if (startDate && endDate) {
-    const { startIst } = getIstTimeRange(new Date(startDate));
-    const { endIst } = getIstTimeRange(new Date(endDate));
+    const { start } = getDayRange(new Date(startDate));
+    const { end } = getDayRange(new Date(endDate));
 
     where.createdAt = {
-      gte: startIst,
-      lte: endIst,
+      gte: start,
+      lte: end,
     };
   }
 

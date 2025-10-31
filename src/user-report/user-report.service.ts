@@ -72,6 +72,7 @@ export class UserReportService {
                             nameTamil: true,
                           },
                         },
+                        shopInfo: true,
                       },
                     },
                   },
@@ -96,6 +97,7 @@ export class UserReportService {
                                 nameTamil: true,
                               },
                             },
+                            shopInfo: true,
                           },
                         },
                       },
@@ -114,6 +116,7 @@ export class UserReportService {
                         nameTamil: true,
                       },
                     },
+                    shopInfo: true,
                   },
                 },
               },
@@ -126,7 +129,8 @@ export class UserReportService {
     const queries = buildQueryParams({
       shopName: query.shopName,
       userName: query.userName,
-      date: query.date?.toString(),
+      startDate: query.startDate?.toString(),
+      endDate: query.endDate?.toString(),
     });
 
     const meta = this.metaDataService.createMetaData({
