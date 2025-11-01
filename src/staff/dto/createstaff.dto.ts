@@ -14,11 +14,6 @@ export class CreateStaffDto {
   @IsNotEmpty({ message: 'Name is required' })
   name: string;
 
-  @ApiProperty({ description: 'userName is required', required: true })
-  @IsString()
-  @IsNotEmpty({ message: 'userName is required' })
-  userName: string;
-
   @ApiProperty({ description: 'Email is required', required: true })
   @IsEmail()
   @IsNotEmpty({ message: 'email is required' })

@@ -22,7 +22,7 @@ model User {
   placedOrders     Order[]            @relation("OrderedUser")
   preDefinedBanner PreDefinedBanner[]
   refreshToken     RefreshToken[]
-  staff            Staff[]
+  staff            Staff?
   vendor           Vendor?
   vendorType       VendorType[]
   review           Review[]

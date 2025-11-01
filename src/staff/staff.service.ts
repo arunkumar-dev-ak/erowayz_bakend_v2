@@ -66,7 +66,7 @@ export class StaffService {
     const initialDate = new Date();
     const { email, password, name, status } = body;
     if (await this.findStaffByName(email)) {
-      throw new ConflictException('Username already exists');
+      throw new ConflictException('Email already exists');
     }
 
     const staffAccountLimit = (
@@ -381,6 +381,18 @@ export class StaffService {
       where: {
         email,
         role: Role.STAFF,
+      },
+      include: {
+        staff: {
+          include: {
+            vendor: {
+              include: {
+                vendorType: true,
+                User: true,
+              },
+            },
+          },
+        },
       },
     });
     return staff;
