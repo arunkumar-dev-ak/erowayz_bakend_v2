@@ -39,7 +39,7 @@ export class ShopTimingController {
     await this.shopTimingService.getShopTimingByVendor({ res, vendorId });
   }
 
-  @Roles(Role.VENDOR)
+  @Roles(Role.VENDOR, Role.STAFF)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @Get('getByVendor')
@@ -48,7 +48,7 @@ export class ShopTimingController {
     await this.shopTimingService.getShopTimingByVendor({ res, vendorId });
   }
 
-  @Roles(Role.VENDOR)
+  @Roles(Role.VENDOR, Role.STAFF)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @Post('create')
@@ -62,7 +62,7 @@ export class ShopTimingController {
     await this.shopTimingService.createShopTiming({ res, vendorId, body });
   }
 
-  @Roles(Role.VENDOR)
+  @Roles(Role.VENDOR, Role.STAFF)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @Patch('updateStatus/:shopTimingId')
@@ -87,7 +87,7 @@ export class ShopTimingController {
     });
   }
 
-  @Roles(Role.VENDOR)
+  @Roles(Role.VENDOR, Role.STAFF)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @Delete('delete')

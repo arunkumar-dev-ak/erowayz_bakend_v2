@@ -84,7 +84,7 @@ export class BankDetailController {
     return this.bankDetailService.createBankDetai({ body, res, vendorId });
   }
 
-  @Roles(Role.VENDOR, Role.STAFF)
+  @Roles(Role.VENDOR)
   @ApiBearerAuth()
   @UseGuards(RoleGuard)
   @Put('update/:bankDetailId')

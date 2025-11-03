@@ -92,7 +92,7 @@ export class VendorServiceOptionController {
     });
   }
 
-  @Roles(Role.VENDOR)
+  @Roles(Role.VENDOR, Role.STAFF)
   @UseGuards(AuthGuard, RoleGuard)
   @Delete('removeServiceOption/:id')
   @ApiParam({

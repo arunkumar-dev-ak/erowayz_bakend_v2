@@ -44,7 +44,7 @@ export class VendorSubscriptionController {
     });
   }
 
-  @Roles(Role.VENDOR)
+  @Roles(Role.VENDOR, Role.STAFF)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @Get('currentVendorSubscription')
@@ -59,7 +59,7 @@ export class VendorSubscriptionController {
     });
   }
 
-  @Roles(Role.VENDOR)
+  @Roles(Role.VENDOR, Role.STAFF)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @Get('currentAndFutureVendorSubscription')
@@ -74,7 +74,7 @@ export class VendorSubscriptionController {
     });
   }
 
-  @Roles(Role.VENDOR)
+  @Roles(Role.VENDOR, Role.STAFF)
   @UseGuards(AuthGuard, RoleGuard)
   @ApiBearerAuth()
   @Post('initiate')

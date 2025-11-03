@@ -8,6 +8,9 @@ export interface RequestWithUser extends Request {
 export const CurrentUser = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest<RequestWithUser>();
-    return request.user as User & { vendor?: Vendor; staff?: Staff };
+    return request.user as User & {
+      vendor?: Vendor;
+      staff?: Staff & { vendor: Vendor };
+    };
   },
 );
