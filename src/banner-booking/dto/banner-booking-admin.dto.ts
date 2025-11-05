@@ -1,5 +1,6 @@
-import { IsOptional, IsString, IsNumberString } from 'class-validator';
+import { IsOptional, IsString, IsNumberString, IsEnum } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { BookingPaymentMethod } from '@prisma/client';
 
 export class GetAdminBannnerBookingQueryDto {
   @ApiPropertyOptional({
@@ -17,6 +18,16 @@ export class GetAdminBannnerBookingQueryDto {
   @IsString()
   @IsOptional()
   endDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Preferred Payment method',
+    type: String,
+  })
+  @IsEnum(BookingPaymentMethod, {
+    message: `Payment Method must be one of ${Object.values(BookingPaymentMethod).join(', ')}`,
+  })
+  @IsOptional()
+  preferredPaymentMethod?: BookingPaymentMethod;
 
   @ApiPropertyOptional({
     description: 'UserName',

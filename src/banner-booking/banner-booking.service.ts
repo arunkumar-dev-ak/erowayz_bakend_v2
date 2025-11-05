@@ -246,8 +246,15 @@ export class BannerBookingService {
       },
     });
 
-    const { vendorName, startDate, endDate, userName, shopName, bookingId } =
-      query;
+    const {
+      vendorName,
+      startDate,
+      endDate,
+      userName,
+      shopName,
+      bookingId,
+      preferredPaymentMethod,
+    } = query;
 
     const queries = buildQueryParams({
       vendorName,
@@ -256,6 +263,7 @@ export class BannerBookingService {
       userName,
       shopName,
       bookingId,
+      preferredPaymentMethod,
     });
 
     const meta = this.metaDataService.createMetaData({

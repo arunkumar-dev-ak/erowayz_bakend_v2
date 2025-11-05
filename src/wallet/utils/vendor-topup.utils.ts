@@ -134,7 +134,7 @@ export function getCoinsLimit({
     'coinsLimitations'
   ] as number | null;
   if (!coinsLimit) {
-    throw new BadRequestException('You are not allowed to use the coins');
+    throw new BadRequestException('You are not allowed to use the coins'); //need to update the error
   }
 
   return coinsLimit;

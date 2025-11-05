@@ -22,6 +22,14 @@ export class GetVendorQueryForAdminDto {
   vendorName?: string;
 
   @ApiPropertyOptional({
+    description: 'mobile',
+    type: String,
+  })
+  @IsString()
+  @IsOptional()
+  mobile?: string;
+
+  @ApiPropertyOptional({
     description: 'Filter by Shop name',
     type: String,
   })

@@ -137,6 +137,11 @@ export class AuthGuard implements CanActivate {
         (await this.vendorSubscriptionService.checkCurrentVendorSubscription({
           vendorId: user.vendor.id,
         })) ?? undefined;
+    } else if (user.role === 'STAFF' && user.staff) {
+      subscription =
+        (await this.vendorSubscriptionService.checkCurrentVendorSubscription({
+          vendorId: user.staff.vendorId,
+        })) ?? undefined;
     }
 
     const payload = await this.tokenService.verifyAccessToken({

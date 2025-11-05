@@ -1412,9 +1412,6 @@ export class OrderService {
             },
             data: {
               orderStatus: 'DELIVERED',
-              orderPayment: orderPaymentCreateQuery
-                ? { create: orderPaymentCreateQuery }
-                : undefined,
             },
           });
 

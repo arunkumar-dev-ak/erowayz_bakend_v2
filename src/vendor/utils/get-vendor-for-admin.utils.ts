@@ -11,11 +11,14 @@ export function buildVendorForAdminWhereFilter({
 }) {
   const where: Prisma.VendorWhereInput = {};
 
-  const { vendorName, shopName, licenseStatus } = query;
+  const { vendorName, shopName, licenseStatus, mobile } = query;
 
-  if (vendorName) {
+  if (vendorName || mobile) {
     where.User = {
-      name: { contains: vendorName, mode: 'insensitive' },
+      ...(vendorName && {
+        name: { contains: vendorName, mode: 'insensitive' },
+      }),
+      ...(mobile && { mobile: { contains: mobile, mode: 'insensitive' } }),
     };
   }
 

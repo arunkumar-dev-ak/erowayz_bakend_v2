@@ -94,7 +94,7 @@ export const validatePreferredPaymentType = async ({
     throw new BadRequestException('Currently vendor is not accepting orders');
   } else if (!paymentModes.includes(preferredPaymentType)) {
     throw new BadRequestException(
-      `Currently vendor is not accepting ${capitalize(paymentModes.toString())} mode of payment`,
+      `Currently vendor is not accepting ${capitalize(preferredPaymentType.toString())} mode of payment`,
     );
   }
 };

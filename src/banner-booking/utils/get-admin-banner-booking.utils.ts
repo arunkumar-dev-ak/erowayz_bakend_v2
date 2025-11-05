@@ -7,8 +7,15 @@ export function buildAdminBannerBookingWhereFilter({
 }: {
   query: GetAdminBannnerBookingQueryDto;
 }) {
-  const { vendorName, startDate, endDate, userName, shopName, bookingId } =
-    query;
+  const {
+    vendorName,
+    startDate,
+    endDate,
+    userName,
+    shopName,
+    bookingId,
+    preferredPaymentMethod,
+  } = query;
   const where: Prisma.BookingWhereInput = {
     serviceBooking: { none: {} },
   };
@@ -43,6 +50,10 @@ export function buildAdminBannerBookingWhereFilter({
         mode: 'insensitive',
       },
     };
+  }
+
+  if (preferredPaymentMethod) {
+    where.preferredPaymentMethod = preferredPaymentMethod;
   }
 
   if (bookingId) {

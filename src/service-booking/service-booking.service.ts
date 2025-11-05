@@ -387,8 +387,15 @@ export class ServiceBookingService {
       },
     });
 
-    const { vendorName, startDate, endDate, userName, shopName, bookingId } =
-      query;
+    const {
+      vendorName,
+      startDate,
+      endDate,
+      userName,
+      shopName,
+      bookingId,
+      preferredPaymentMethod,
+    } = query;
 
     const queries = buildQueryParams({
       vendorName,
@@ -397,6 +404,7 @@ export class ServiceBookingService {
       userName,
       shopName,
       bookingId,
+      preferredPaymentMethod,
     });
 
     const meta = this.metaDataService.createMetaData({

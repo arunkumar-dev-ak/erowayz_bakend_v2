@@ -7,7 +7,15 @@ export function buildAdminOrderWhereFilter({
 }: {
   query: GetAdminOrderQueryDto;
 }): Prisma.OrderWhereInput {
-  const { vendorName, startDate, endDate, userName, shopName, orderId } = query;
+  const {
+    vendorName,
+    startDate,
+    endDate,
+    userName,
+    shopName,
+    orderId,
+    preferredPaymentMethod,
+  } = query;
   const where: Prisma.OrderWhereInput = {};
 
   if (vendorName) {
@@ -70,9 +78,8 @@ export function buildAdminOrderWhereFilter({
     };
   }
 
-  console.log(startDate, endDate);
-  if (startDate) {
-    console.log('finalStartDate', getDayRange(new Date(startDate)));
+  if (preferredPaymentMethod) {
+    where.preferredPaymentMethod = preferredPaymentMethod;
   }
 
   if (startDate && endDate) {
