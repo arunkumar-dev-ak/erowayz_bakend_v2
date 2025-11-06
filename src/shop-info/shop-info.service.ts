@@ -118,6 +118,25 @@ export class ShopInfoService {
       }
     }
 
+    //check licenseNo
+    if (body.licenseNo) {
+      const existingLicenseWithNo = await this.checkLicenseByNo(body.licenseNo);
+      if (existingLicenseWithNo) {
+        if (
+          existingShop.license &&
+          existingShop.license.id !== existingLicenseWithNo.id
+        ) {
+          throw new BadRequestException(
+            'License already used by another vendor',
+          );
+        } else {
+          throw new BadRequestException(
+            'License already used by another vendor',
+          );
+        }
+      }
+    }
+
     const {
       shopInfoData,
       licenseUpdate,
@@ -327,5 +346,13 @@ export class ShopInfoService {
 
   async checkLicenseById(licenseId: string) {
     return await this.prisma.license.findUnique({ where: { id: licenseId } });
+  }
+
+  async checkLicenseByNo(licenseNo: string) {
+    return await this.prisma.license.findUnique({
+      where: {
+        licenseNo,
+      },
+    });
   }
 }

@@ -61,32 +61,30 @@ export async function UpdateShopInfoUtils({
 
   /*----- check shopLocation change limit -----*/
   if (latitude || longitude) {
-    const vendorFeatureUsageForQtyUpdate =
+    const vendorFeatureUsageForLocationUpdate =
       await vendorSubscriptionService.getOrCreateFeatureUsage({
         vendorSubscriptionId: currentVendorSubscription.id,
         shopId,
         feature: 'locationChangeLimit',
       });
     const locationChangeLimit = (
-      vendorFeatureUsageForQtyUpdate.vendorSubscription.planFeatures as Record<
-        string,
-        any
-      >
+      vendorFeatureUsageForLocationUpdate.vendorSubscription
+        .planFeatures as Record<string, any>
     )['locationChangeLimit'] as number | null;
     if (!locationChangeLimit) {
       throw new BadRequestException(
         'You are not allowed to update the shop location',
       );
     }
-    if (vendorFeatureUsageForQtyUpdate.usageCount >= locationChangeLimit) {
+    if (vendorFeatureUsageForLocationUpdate.usageCount >= locationChangeLimit) {
       throw new BadRequestException(
-        'You have reached the limit to update the quantity',
+        'You have reached the limit to update the shop location',
       );
     }
 
     updateVendorUsageQuery = {
       where: {
-        id: vendorFeatureUsageForQtyUpdate.id,
+        id: vendorFeatureUsageForLocationUpdate.id,
       },
       data: {
         usageCount: {
@@ -157,9 +155,9 @@ export async function UpdateShopInfoUtils({
     licenseNo && expiryDate && licenseImageUrl && licenseCategoryId;
   const shouldUpdate = licenseNo || expiryDate || licenseImageUrl;
 
-  if (shouldUpdate && (!license || license === null)) {
+  if (!shouldCreate && shouldUpdate && (!license || license === null)) {
     throw new BadRequestException(
-      'License Not found,So you must provide licenseNo,expiryDate , licenseImageUrl , licenseType',
+      'License Not found,So you must provide licenseNo ,expiryDate , licenseImage , licenseType',
     );
   }
 

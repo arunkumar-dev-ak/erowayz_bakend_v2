@@ -50,6 +50,7 @@ export class SettlementService {
     const queries = buildQueryParams({
       date: query.date.toString(),
       shopName: query.shopName,
+      planName: query.planName,
     });
 
     const meta = this.metaDataService.createMetaData({

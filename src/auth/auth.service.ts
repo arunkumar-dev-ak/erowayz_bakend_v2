@@ -17,7 +17,6 @@ import { TestRegisterDto } from './dto/testregister.dto';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
 import { Role, User } from '@prisma/client';
-import { getReferralForRegistration } from 'src/common/functions/userfunctions';
 import {
   buildBloodDetailsForRegister,
   buildBloodDetailsForTestRegister,
@@ -246,16 +245,9 @@ export class AuthService {
             salt: newUser.salt,
           });
 
-        // 4. Referral code update
-        const referralCode = await getReferralForRegistration(
-          this.prisma,
-          newUser.id,
-        );
-
         // 5. Update user with referral code and return user
-        const user = await tx.user.update({
+        const user = await tx.user.findUnique({
           where: { id: newUser.id },
-          data: { referralCode },
           include: {
             vendor: {
               include: {
@@ -281,7 +273,7 @@ export class AuthService {
         if (fcmToken) {
           await this.fcmTokenService.createFcmToken({
             tx,
-            userId: user.id,
+            userId: newUser.id,
             token: fcmToken,
           });
         }
@@ -722,16 +714,9 @@ export class AuthService {
             salt: newUser.salt,
           });
 
-        // 4. Referral code update
-        const referralCode = await getReferralForRegistration(
-          this.prisma,
-          newUser.id,
-        );
-
         // 5. Update user with referral code and return user
-        const user = await tx.user.update({
+        const user = await tx.user.findUnique({
           where: { id: newUser.id },
-          data: { referralCode },
           include: {
             vendor: {
               include: {
@@ -757,7 +742,7 @@ export class AuthService {
         if (body.fcmToken) {
           await this.fcmTokenService.createFcmToken({
             tx,
-            userId: user.id,
+            userId: newUser.id,
             token: body.fcmToken,
           });
         }

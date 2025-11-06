@@ -543,7 +543,7 @@ export class VendorService {
 
     try {
       // 3. Validate vendor-specific data
-      await TempRegisterVendorVerification({
+      const { vendorType } = await TempRegisterVendorVerification({
         body: parsedValue,
         vendorTypeService: this.vendorTypeService,
         keywordService: this.keywordService,
@@ -599,7 +599,7 @@ export class VendorService {
 
         const referralCode = await getReferralForRegistration(
           this.prisma,
-          newUser.id,
+          vendorType.type,
         );
 
         const user = await tx.user.update({
@@ -861,7 +861,7 @@ export class VendorService {
       shopCategoryId,
     } = body;
 
-    await RegisterTestVendorVerification({
+    const { vendorType } = await RegisterTestVendorVerification({
       body,
       vendorTypeService: this.vendorTypeService,
       keywordService: this.keywordService,
@@ -985,7 +985,7 @@ export class VendorService {
 
         const referralCode = await getReferralForRegistration(
           this.prisma,
-          newUser.id,
+          vendorType.type,
         );
 
         // 👇 Update user with referral code

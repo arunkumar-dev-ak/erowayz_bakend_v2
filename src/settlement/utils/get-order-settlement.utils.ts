@@ -9,7 +9,7 @@ export function getSettlements({
   offset: number;
   limit: number;
 }) {
-  const { date, shopName } = query;
+  const { date, shopName, planName } = query;
 
   // Safe date parsing
   const parsedDate = new Date(date);
@@ -33,6 +33,10 @@ export function getSettlements({
     conditions.push(`si.name ILIKE '%${shopName}%'`);
   }
 
+  if (planName) {
+    conditions.push(`vs."planName" ILIKE '%${planName}%'`);
+  }
+
   // Use the parsed date directly in the query - no parameters needed
   const settlementDateISO = parsedDate.toISOString().split('T')[0]; // Get YYYY-MM-DD format
 
@@ -42,6 +46,7 @@ export function getSettlements({
       u.name AS "vendorName",
       u.id AS "userId",
       si.name AS "shopName",
+      vs."planName" AS "subscriptionPlanName",
       bd."accountHolderName",
       bd."accountNumber",
       bd."ifscCode",
@@ -59,6 +64,13 @@ export function getSettlements({
     INNER JOIN "VendorServiceOption" AS vso ON vso.id = oivs."vendorServiceOptionId"
     INNER JOIN "Vendor" AS v ON v.id = vso."vendorId"
     INNER JOIN "ShopInfo" AS si on si."vendorId" = v.id
+
+    LEFT JOIN "VendorSubscription" AS vs 
+      ON vs."vendorId" = v.id
+      AND vs."isActive" = TRUE
+      AND vs."startDate" <= CURRENT_TIMESTAMP
+      AND vs."endDate" > CURRENT_TIMESTAMP
+
     LEFT JOIN "BankDetail" AS bd ON bd."vendorId" = v.id
     LEFT JOIN "BankPaymentType" AS bpt ON bpt.id = bd."bankPaymentTypeId"
     LEFT JOIN "BankName" AS bn ON bn.id = bd."bankNameId"
@@ -73,7 +85,8 @@ export function getSettlements({
       bd."linkedPhoneNumber",
       bd."bankPlatformType",
       bn.name,
-      bpt.name
+      bpt.name,
+      vs."planName"
     LIMIT ${limit} OFFSET ${offset};
   `;
 
@@ -88,6 +101,13 @@ export function getSettlements({
       INNER JOIN "VendorServiceOption" AS vso ON vso.id = oivs."vendorServiceOptionId"
       INNER JOIN "Vendor" AS v ON v.id = vso."vendorId"
       INNER JOIN "ShopInfo" AS si on si."vendorId" = v.id
+
+      LEFT JOIN "VendorSubscription" AS vs 
+        ON vs."vendorId" = v.id
+        AND vs."isActive" = TRUE
+        AND vs."startDate" <= CURRENT_TIMESTAMP
+        AND vs."endDate" > CURRENT_TIMESTAMP
+
       LEFT JOIN "BankDetail" AS bd ON bd."vendorId" = v.id
       LEFT JOIN "BankPaymentType" AS bpt ON bpt.id = bd."bankPaymentTypeId"
       LEFT JOIN "BankName" AS bn ON bn.id = bd."bankNameId"
@@ -102,7 +122,8 @@ export function getSettlements({
       bd."linkedPhoneNumber",
       bd."bankPlatformType",
       bn.name,
-      bpt.name
+      bpt.name,
+      vs."planName"
     ) AS subquery;
   `;
 

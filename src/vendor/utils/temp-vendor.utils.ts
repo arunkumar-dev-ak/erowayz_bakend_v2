@@ -124,6 +124,8 @@ export const TempRegisterVendorVerification = async ({
       'Shop type is required only when the vendor category is Street Food, and must not be provided for other categories.',
     );
   }
+
+  return { vendorType };
 };
 
 /*----- Test register -----*/
@@ -225,6 +227,8 @@ export const RegisterTestVendorVerification = async ({
       'Shop type is required only when the vendor category is Street Food, and must not be provided for other categories.',
     );
   }
+
+  return { vendorType };
 };
 
 function validateUserByMobile(userByMobile: any) {

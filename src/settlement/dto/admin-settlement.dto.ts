@@ -10,6 +10,14 @@ export class AdminSettlementQueryDto {
   @IsOptional()
   shopName?: string;
 
+  @ApiPropertyOptional({
+    description: 'Filter by plan name',
+    type: String,
+  })
+  @IsString()
+  @IsOptional()
+  planName?: string;
+
   @ApiProperty({
     description: 'Start date and time of the banner',
     example: '2024-09-01T00:00:00.000Z',
