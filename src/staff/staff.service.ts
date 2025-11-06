@@ -115,12 +115,12 @@ export class StaffService {
 
   async updateStaffAccount({
     vendorId,
-    id,
+    staffId,
     res,
     body,
   }: {
     vendorId: string;
-    id: string;
+    staffId: string;
     res: Response;
     body: UpdateStaffDto;
   }) {
@@ -131,7 +131,7 @@ export class StaffService {
     const { email, password, status } = body;
     const existingStaff = await this.findStaffByVendorId({
       vendorId,
-      staffId: id,
+      staffId,
     });
     if (!existingStaff) {
       throw new ForbiddenException(
@@ -139,8 +139,8 @@ export class StaffService {
       );
     }
     if (email) {
-      const existingEmail = await this.prisma.user.findFirst({
-        where: { email, id: { not: id } },
+      const existingEmail = await this.prisma.staff.findFirst({
+        where: { user: { email }, id: { not: staffId } },
       });
 
       if (existingEmail) {
@@ -156,7 +156,7 @@ export class StaffService {
     }
     const result = await this.prisma.$transaction(async (tx) => {
       const updatedStaff = await this.prisma.user.update({
-        where: { id },
+        where: { id: staffId },
         data: body,
       });
       if (body['salt'] !== undefined) {

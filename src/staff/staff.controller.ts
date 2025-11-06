@@ -91,7 +91,7 @@ export class StaffController {
     const vendorId = req['vendorId'] as string;
     return await this.staffService.updateStaffAccount({
       vendorId,
-      id,
+      staffId: id,
       body,
       res,
     });
