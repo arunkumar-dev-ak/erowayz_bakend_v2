@@ -10,12 +10,14 @@ export async function VendorToCustomerTransferUtils({
   walletService,
   tx,
   userService,
+  coinsLimit,
 }: {
   body: VendorTransferToCustomerDto;
   vendorUserId: string;
   walletService: WalletService;
   tx: Prisma.TransactionClient;
   userService: UserService;
+  coinsLimit: number;
 }) {
   //check customerUserId is valid and he is in active and also he is an customer
   //check vendor balance
@@ -40,6 +42,10 @@ export async function VendorToCustomerTransferUtils({
     throw new BadRequestException(
       `Insufficient balance. Vendor has only ${vendorWallet.balance} coins, but tried to transfer ${coinsCount}`,
     );
+  }
+
+  if (customerWallet.balance + coinsCount > coinsLimit) {
+    throw new BadRequestException(`Wallet Exceeded the limit of ${coinsLimit}`);
   }
 
   const createTransactionQuery: Prisma.WalletTransactionCreateInput = {

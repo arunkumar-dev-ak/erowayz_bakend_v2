@@ -38,6 +38,7 @@ import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscr
 export class WalletService {
   private readonly MAX_RETRIES: number;
   private readonly maxWalletPaymentInitiationCount: number;
+  private readonly customerWalletLimit: number;
   constructor(
     private readonly prisma: PrismaService,
     private readonly response: ResponseService,
@@ -53,6 +54,9 @@ export class WalletService {
     );
     this.maxWalletPaymentInitiationCount = parseInt(
       configService.get<string>('MAX_WALLET_INITIATION_COUNT') || '3',
+    );
+    this.customerWalletLimit = parseInt(
+      configService.get<string>('CUSTOMER_COIN_LIMIT') || '200',
     );
   }
 
@@ -436,6 +440,7 @@ export class WalletService {
               userService: this.userService,
               walletService: this,
               tx,
+              coinsLimit: this.customerWalletLimit,
             });
 
             const updatedVendorWallet = await tx.wallet.update({
