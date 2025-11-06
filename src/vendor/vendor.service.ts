@@ -570,10 +570,6 @@ export class VendorService {
         createVendorSub = createQuery?.createVendorSubscriptionQuery;
       }
 
-      if (!createVendorSub) {
-        throw new BadRequestException('Referal code not found');
-      }
-
       // 4. Create user & vendor inside a transaction
       const result = await this.prisma.$transaction(async (tx) => {
         const newUser = await tx.user.create({

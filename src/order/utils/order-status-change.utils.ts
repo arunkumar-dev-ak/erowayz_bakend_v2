@@ -175,8 +175,12 @@ export const DeliveredOrderUtils = async ({
     };
   }
 
-  if (existingOrder.preferredPaymentMethod === PaymentMethod.COINS) {
-    const finalPayableAmount = existingOrder.finalPayableAmount;
+  if (
+    isPaidByCash &&
+    TrueOrFalseMap[isPaidByCash] === true &&
+    existingOrder.preferredPaymentMethod === PaymentMethod.COINS
+  ) {
+    const finalPayableAmount = Math.round(existingOrder.finalPayableAmount);
     const [vendorWallet, customerWallet] = await Promise.all([
       walletService.createOrFindWallet(vendorUserId, tx),
       walletService.createOrFindWallet(customerUserId, tx),

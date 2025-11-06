@@ -105,21 +105,17 @@ export class CancelOrderProcessor {
           // 3️⃣ Unlock wallets if payment method is COINS
           if (order.preferredPaymentMethod === 'COINS') {
             // Get all unique vendor userIds from this order (in case multiple vendors somehow exist)
-            const vendorUserIds = [
-              ...new Set(
-                order.orderItems.map(
-                  (orderItem) => orderItem.item.vendor.userId,
-                ),
-              ),
-            ];
+            const vendorUserId = order.orderItems[0]?.item.vendor.userId;
 
-            const [customerWallet, vendorWallets] = await Promise.all([
+            const [customerWallet, vendorWallet] = await Promise.all([
               tx.wallet.findUnique({
                 where: { userId: order.userId },
               }),
-              tx.wallet.findMany({
-                where: { userId: { in: vendorUserIds } },
-              }),
+              vendorUserId
+                ? tx.wallet.findUnique({
+                    where: { userId: vendorUserId },
+                  })
+                : Promise.resolve(null),
             ]);
 
             // Unlock customer wallet
@@ -130,19 +126,17 @@ export class CancelOrderProcessor {
               });
             }
 
-            // Decrement locked balance for each vendor
-            await Promise.all(
-              vendorWallets.map((vWallet) =>
-                tx.wallet.update({
-                  where: { id: vWallet.id },
-                  data: {
-                    lockedBalance: {
-                      decrement: Math.round(order.finalPayableAmount),
-                    },
+            // Decrement locked balance for the vendor’s wallet
+            if (vendorWallet) {
+              await tx.wallet.update({
+                where: { id: vendorWallet.id },
+                data: {
+                  lockedBalance: {
+                    decrement: Math.round(order.finalPayableAmount),
                   },
-                }),
-              ),
-            );
+                },
+              });
+            }
           }
         });
       }
