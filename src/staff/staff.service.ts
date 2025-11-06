@@ -150,16 +150,17 @@ export class StaffService {
     if (password) {
       body.password = await bcrypt.hash(password, 10);
     }
+    let salt: string | undefined = undefined;
     // Set a new salt if username or password is changed
     if (password || email || status !== existingStaff.user['status']) {
-      body['salt'] = uuidv4();
+      salt = uuidv4();
     }
     const result = await this.prisma.$transaction(async (tx) => {
       const updatedStaff = await this.prisma.user.update({
-        where: { id: staffId },
-        data: body,
+        where: { id: existingStaff.userId },
+        data: { ...body, salt },
       });
-      if (body['salt'] !== undefined) {
+      if (salt !== undefined) {
         await this.logoutStaffAccountByStaffId({
           staffId: updatedStaff.id,
           tx,
