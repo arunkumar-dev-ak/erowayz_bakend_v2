@@ -5,6 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseService } from 'src/response/response.service';
 import { HomeApiDto } from './dto/home-api.dto';
 import { OrderPaymentType } from '@prisma/client';
+import { getIstTimeRange } from 'src/subscription/utils/get-sub-transaction.utils';
 
 @Injectable()
 export class HomeApiService {
@@ -27,12 +28,15 @@ export class HomeApiService {
 
     const { startDateTime, endDateTime } = body;
 
+    const start = getIstTimeRange(new Date(startDateTime)).startIst;
+    const end = getIstTimeRange(new Date(endDateTime)).endIst;
+
     //total orders
     const totalOrdersCount = await this.prisma.order.count({
       where: {
         createdAt: {
-          gte: startDateTime,
-          lte: endDateTime,
+          gte: start,
+          lte: end,
         },
         orderItems: {
           some: {
@@ -58,8 +62,8 @@ export class HomeApiService {
           orderItem: {
             order: {
               createdAt: {
-                gte: startDateTime,
-                lte: endDateTime,
+                gte: start,
+                lte: end,
               },
               orderPayment: {
                 isNot: null,
@@ -104,8 +108,8 @@ export class HomeApiService {
           },
         },
         createdAt: {
-          gte: startDateTime,
-          lte: endDateTime,
+          gte: start,
+          lte: end,
         },
       },
     });
@@ -124,8 +128,8 @@ export class HomeApiService {
           },
         },
         createdAt: {
-          gte: startDateTime,
-          lte: endDateTime,
+          gte: start,
+          lte: end,
         },
       },
     });
@@ -143,8 +147,8 @@ export class HomeApiService {
           },
         },
         createdAt: {
-          gte: startDateTime,
-          lte: endDateTime,
+          gte: start,
+          lte: end,
         },
       },
     });
