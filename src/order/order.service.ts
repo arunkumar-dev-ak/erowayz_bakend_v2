@@ -106,8 +106,8 @@ export class OrderService {
 
   statusFlowMap: Record<OrderStatus, OrderStatus[]> = {
     PENDING: ['IN_PROGRESS', 'CANCELLED'],
-    IN_PROGRESS: ['DELIVERED', 'COMPLETED'],
-    COMPLETED: ['DELIVERED'],
+    IN_PROGRESS: ['DELIVERED', 'COMPLETED', 'CANCELLED'],
+    COMPLETED: ['DELIVERED', 'CANCELLED'],
     DELIVERED: [],
     CANCELLED: [],
   };
@@ -1025,7 +1025,12 @@ export class OrderService {
     if (newStatus === 'IN_PROGRESS') {
       updatedOrder = await this.handleAcceptOrder(orderId);
     } else if (newStatus === 'CANCELLED') {
-      updatedOrder = await this.handleCancelledOrder(orderId, userId);
+      updatedOrder = await this.handleCancelledOrder({
+        userId,
+        orderId,
+        customerUserId,
+        vendorUserId,
+      });
     } else if (newStatus === 'DELIVERED') {
       updatedOrder = await this.handleDeliveringOrder({
         orderId,
@@ -1221,6 +1226,7 @@ export class OrderService {
                 },
               },
             },
+            item: true,
           },
         },
         orderPayment: true,
@@ -1285,17 +1291,22 @@ export class OrderService {
     }
   }
 
-  async cancelOrderBySystem(orderId: string) {
-    await this.prisma.order.update({
-      where: {
-        id: orderId,
-      },
-      data: {
-        orderStatus: 'CANCELLED',
-        declineType: 'SYSTEM',
-      },
-    });
-  }
+  // async cancelOrderBySystem(existingOrder: OrderWithRelations) {
+  //   await this.prisma.$transaction(async (tx) => {
+  //     if (existingOrder.preferredPaymentMethod === 'COINS') {
+  //       const customerUserId =
+  //     }
+  //   });
+  //   await this.prisma.order.update({
+  //     where: {
+  //       id: orderId,
+  //     },
+  //     data: {
+  //       orderStatus: 'CANCELLED',
+  //       declineType: 'SYSTEM',
+  //     },
+  //   });
+  // }
 
   /*----- changeStatus helper -----*/
   async handleAcceptOrder(orderId: string) {
@@ -1331,15 +1342,39 @@ export class OrderService {
     return updatedOrder;
   }
 
-  async handleCancelledOrder(orderId: string, userId: string) {
+  async handleCancelledOrder({
+    userId,
+    orderId,
+    customerUserId,
+    vendorUserId,
+  }: {
+    userId: string;
+    orderId: string;
+    customerUserId: string;
+    vendorUserId: string;
+  }) {
     const orderItems = await this.prisma.orderItem.findMany({
       where: {
         orderId: orderId,
       },
       include: {
         item: true,
+        order: {
+          include: {
+            orderPayment: true,
+          },
+        },
       },
     });
+
+    if (orderItems[0].order.orderPayment) {
+      throw new BadRequestException(
+        "Payment already done for order.So you can't cancel the order.",
+      );
+    }
+
+    const preferredPaymentMethod = orderItems[0].order.preferredPaymentMethod;
+    const finalPayableAmountForOrder = orderItems[0].order.finalPayableAmount;
 
     return await this.prisma.$transaction(async (tx) => {
       const updatedOrder = await tx.order.update({
@@ -1355,6 +1390,36 @@ export class OrderService {
           },
         },
       });
+
+      if (preferredPaymentMethod === PaymentMethod.COINS) {
+        const finalPayableAmount = Math.round(finalPayableAmountForOrder);
+
+        const [vendorWallet, customerWallet] = await Promise.all([
+          this.walletService.createOrFindWallet(vendorUserId, tx),
+          this.walletService.createOrFindWallet(customerUserId, tx),
+        ]);
+
+        // update vendr wallet
+        await tx.wallet.update({
+          where: {
+            id: vendorWallet.id,
+          },
+          data: {
+            lockedBalance: {
+              decrement: finalPayableAmount,
+            },
+          },
+        });
+
+        await tx.wallet.update({
+          where: {
+            id: customerWallet.id,
+          },
+          data: {
+            locked: false,
+          },
+        });
+      }
 
       const updatingQty = orderItems.map((orderItem) => {
         const currentRemaining = orderItem.item.remainingQty;

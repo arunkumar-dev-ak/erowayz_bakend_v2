@@ -52,9 +52,8 @@ export const OrderStatusChangeUtils = async ({
 
   //check expiration
   if (newStatus === 'IN_PROGRESS' && initialDate > existingOrder.expiryAt) {
-    await orderService.cancelOrderBySystem(orderId);
     throw new BadRequestException(
-      'Apologies, unfortunately the order has expired.',
+      'Apologies, unfortunately the order has exceeded the expiry time.',
     );
   }
 
