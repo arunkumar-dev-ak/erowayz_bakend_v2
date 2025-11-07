@@ -50,7 +50,7 @@ export const CreateBannerValidation = async ({
   }
   if (vendorFeatureUsageForQtyUpdate.usageCount >= bannerLimit) {
     throw new BadRequestException(
-      'You have reached the limit to update the quantity',
+      'You have reached the limit to create the banner',
     );
   }
 

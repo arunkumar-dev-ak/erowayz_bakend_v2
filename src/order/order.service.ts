@@ -535,6 +535,11 @@ export class OrderService {
             },
           },
         },
+        user: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
 

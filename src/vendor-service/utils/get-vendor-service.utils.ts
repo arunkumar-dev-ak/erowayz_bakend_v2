@@ -49,7 +49,11 @@ export function buildVendorServiceWhereFilter({
           }
         : {}),
     };
-  } else if (userRole !== 'VENDOR' && userRole !== 'STAFF') {
+  } else if (
+    userRole !== 'VENDOR' &&
+    userRole !== 'STAFF' &&
+    userRole !== 'ADMIN'
+  ) {
     // If keywordId is not provided, still apply subscription filter
     where.vendor = {
       vendorSubscription: {

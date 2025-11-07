@@ -21,7 +21,7 @@ export interface PlanFeatures {
   dineOptions?: string[];
   customerSupport?: boolean;
   banner?: boolean;
-  socialMeduiaPromotion?: boolean;
+  socialMediaPromotion?: boolean;
   tracking?: boolean;
   status?: 'ACTIVE' | 'INACTIVE';
   [key: string]: any;

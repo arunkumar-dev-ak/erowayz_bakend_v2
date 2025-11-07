@@ -121,15 +121,17 @@ export class ShopInfoService {
     //check licenseNo
     if (body.licenseNo) {
       const existingLicenseWithNo = await this.checkLicenseByNo(body.licenseNo);
+
       if (existingLicenseWithNo) {
-        if (
-          existingShop.license &&
-          existingShop.license.id !== existingLicenseWithNo.id
-        ) {
+        //check license belong to same vendor
+        const currentVendorLicenseNo = existingShop.license?.id;
+        if (!currentVendorLicenseNo) {
           throw new BadRequestException(
             'License already used by another vendor',
           );
-        } else {
+        }
+
+        if (currentVendorLicenseNo !== existingLicenseWithNo.id) {
           throw new BadRequestException(
             'License already used by another vendor',
           );

@@ -290,6 +290,12 @@ export class BannerService {
                 shopCity: true,
               },
             },
+            User: {
+              select: {
+                name: true,
+                nameTamil: true,
+              },
+            },
           },
         },
         keyWordBanner: {
