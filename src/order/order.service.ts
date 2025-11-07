@@ -194,6 +194,7 @@ export class OrderService {
               status: true,
             },
           },
+          orderPayment: true,
         },
       }),
     ]);
@@ -296,6 +297,7 @@ export class OrderService {
             status: true,
           },
         },
+        orderPayment: true,
       },
     });
 
