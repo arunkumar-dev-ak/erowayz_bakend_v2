@@ -45,8 +45,8 @@ export class ServiceBookingService {
 
   statusFlowMap: Record<OrderStatus, OrderStatus[]> = {
     PENDING: ['IN_PROGRESS', 'CANCELLED'],
-    IN_PROGRESS: ['DELIVERED', 'COMPLETED'],
-    COMPLETED: ['DELIVERED'],
+    IN_PROGRESS: ['DELIVERED', 'COMPLETED', 'CANCELLED'],
+    COMPLETED: ['DELIVERED', 'CANCELLED'],
     DELIVERED: [],
     CANCELLED: [],
   };
