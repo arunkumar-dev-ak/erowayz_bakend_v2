@@ -119,6 +119,7 @@ export class CreateSubscriptionDto {
       offerOnHomepage: false,
       promoteProductSocial: false,
       customerSupport: true,
+      featuredProductAddition: true,
     },
     required: true,
     type: Object,

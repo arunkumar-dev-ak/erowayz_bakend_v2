@@ -124,7 +124,6 @@ model TermsAndCondition {
     createdAt        DateTime           @default(now())
     updatedAt        DateTime           @updatedAt
 
-    @@unique([vendorTypeId])
     vendorType      VendorType?  @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
 }
 

@@ -187,7 +187,6 @@ export class ServiceBookingService {
       },
       include: {
         serviceBooking: {
-          take: 1,
           orderBy: {
             createdAt: 'asc',
           },
