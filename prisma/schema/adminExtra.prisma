@@ -10,6 +10,7 @@ enum DisclaimerType {
     COINS
     UPI
     BLOOD
+    UPI_SETTLEMENT
 }
 
 enum PrivacyPolicyType {
