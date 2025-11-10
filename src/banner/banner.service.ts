@@ -25,7 +25,10 @@ import {
   getImageUpdateFields,
   rollbackImageUpload,
 } from './utils/bannerhelper';
-import { buildBannerWhereFilter } from './utils/banner-wherefilter';
+import {
+  buildBannerWhereFilter,
+  getBannerVendorsAvgRating,
+} from './utils/banner-wherefilter';
 import { buildQueryParams } from 'src/common/functions/buildQueryParams';
 import { ItemService } from 'src/item/item.service';
 import {
@@ -137,6 +140,11 @@ export class BannerService {
       longitude: longitude?.toString(),
     });
 
+    const bannersWithVendorRating = await getBannerVendorsAvgRating({
+      banners,
+      prisma: this.prisma,
+    });
+
     const meta = this.metaDataService.createMetaData({
       queries,
       totalCount,
@@ -147,7 +155,7 @@ export class BannerService {
 
     return this.response.successResponse({
       res,
-      data: banners,
+      data: bannersWithVendorRating,
       meta,
       message: 'Regular banners retrieved successfully',
       statusCode: 200,
@@ -225,6 +233,11 @@ export class BannerService {
       },
     });
 
+    const bannersWithVendorRating = await getBannerVendorsAvgRating({
+      banners,
+      prisma: this.prisma,
+    });
+
     const queries = buildQueryParams({
       name,
       vendorId,
@@ -246,7 +259,7 @@ export class BannerService {
 
     return this.response.successResponse({
       res,
-      data: banners,
+      data: bannersWithVendorRating,
       meta,
       message: 'Product banners retrieved successfully',
       statusCode: 200,

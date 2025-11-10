@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { BannerStatus, BannerType, Prisma, Role } from '@prisma/client';
+import { Banner, BannerStatus, BannerType, Prisma, Role } from '@prisma/client';
 import { KeywordService } from 'src/keyword/keyword.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -159,4 +159,49 @@ export async function buildBannerWhereFilter({
   }
 
   return where;
+}
+
+export async function getBannerVendorsAvgRating({
+  banners,
+  prisma,
+}: {
+  banners: Banner[];
+  prisma: PrismaService;
+}) {
+  const vendorIds = banners.map((b) => b.vendorId);
+
+  if (vendorIds.length === 0) {
+    return banners.map((banner) => ({
+      ...banner,
+      vendorAvgRating: null,
+    }));
+  }
+
+  // Get average ratings grouped by vendorId
+  const avgRatings = await prisma.review.groupBy({
+    by: ['vendorId'],
+    where: {
+      vendorId: {
+        in: vendorIds,
+      },
+    },
+    _avg: {
+      rating: true,
+    },
+  });
+
+  // Map ratings by vendorId
+  const vendorRatingsMap: Record<string, number | null> = Object.fromEntries(
+    avgRatings.map((r) => [r.vendorId as string, r._avg.rating || null]),
+  );
+
+  // Attach avgRating as vendorAvgRating property to each banner
+  const bannersWithRating = banners.map((banner) => ({
+    ...banner,
+    vendorAvgRating: banner.vendorId
+      ? (vendorRatingsMap[banner.vendorId] ?? null)
+      : null,
+  }));
+
+  return bannersWithRating;
 }
