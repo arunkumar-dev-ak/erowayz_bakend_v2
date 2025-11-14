@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -26,11 +27,14 @@ import { RoleGuard } from 'src/common/guards/role.guard';
 import { Roles } from 'src/common/roles/roles.docorator';
 import { Role } from '@prisma/client';
 import { extractVendorIdFromRequest } from 'src/common/functions/extractVendorid';
-import { ShopOpenCloseDto } from './dto/shopopenclose-dto';
+import { ShopOpenCloseDto, ShopStatus } from './dto/shopopenclose-dto';
 import { FeaturePermission } from 'src/common/decorator/featurepermission.decorator';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UpdateLicenseInfo } from './dto/updateLicenseInfo.dto';
-import { extractVendorSubFromRequest } from 'src/common/functions/extact-sub';
+import {
+  extractVendorSubFromRequest,
+  extractVendorSubFromRequestAndNotThrow,
+} from 'src/common/functions/extact-sub';
 
 @ApiTags('Shop Info') // Swagger grouping
 @Controller('shop-info')
@@ -121,6 +125,11 @@ export class ShopInfoController {
     @Body() body: ShopOpenCloseDto,
   ) {
     const vendorId = extractVendorIdFromRequest(req);
+    const currentVendorSub = extractVendorSubFromRequestAndNotThrow(req);
+
+    if (body.isShopOpen === ShopStatus.OPEN && !currentVendorSub) {
+      throw new BadRequestException('Please Subscribe to Open the shop');
+    }
 
     await this.shopInfoService.setShopOpenClose({
       res,

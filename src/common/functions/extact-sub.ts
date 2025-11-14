@@ -10,3 +10,10 @@ export const extractVendorSubFromRequest = (req: Request) => {
   }
   return vendorSub;
 };
+
+export const extractVendorSubFromRequestAndNotThrow = (req: Request) => {
+  const vendorSub = req['currentSubscription'] as
+    | VendorSubscription
+    | undefined;
+  return vendorSub;
+};

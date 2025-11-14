@@ -10,6 +10,7 @@ export class QueueService {
     @InjectQueue('deadLetter') private deadLetterQueue: Queue,
     @InjectQueue('expiryPayment') private expiryPaymentQueue: Queue,
     @InjectQueue('processPayment') private processPaymentQueue: Queue,
+    @InjectQueue('closeVendorShop') private closeVendorShopQueue: Queue,
   ) {}
 
   async addCancelOrderJob(orderId: string) {
@@ -38,6 +39,17 @@ export class QueueService {
         removeOnFail: {
           age: 129600000,
         },
+      },
+    );
+  }
+
+  async addCloseVendorShopJob() {
+    await this.closeVendorShopQueue.add(
+      'close-inactive-vendor-shops-job',
+      {},
+      {
+        removeOnComplete: { age: 129600000 }, // 1.5 days
+        removeOnFail: { age: 129600000 },
       },
     );
   }

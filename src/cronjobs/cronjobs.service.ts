@@ -9,6 +9,7 @@ export class CronjobsService {
     @InjectQueue('cancelOrder') private cancelQueue: Queue,
     @InjectQueue('remainingQty') private remainingQueue: Queue,
     @InjectQueue('expiryPayment') private expiryPayment: Queue,
+    @InjectQueue('closeVendorShop') private closeVendorShopQueue: Queue,
   ) {}
 
   @Cron('*/1 * * * *') // every minute
@@ -51,6 +52,21 @@ export class CronjobsService {
         backoff: {
           type: 'exponential',
           delay: 10000,
+        },
+      },
+    );
+  }
+
+  @Cron('*/10 * * * *')
+  async closeInactiveVendorShopsJob() {
+    await this.closeVendorShopQueue.add(
+      'close-inactive-vendor-shops-job',
+      {},
+      {
+        attempts: 5,
+        backoff: {
+          type: 'exponential',
+          delay: 3000,
         },
       },
     );
