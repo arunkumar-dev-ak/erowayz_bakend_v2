@@ -173,6 +173,7 @@ export function vendorInclude(userId?: string) {
           select: {
             id: true,
             name: true,
+            tamilName: true,
             serviceOptImageRef: true,
             relativeUrl: true,
           },
