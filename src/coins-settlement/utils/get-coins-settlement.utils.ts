@@ -52,10 +52,10 @@ export function buildCoinSettlementWhereFilter({
       },
       createdAt: {
         ...(startDate && {
-          gte: getIstTimeRange(new Date(startDate)).startIst,
+          gte: getUtcTimeRangeForIstRange(new Date(startDate)).startIst,
         }),
         ...(endDate && {
-          lte: getIstTimeRange(new Date(endDate)).endIst,
+          lte: getUtcTimeRangeForIstRange(new Date(endDate)).endIst,
         }),
       },
     };
@@ -89,10 +89,10 @@ export function buildWalletTransactionWhereFilter({
     },
     createdAt: {
       ...(startDate && {
-        gte: getIstTimeRange(new Date(startDate)).startIst,
+        gte: getUtcTimeRangeForIstRange(new Date(startDate)).startIst,
       }),
       ...(endDate && {
-        lte: getIstTimeRange(new Date(endDate)).endIst,
+        lte: getUtcTimeRangeForIstRange(new Date(endDate)).endIst,
       }),
     },
   };
@@ -107,6 +107,17 @@ export function getIstTimeRange(date: Date) {
   const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000; // 5 hours 30 mins in ms
   const startIst = new Date(start.getTime() + IST_OFFSET_MS);
   const endIst = new Date(end.getTime() + IST_OFFSET_MS);
+
+  return { startIst, endIst };
+}
+
+export function getUtcTimeRangeForIstRange(date: Date) {
+  const { start, end } = getDayRange(date);
+
+  // Shift to IST (UTC+5:30)
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000; // 5 hours 30 mins in ms
+  const startIst = new Date(start.getTime() - IST_OFFSET_MS);
+  const endIst = new Date(end.getTime() - IST_OFFSET_MS);
 
   return { startIst, endIst };
 }

@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { GetDashboardBarChartQueryDto } from '../dto/dashboard-bar-chart.dto';
-import { getIstTimeRange } from 'src/subscription/utils/get-sub-transaction.utils';
+import { getUtcTimeRangeForIstRange } from 'src/coins-settlement/utils/get-coins-settlement.utils';
 
 export const GetDashboardBarChartUtils = ({
   query,
@@ -9,8 +9,8 @@ export const GetDashboardBarChartUtils = ({
 }) => {
   const { startDate, endDate } = query;
 
-  const { startIst } = getIstTimeRange(new Date(startDate));
-  const { endIst } = getIstTimeRange(new Date(endDate));
+  const { startIst } = getUtcTimeRangeForIstRange(new Date(startDate));
+  const { endIst } = getUtcTimeRangeForIstRange(new Date(endDate));
 
   const orderWhere: Prisma.OrderWhereInput = {
     createdAt: {

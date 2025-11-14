@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { getDayRange } from 'src/common/functions/utils';
 import { GetWalletTransactionQueryForAdminDto } from '../dto/get-wallet-transaction-query.dto';
+import { getUtcTimeRangeForIstRange } from 'src/coins-settlement/utils/get-coins-settlement.utils';
 
 export function buildWalletTransactiontWhereFilter({
   query,
@@ -71,10 +72,10 @@ export function buildWalletTransactiontWhereFilter({
   if (startDate || endDate) {
     where.createdAt = {
       ...(startDate && {
-        gte: getIstTimeRange(new Date(startDate)).startIst,
+        gte: getUtcTimeRangeForIstRange(new Date(startDate)).startIst,
       }),
       ...(endDate && {
-        lte: getIstTimeRange(new Date(endDate)).endIst,
+        lte: getUtcTimeRangeForIstRange(new Date(endDate)).endIst,
       }),
     };
   }

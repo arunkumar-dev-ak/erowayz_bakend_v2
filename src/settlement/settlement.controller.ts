@@ -41,8 +41,7 @@ export class SettlementController {
     await this.settlementService.getOrderSettlementForVendor({
       vendorId,
       res,
-      month: Number(query.month),
-      year: Number(query.year),
+      date: query.date,
     });
   }
 

@@ -1,6 +1,7 @@
 import { PaymentPurpose, Prisma } from '@prisma/client';
 import { getDayRange } from 'src/common/functions/utils';
 import { GetOrderTransactionQueryForAdminDto } from '../dto/get-order-transaction-query.dto';
+import { getUtcTimeRangeForIstRange } from 'src/coins-settlement/utils/get-coins-settlement.utils';
 
 export function buildOrderTransactiontWhereFilter({
   query,
@@ -66,10 +67,10 @@ export function buildOrderTransactiontWhereFilter({
   if (startDate || endDate) {
     where.createdAt = {
       ...(startDate && {
-        gte: getIstTimeRange(new Date(startDate)).startIst,
+        gte: getUtcTimeRangeForIstRange(new Date(startDate)).startIst,
       }),
       ...(endDate && {
-        lte: getIstTimeRange(new Date(endDate)).endIst,
+        lte: getUtcTimeRangeForIstRange(new Date(endDate)).endIst,
       }),
     };
   }

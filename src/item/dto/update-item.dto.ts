@@ -93,6 +93,24 @@ export class UpdateItemDto {
   price?: number;
 
   @ApiProperty({
+    description: 'startAvailableTime should not be empty',
+    required: true,
+    example: 'Mushroom Biryani',
+  })
+  @IsString()
+  @IsOptional()
+  startAvailableTime?: string;
+
+  @ApiProperty({
+    description: 'endAvailableTime should not be empty',
+    required: true,
+    example: 'Mushroom Biryani',
+  })
+  @IsString()
+  @IsOptional()
+  endAvailableTime?: string;
+
+  @ApiProperty({
     description: 'Discount Price (optional)',
     required: false,
     example: 20.99,

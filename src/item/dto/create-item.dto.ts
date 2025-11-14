@@ -179,6 +179,24 @@ export class CreateItemDto {
   expiryDate?: Date;
 
   @ApiProperty({
+    description: 'startAvailableTime should not be empty',
+    required: true,
+    example: 'Mushroom Biryani',
+  })
+  @IsString()
+  @IsOptional()
+  startAvailableTime?: string;
+
+  @ApiProperty({
+    description: 'endAvailableTime should not be empty',
+    required: true,
+    example: 'Mushroom Biryani',
+  })
+  @IsString()
+  @IsOptional()
+  endAvailableTime?: string;
+
+  @ApiProperty({
     format: 'binary',
     required: true,
     type: 'string',

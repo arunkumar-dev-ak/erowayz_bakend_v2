@@ -1,20 +1,14 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumberString, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsDate, IsNumberString, IsOptional } from 'class-validator';
 
 export class VendorOrderSettlementQueryDto {
-  @ApiPropertyOptional({
-    description: 'Filter by month',
-    type: String,
+  @ApiProperty({
+    description: 'Start date and time of the banner',
+    example: '2024-09-01T00:00:00.000Z',
+    required: false,
   })
-  @IsNumberString()
-  month: string;
-
-  @ApiPropertyOptional({
-    description: 'Filter by month',
-    type: String,
-  })
-  @IsNumberString()
-  year: string;
+  @IsDate()
+  date: Date;
 
   @ApiPropertyOptional({
     description: 'Number of records to skip (for pagination), default is 0',

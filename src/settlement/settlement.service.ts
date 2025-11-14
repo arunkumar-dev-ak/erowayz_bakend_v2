@@ -135,20 +135,17 @@ export class SettlementService {
 
   async getOrderSettlementForVendor({
     res,
-    month,
-    year,
+    date,
     vendorId,
   }: {
     res: Response;
     vendorId: string;
-    month: number;
-    year: number;
+    date: Date;
   }) {
     const initialDate = new Date();
 
     const { sql } = getOrderSettlementsForVendor({
-      month,
-      year,
+      date,
       vendorId,
     });
 
@@ -157,8 +154,7 @@ export class SettlementService {
 
     // Build query params for metadata
     const queries = buildQueryParams({
-      month: month.toString(),
-      year: year.toString(),
+      date: date.toString(),
       vendorId,
     });
 

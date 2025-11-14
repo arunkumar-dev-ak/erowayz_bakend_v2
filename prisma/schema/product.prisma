@@ -41,6 +41,8 @@ model Item {
   nameTamil         String?
   description       String
   descriptionTamil  String?
+  startAvailableTime         String?
+  endAvailableTime           String?
   price             Float
   discountPrice     Float?
   minSellingQty     Float         @default(1)

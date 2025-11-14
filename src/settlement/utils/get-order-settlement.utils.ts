@@ -25,8 +25,8 @@ export function getSettlements({
   const conditions: string[] = [
     `op.status = 'COMPLETED'`,
     `op.type = 'JUSPAY'`,
-    `op."createdAt" >= TIMESTAMP '${startUtc.toISOString()}' + INTERVAL '5 hours 30 minutes'`,
-    `op."createdAt" <= TIMESTAMP '${endUtc.toISOString()}' + INTERVAL '5 hours 30 minutes'`,
+    `op."createdAt" >= TIMESTAMP '${startUtc.toISOString()}' - INTERVAL '5 hours 30 minutes'`,
+    `op."createdAt" <= TIMESTAMP '${endUtc.toISOString()}' - INTERVAL '5 hours 30 minutes'`,
   ];
 
   if (shopName) {

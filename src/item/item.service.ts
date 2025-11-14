@@ -237,6 +237,8 @@ export class ItemService {
           remainingQty: body.dailyTotalQty,
           dailyTotalQty: body.dailyTotalQty,
           minSellingQty: body.minSellingQty,
+          startAvailableTime: body.startAvailableTime,
+          endAvailableTime: body.endAvailableTime,
           categoryId,
           subCategoryId,
           vendorId,
@@ -338,6 +340,12 @@ export class ItemService {
         ...(body.categoryId && { categoryId: body.categoryId }),
         ...(body.subCategoryId && { subCategoryId: body.subCategoryId }),
         ...(body.status && { status: body.status }),
+        ...(body.startAvailableTime && {
+          startAvailableTime: body.startAvailableTime,
+        }),
+        ...(body.endAvailableTime && {
+          endAvailableTime: body.endAvailableTime,
+        }),
         ...(body.expiryDate && { expiryDate: body.expiryDate }),
         ...(body.nameTamil && { nameTamil: body.nameTamil }),
         ...(body.descriptionTamil && {

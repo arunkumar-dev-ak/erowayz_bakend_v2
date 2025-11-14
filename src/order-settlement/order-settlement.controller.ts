@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   Res,
   UploadedFile,
   UseGuards,
@@ -15,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { OrderSettlementService } from './order-settlement.service';
 import { GetOrderSettlementQueryDto } from './dto/get-order-settlement';
-import { Role } from '@prisma/client';
+import { Role, Staff, User, Vendor } from '@prisma/client';
 import { Roles } from 'src/common/roles/roles.docorator';
 import { RoleGuard } from 'src/common/guards/role.guard';
 import { Response } from 'express';
@@ -23,6 +24,7 @@ import { CreateOrderSettlementDto } from './dto/create-order-settlement';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { UpdateOrderSettlementDto } from './dto/update-order-settlement';
+import { CurrentUser } from 'src/common/decorator/currentuser.decorator';
 
 @Controller('order-settlement')
 export class OrderSettlementController {
@@ -30,15 +32,24 @@ export class OrderSettlementController {
     private readonly orderSettlementService: OrderSettlementService,
   ) {}
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.VENDOR, Role.STAFF)
   @UseGuards(AuthGuard, RoleGuard)
   @Get()
   async getOrderSettlement(
+    @Req() req: Request,
     @Res() res: Response,
     @Query() query: GetOrderSettlementQueryDto,
+    @CurrentUser() currentUser: User & { vendor?: Vendor; staff?: Staff },
   ) {
+    let vendorId: string | undefined;
+    if (currentUser.vendor || currentUser.staff) {
+      vendorId = currentUser.vendor?.id ?? currentUser.staff?.vendorId;
+    }
     await this.orderSettlementService.getOrderSettlement({
-      query,
+      query: {
+        ...query,
+        vendorId,
+      },
       res,
       offset: Number(query.offset || '0'),
       limit: Number(query.limit || '0'),
