@@ -49,7 +49,7 @@ export async function VendorReturnCoinsUtils({
   };
 
   const adminVendorLimitUpdateQuery: Prisma.AdminVendorCreditUpdateInput = {
-    totalGiven: { decrement: coinsCount },
+    totalRefunded: { increment: coinsCount },
   };
 
   return {

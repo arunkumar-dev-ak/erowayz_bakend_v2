@@ -67,6 +67,18 @@ export class WalletService {
       where: {
         userId,
       },
+      include: {
+        user: {
+          select: {
+            name: true,
+            vendor: {
+              select: {
+                adminVendorCredit: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     return this.response.successResponse({

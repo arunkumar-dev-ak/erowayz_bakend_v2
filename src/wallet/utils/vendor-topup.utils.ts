@@ -42,9 +42,14 @@ export async function vendorTopUpPaymentInitiation({
       'You have exceeded the limit for wallet payment initiation. Please try again after 5 minutes.',
     );
   }
+
   // checking coins limit
-  if (coinsCount + adminvendorLimit.totalGiven > coinsLimit) {
+  if (coinsCount + wallet.balance > coinsLimit) {
     throw new BadRequestException('Coins limit exceeded');
+  } else if (coinsCount + adminvendorLimit.totalGiven > 2000) {
+    throw new BadRequestException(
+      `You have already received ₹${adminvendorLimit.totalGiven} from Erowayz. You cannot exceed the limit of 2000.`,
+    );
   }
 
   return { wallet };
@@ -79,7 +84,7 @@ export async function VendorTopUpUtils({
   ]);
 
   // checking coins limit
-  if (coinsCount + adminvendorLimit.totalGiven > coinsLimit) {
+  if (coinsCount + wallet.balance > coinsLimit) {
     throw new PaymentError(
       'Coins limit exceeded for vendor top-up',
       false,
