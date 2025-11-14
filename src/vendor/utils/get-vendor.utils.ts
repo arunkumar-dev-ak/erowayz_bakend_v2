@@ -189,6 +189,17 @@ export function vendorInclude(userId?: string) {
         status: true,
         email: true,
         mobile: true,
+        referrer: {
+          select: {
+            id: true,
+            name: true,
+            nameTamil: true,
+            imageRef: true,
+            status: true,
+            email: true,
+            mobile: true,
+          },
+        },
       },
     },
     service: {

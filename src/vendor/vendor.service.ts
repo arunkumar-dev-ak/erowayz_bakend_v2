@@ -16,7 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
 import { TestVendorLoginDto } from 'src/auth/dto/testvendorlogin.dto';
-import { Prisma, Role } from '@prisma/client';
+import { Prisma, Role, User } from '@prisma/client';
 import { MetadataService } from 'src/metadata/metadata.service';
 import { KeywordService } from 'src/keyword/keyword.service';
 import { ConfigService } from '@nestjs/config';
@@ -561,6 +561,7 @@ export class VendorService {
 
       let createVendorSub: Prisma.VendorSubscriptionCreateInput | undefined =
         undefined;
+      let referrer: User | undefined;
 
       if (parsedValue.referralCode) {
         const createQuery = await this.referralService.getSubInfoForReferral({
@@ -568,12 +569,16 @@ export class VendorService {
           isQueryNeeded: true,
         });
         createVendorSub = createQuery?.createVendorSubscriptionQuery;
+        referrer = createQuery?.referrer;
       }
 
       // 4. Create user & vendor inside a transaction
       const result = await this.prisma.$transaction(async (tx) => {
         const newUser = await tx.user.create({
-          data: vendorCreateQuery,
+          data: {
+            ...vendorCreateQuery,
+            referrer: referrer ? { connect: { id: referrer.id } } : undefined,
+          },
           include: {
             vendor: { include: { shopInfo: true } },
           },

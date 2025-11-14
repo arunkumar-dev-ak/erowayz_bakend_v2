@@ -51,6 +51,32 @@ export function getIncludeVendorUtilsForAdmin(): Prisma.VendorInclude {
         name: true,
         nameTamil: true,
         status: true,
+        referees: {
+          select: {
+            id: true,
+            mobile: true,
+            email: true,
+            createdAt: true,
+            updatedAt: true,
+            imageRef: true,
+            name: true,
+            nameTamil: true,
+            status: true,
+          },
+        },
+        referrer: {
+          select: {
+            id: true,
+            mobile: true,
+            email: true,
+            createdAt: true,
+            updatedAt: true,
+            imageRef: true,
+            name: true,
+            nameTamil: true,
+            status: true,
+          },
+        },
       },
     },
     vendorServiceOption: {

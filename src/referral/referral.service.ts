@@ -59,7 +59,10 @@ export class ReferralService {
           endDate,
         };
 
-      return { createVendorSubscriptionQuery };
+      return {
+        createVendorSubscriptionQuery,
+        referrer: currentSubscription.vendor.User,
+      };
     }
   }
 
