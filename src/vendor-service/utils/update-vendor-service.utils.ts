@@ -64,6 +64,7 @@ export const updateVendorServiceUtils = async ({
     subServiceName,
     status,
     deletedServiceImageIds,
+    nameTamil,
   } = body;
 
   const [vendorService, serviceOption, deletedServiceImages] =
@@ -108,6 +109,7 @@ export const updateVendorServiceUtils = async ({
 
   const updateQuery: Prisma.ServiceUpdateInput = {
     ...(name && { name }),
+    ...(nameTamil && { nameTamil }),
     ...(serviceOptId && {
       serviceOption: {
         connect: { id: serviceOptId },

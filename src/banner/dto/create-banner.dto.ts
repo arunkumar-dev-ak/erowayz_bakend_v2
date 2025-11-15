@@ -90,6 +90,11 @@ export class CreateBannerDto {
   @IsNotEmpty({ message: 'Name is required' })
   name: string;
 
+  @ApiProperty()
+  @IsNotEmpty({ message: 'nameTamil is required' })
+  @IsOptional()
+  nameTamil?: string;
+
   @ApiProperty({
     description: 'Title of the predefined banner',
     required: false,
@@ -98,6 +103,11 @@ export class CreateBannerDto {
   @IsString()
   @IsNotEmpty({ message: 'Title is required' })
   title?: string;
+
+  @ApiProperty()
+  @IsNotEmpty({ message: 'nameTamil is required' })
+  @IsOptional()
+  titleTamil?: string;
 
   @ApiProperty({
     description: 'SubTitle of the predefined banner',
@@ -108,6 +118,11 @@ export class CreateBannerDto {
   @IsNotEmpty({ message: 'SubTitle is required' })
   subTitle?: string;
 
+  @ApiProperty()
+  @IsNotEmpty({ message: 'nameTamil is required' })
+  @IsOptional()
+  subTitleTamil?: string;
+
   @ApiProperty({
     description: 'SubHeading of the predefined banner',
     required: false,
@@ -116,6 +131,11 @@ export class CreateBannerDto {
   @IsString()
   @IsNotEmpty({ message: 'SubHeading is required' })
   subHeading?: string;
+
+  @ApiProperty()
+  @IsNotEmpty({ message: 'subHeading is required' })
+  @IsOptional()
+  subHeadingTamil?: string;
 
   @ApiProperty({
     description: 'Description of the predefined banner',

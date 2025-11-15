@@ -17,6 +17,7 @@ model VendorServiceOption {
 model Service {
   id                      String                    @id @default(uuid())
   name                    String
+  nameTamil               String?
   description             String?
   serviceOptionId         String
   vendorId                String

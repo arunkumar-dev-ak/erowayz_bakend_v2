@@ -150,6 +150,10 @@ export const buildCreateBannerData = ({
     title,
     subHeading,
     subTitle,
+    nameTamil,
+    titleTamil,
+    subHeadingTamil,
+    subTitleTamil,
   } = body;
 
   const createData: Prisma.BannerCreateInput = {
@@ -162,6 +166,10 @@ export const buildCreateBannerData = ({
     offerValue,
     minApplyValue,
     status: status ?? 'ACTIVE',
+    nameTamil,
+    titleTamil,
+    subHeadingTamil,
+    subTitleTamil,
     ...(title && { title }),
     ...(subHeading && { subHeading }),
     ...(description && { description }),

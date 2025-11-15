@@ -42,6 +42,11 @@ export class CreateVendorServiceDto {
   @IsNotEmpty({ message: 'Name should not be empty' })
   name: string;
 
+  @ApiProperty()
+  @IsNotEmpty({ message: 'nameTamil is required' })
+  @IsOptional()
+  nameTamil?: string;
+
   @ApiProperty({
     description: ' Service Option ID (UUID)',
     required: true,

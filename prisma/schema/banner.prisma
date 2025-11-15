@@ -41,10 +41,14 @@ enum fgBannerImagePosition {
 model Banner {
   id                   String             @id @default(uuid())
   name                 String
+  nameTamil            String?
   bannerType           BannerType         @default(REGULAR)
   title                String?
+  titleTamil           String?
   subTitle             String?
+  subTitleTamil        String?
   subHeading           String?
+  subHeadingTamil      String?
   description          String?
   vendorId             String
   textColor            String?

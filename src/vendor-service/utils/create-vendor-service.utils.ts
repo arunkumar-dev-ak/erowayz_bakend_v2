@@ -27,8 +27,15 @@ export const createVendorServiceUtils = async ({
   vendorServiceService: VendorServiceService;
   vendorService: VendorService;
 }) => {
-  const { name, serviceOptId, description, price, subServiceName, status } =
-    body;
+  const {
+    name,
+    serviceOptId,
+    description,
+    price,
+    subServiceName,
+    status,
+    nameTamil,
+  } = body;
 
   // Fetch vendor, service option, and check for duplicate service name
   const [vendor, serviceOption, existingService] = await Promise.all([
@@ -84,6 +91,7 @@ export const createVendorServiceUtils = async ({
     name,
     description,
     status,
+    nameTamil,
     vendor: {
       connect: { id: vendorId },
     },

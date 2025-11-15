@@ -220,10 +220,18 @@ export const buildUpdateBannerData = ({
     title,
     subHeading,
     subTitle,
+    nameTamil,
+    titleTamil,
+    subHeadingTamil,
+    subTitleTamil,
   } = body;
 
   const updateData: Prisma.BannerUpdateInput = {
     ...(name && { name }),
+    ...(nameTamil && { nameTamil }),
+    ...(titleTamil && { titleTamil }),
+    ...(subHeadingTamil && { subHeadingTamil }),
+    ...(subTitleTamil && { subTitleTamil }),
     ...(startDateTime && { startDateTime }),
     ...(endDateTime && { endDateTime }),
     ...(offerType && { offerType }),
