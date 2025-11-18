@@ -147,6 +147,11 @@ export class UpdateBannerDto {
   @IsNotEmpty({ message: 'Description is required, if defined' })
   description?: string;
 
+  @ApiProperty()
+  @IsNotEmpty({ message: 'descriptionTamil is required' })
+  @IsOptional()
+  descriptionTamil?: string;
+
   //Regulaer Banner fields
   @ApiProperty({
     description: ' quantity available',

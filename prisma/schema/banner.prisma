@@ -50,6 +50,7 @@ model Banner {
   subHeading           String?
   subHeadingTamil      String?
   description          String?
+  descriptionTamil     String?
   vendorId             String
   textColor            String?
   startDateTime        DateTime

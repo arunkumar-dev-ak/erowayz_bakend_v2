@@ -224,6 +224,7 @@ export const buildUpdateBannerData = ({
     titleTamil,
     subHeadingTamil,
     subTitleTamil,
+    descriptionTamil,
   } = body;
 
   const updateData: Prisma.BannerUpdateInput = {
@@ -239,6 +240,7 @@ export const buildUpdateBannerData = ({
     ...(minApplyValue && { minApplyValue }),
     ...(status && { status }),
     ...(description && { description }),
+    ...(descriptionTamil && { descriptionTamil }),
     ...(title && { title }),
     ...(subHeading && { subHeading }),
     ...(textColor && { textColor }),

@@ -8,7 +8,7 @@ export function buildBloodDetailsWhereFilter({
 }): Prisma.BloodDetailsWhereInput {
   const where: Prisma.BloodDetailsWhereInput = {};
 
-  const { userName, id, bloodGroup, isDonor } = query;
+  const { userName, id, bloodGroup, isDonor, land } = query;
 
   if (userName) {
     where.User = {
@@ -18,6 +18,23 @@ export function buildBloodDetailsWhereFilter({
   if (id) where.id = id;
   if (bloodGroup) where.bloodGroup = bloodGroup;
   if (isDonor) where.isDonor = isDonor;
+
+  if (land) {
+    where.OR = [
+      {
+        area: {
+          contains: land,
+          mode: 'insensitive',
+        },
+      },
+      {
+        city: {
+          contains: land,
+          mode: 'insensitive',
+        },
+      },
+    ];
+  }
 
   return where;
 }

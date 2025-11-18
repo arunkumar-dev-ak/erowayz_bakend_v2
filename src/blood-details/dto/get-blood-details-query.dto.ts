@@ -29,6 +29,15 @@ export class GetBloodDetailsQueryDto {
   id?: string;
 
   @ApiPropertyOptional({
+    description: 'Filter by land',
+    type: String,
+  })
+  @IsString()
+  @IsOptional()
+  @IsNotEmpty({ message: 'Filter by land' })
+  land?: string;
+
+  @ApiPropertyOptional({
     description: 'Context in which this dynamic field will be used',
     enum: BloodGroups,
     example: BloodGroups.AB_NEGATIVE,

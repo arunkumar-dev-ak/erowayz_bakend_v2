@@ -146,6 +146,11 @@ export class CreateBannerDto {
   @IsNotEmpty({ message: 'Description is required' })
   description?: string;
 
+  @ApiProperty()
+  @IsNotEmpty({ message: 'descriptionTamil is required' })
+  @IsOptional()
+  descriptionTamil?: string;
+
   @ApiProperty({
     description: 'Background color in hex format (e.g., #FFFFFF)',
     required: false,

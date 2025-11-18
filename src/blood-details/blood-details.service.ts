@@ -61,6 +61,7 @@ export class BloodDetailsService {
       userName: query.userName,
       bloodGroup: query.bloodGroup,
       isDonor: 'true',
+      land: query.land,
     });
 
     const meta = this.metaDataService.createMetaData({
