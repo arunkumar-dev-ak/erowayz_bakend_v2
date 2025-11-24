@@ -11,7 +11,8 @@ import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { AdminLogoutDto } from './dto/adminlogout.dto';
 import { TokenService } from 'src/token/token.service';
-import { Role } from '@prisma/client';
+import { Role, User } from '@prisma/client';
+import { AdminPasswordChangeDto } from './dto/admin-pwd-change.dto';
 @Injectable()
 export class AdminService {
   constructor(
@@ -63,6 +64,51 @@ export class AdminService {
         ...result,
       },
       message: 'Admin Login successfully',
+      statusCode: 200,
+      initialDate,
+    });
+  }
+
+  async changeAdmimPassword({
+    res,
+    body,
+    user,
+  }: {
+    res: Response;
+    body: AdminPasswordChangeDto;
+    user: User;
+  }) {
+    const initialDate = new Date();
+    const { oldPassword, newPassword } = body;
+
+    const isMatch =
+      typeof user.password === 'string'
+        ? await bcrypt.compare(oldPassword, user.password)
+        : null;
+
+    if (!isMatch) {
+      throw new BadRequestException('Invalid Old Password');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          salt: uuidv4(),
+          password: hashedPassword,
+        },
+      });
+      await this.tokenService.revokeAllUserRefreshTokens({
+        userId: user.id,
+        tx,
+      });
+    });
+    return this.response.successResponse({
+      res,
+      data: {},
+      message: 'Admin Password changed successfully',
       statusCode: 200,
       initialDate,
     });

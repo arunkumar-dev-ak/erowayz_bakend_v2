@@ -6,9 +6,11 @@ import { AdminLogoutDto } from './dto/adminlogout.dto';
 import { AdminLoginDto } from './dto/adminlogin.dto';
 import { extractAdminIdFromRequest } from 'src/common/functions/extractAdminId';
 import { Roles } from 'src/common/roles/roles.docorator';
-import { Role } from '@prisma/client';
+import { Role, Staff, User, Vendor } from '@prisma/client';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RoleGuard } from 'src/common/guards/role.guard';
+import { AdminPasswordChangeDto } from './dto/admin-pwd-change.dto';
+import { CurrentUser } from 'src/common/decorator/currentuser.decorator';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -27,6 +29,26 @@ export class AdminController {
     @Body() body: AdminLoginDto,
   ) {
     return this.adminService.loginAdmin({ res, body });
+  }
+
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(Role.ADMIN)
+  @Post('changePassword')
+  @ApiOperation({
+    summary: 'Change Admin Password',
+    description: 'Logs in an admin user',
+  })
+  @ApiBody({ type: AdminPasswordChangeDto })
+  changeAdminPassword(
+    @CurrentUser() currentUser: User & { vendor?: Vendor; staff?: Staff },
+    @Res() res: Response,
+    @Body() body: AdminPasswordChangeDto,
+  ) {
+    return this.adminService.changeAdmimPassword({
+      user: currentUser,
+      res,
+      body,
+    });
   }
 
   @Roles(Role.ADMIN)
