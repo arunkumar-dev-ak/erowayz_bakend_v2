@@ -19,7 +19,12 @@ export function buildSubTransactiontWhereFilter({
       ...(vendorId && { vendorId }),
       vendor: {
         User: {
-          ...(userName && { name: userId }),
+          ...(userName && {
+            name: {
+              contains: userName,
+              mode: 'insensitive',
+            },
+          }),
           ...(userId && { id: userId }),
         },
         shopInfo: {
