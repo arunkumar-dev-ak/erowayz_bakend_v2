@@ -44,7 +44,10 @@ export class OrderSettlementController {
     let vendorId: string | undefined;
     if (currentUser.vendor || currentUser.staff) {
       vendorId = currentUser.vendor?.id ?? currentUser.staff?.vendorId;
+    } else {
+      vendorId = query.vendorId;
     }
+
     await this.orderSettlementService.getOrderSettlement({
       query: {
         ...query,
