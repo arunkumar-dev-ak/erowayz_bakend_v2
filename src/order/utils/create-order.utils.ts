@@ -52,7 +52,8 @@ export const lockVendorAndCustomerWallet = async ({
   const finalLockedBalance =
     vendorBalance +
     vendorLockedBalance +
-    (vendorPaymentReqForCoins?.amount || 0);
+    (vendorPaymentReqForCoins?.amount || 0) +
+    finalPayableAmount;
 
   if (finalLockedBalance > vendorWalletBalanceLimit) {
     throw new BadRequestException(
