@@ -33,7 +33,7 @@ export class CatchEverythingFilter implements ExceptionFilter {
   constructor(private readonly responseService: ResponseService) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
-    console.log(exception);
+    console.log(JSON.stringify(exception, null, 2));
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();
 

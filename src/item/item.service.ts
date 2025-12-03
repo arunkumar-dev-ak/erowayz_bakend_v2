@@ -340,13 +340,22 @@ export class ItemService {
         ...(body.categoryId && { categoryId: body.categoryId }),
         ...(body.subCategoryId && { subCategoryId: body.subCategoryId }),
         ...(body.status && { status: body.status }),
-        ...(body.startAvailableTime && {
-          startAvailableTime: body.startAvailableTime,
+        ...(body.startAvailableTime !== undefined && {
+          startAvailableTime:
+            body.startAvailableTime === '' ? null : body.startAvailableTime,
         }),
-        ...(body.endAvailableTime && {
-          endAvailableTime: body.endAvailableTime,
+        ...(body.endAvailableTime !== undefined && {
+          endAvailableTime:
+            body.endAvailableTime === '' ? null : body.endAvailableTime,
         }),
-        ...(body.expiryDate && { expiryDate: body.expiryDate }),
+        ...(body.expiryDate !== undefined && {
+          expiryDate:
+            body.expiryDate === ''
+              ? null
+              : body.expiryDate instanceof Date
+                ? body.expiryDate
+                : null,
+        }),
         ...(body.nameTamil && { nameTamil: body.nameTamil }),
         ...(body.descriptionTamil && {
           descriptionTamil: body.descriptionTamil,

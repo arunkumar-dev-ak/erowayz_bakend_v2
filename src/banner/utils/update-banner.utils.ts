@@ -253,7 +253,7 @@ export const buildUpdateBannerData = ({
     ...(originalPricePerUnit && { originalPricePerUnit }),
     ...(qty && { qty }),
     ...(qtyUnit && { qtyUnit }),
-    ...(subHeading && { subTitle }),
+    ...(subTitle && { subTitle }),
     bannerItemImages: bannerProductImage
       ? createBannerItemImages(bannerProductImage)
       : {},

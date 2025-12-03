@@ -30,12 +30,44 @@ export class GetVendorSubscriptionQueryForAdmin {
   name?: string;
 
   @ApiPropertyOptional({
+    description: 'Filter by Name',
+    type: String,
+  })
+  @IsOptional()
+  @IsString({ message: 'type must be a string' })
+  type?: string;
+
+  @ApiPropertyOptional({
+    description: 'Start date in ISO string format (YYYY-MM-DD)',
+    type: String,
+  })
+  @IsString()
+  @IsOptional()
+  startDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'End date in ISO string format (YYYY-MM-DD)',
+    type: String,
+  })
+  @IsString()
+  @IsOptional()
+  endDate?: string;
+
+  @ApiPropertyOptional({
     description: 'Filter by subscription name',
     type: String,
   })
   @IsOptional()
   @IsString({ message: 'subscription Name must be a string' })
   subscriptionName?: string; // This can refer to a plan name or ID
+
+  @ApiPropertyOptional({
+    description: 'Filter by shopName',
+    type: String,
+  })
+  @IsOptional()
+  @IsString({ message: 'shopName must be a string' })
+  shopName?: string;
 
   @ApiPropertyOptional({
     description: 'Pagination offset, defaults to 0',

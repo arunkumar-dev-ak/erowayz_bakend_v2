@@ -2,7 +2,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Status } from '@prisma/client';
 import {
   IsArray,
-  IsDate,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -144,10 +143,7 @@ export class UpdateItemDto {
     required: true,
   })
   @IsOptional()
-  @IsDate({
-    message: 'expiryDate must be in the format of 2024-09-01T00:00:00.000Z',
-  })
-  expiryDate?: Date;
+  expiryDate?: string | Date;
 
   @ApiProperty({
     description: 'Daily Total quantity available, if defined',

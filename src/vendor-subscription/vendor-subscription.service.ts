@@ -71,7 +71,14 @@ export class VendorSubscriptionService {
       include: {
         vendor: {
           include: {
-            User: true,
+            User: {
+              select: {
+                name: true,
+                nameTamil: true,
+                relativeUrl: true,
+              },
+            },
+            shopInfo: true,
           },
         },
       },
@@ -82,6 +89,9 @@ export class VendorSubscriptionService {
       isActive: query.isActive,
       subscriptionName: query.subscriptionName,
       vendorId: query.vendorId,
+      type: query.type,
+      startDate: query.startDate,
+      endDate: query.endDate,
     });
 
     const meta = this.metaDataService.createMetaData({
