@@ -5,6 +5,15 @@ CREATE EXTENSION IF NOT EXISTS "postgis";
 CREATE TYPE "public"."UserType" AS ENUM ('CUSTOMER', 'VENDOR');
 
 -- CreateEnum
+CREATE TYPE "public"."DisclaimerType" AS ENUM ('PRODUCT_ORDER', 'SERVICE_BOOK', 'BANNER_BOOK', 'COINS', 'UPI', 'BLOOD', 'UPI_SETTLEMENT');
+
+-- CreateEnum
+CREATE TYPE "public"."PrivacyPolicyType" AS ENUM ('COINS', 'UPI', 'BLOOD');
+
+-- CreateEnum
+CREATE TYPE "public"."TermsAndConditionType" AS ENUM ('COINS', 'UPI', 'BLOOD');
+
+-- CreateEnum
 CREATE TYPE "public"."fgBannerImagePosition" AS ENUM ('LEFT', 'RIGHT');
 
 -- CreateEnum
@@ -15,6 +24,9 @@ CREATE TYPE "public"."BannerStatus" AS ENUM ('ACTIVE', 'INACTIVE');
 
 -- CreateEnum
 CREATE TYPE "public"."OfferType" AS ENUM ('FLAT', 'PERCENTAGE');
+
+-- CreateEnum
+CREATE TYPE "public"."BookingPaymentMethod" AS ENUM ('CASH', 'JUSPAY');
 
 -- CreateEnum
 CREATE TYPE "public"."DynamicContext" AS ENUM ('BLOOD_DETAIL', 'BLOOD_REQUEST');
@@ -41,16 +53,10 @@ CREATE TYPE "public"."PaymentMethod" AS ENUM ('CASH', 'JUSPAY', 'COINS');
 CREATE TYPE "public"."DeclineByType" AS ENUM ('VENDOR', 'CUSTOMER', 'SYSTEM', 'STAFF');
 
 -- CreateEnum
-CREATE TYPE "public"."QuantityUnit" AS ENUM ('GENERAL', 'KG', 'GRAM', 'BOX', 'SET', 'PIECE', 'LITRE', 'MILLILITRE', 'UNIT', 'SERVE');
-
--- CreateEnum
-CREATE TYPE "public"."ProductStatus" AS ENUM ('AVAILABLE', 'OUT_OF_STOCK');
-
--- CreateEnum
-CREATE TYPE "public"."SettlementStatus" AS ENUM ('PAID', 'UNPAID');
-
--- CreateEnum
 CREATE TYPE "public"."BillingPeriod" AS ENUM ('WEEKLY', 'MONTHLY');
+
+-- CreateEnum
+CREATE TYPE "public"."ErrorLogStatus" AS ENUM ('PENDING', 'RESOLVED');
 
 -- CreateEnum
 CREATE TYPE "public"."PaymentStatus" AS ENUM ('CHARGED', 'PENDING', 'PROCESSING', 'FAILED');
@@ -62,13 +68,25 @@ CREATE TYPE "public"."PaymentPurpose" AS ENUM ('SUBSCRIPTION_PURCHASE', 'PRODUCT
 CREATE TYPE "public"."RefundStatus" AS ENUM ('PENDING', 'CANCELLED', 'COMPLETED');
 
 -- CreateEnum
+CREATE TYPE "public"."QuantityUnit" AS ENUM ('GENERAL', 'KG', 'GRAM', 'BOX', 'SET', 'PIECE', 'LITRE', 'MILLILITRE', 'UNIT', 'SERVE');
+
+-- CreateEnum
+CREATE TYPE "public"."ProductStatus" AS ENUM ('AVAILABLE', 'OUT_OF_STOCK');
+
+-- CreateEnum
+CREATE TYPE "public"."UserReportStatusType" AS ENUM ('PENDING', 'RESOLVED');
+
+-- CreateEnum
+CREATE TYPE "public"."SettlementStatus" AS ENUM ('PAID', 'UNPAID');
+
+-- CreateEnum
 CREATE TYPE "public"."OTPStatus" AS ENUM ('PENDING', 'VERIFIED');
 
 -- CreateEnum
 CREATE TYPE "public"."Status" AS ENUM ('ACTIVE', 'INACTIVE');
 
 -- CreateEnum
-CREATE TYPE "public"."Role" AS ENUM ('CUSTOMER', 'ADMIN', 'VENDOR', 'STAFF');
+CREATE TYPE "public"."Role" AS ENUM ('CUSTOMER', 'ADMIN', 'VENDOR', 'STAFF', 'SUB_ADMIN');
 
 -- CreateEnum
 CREATE TYPE "public"."BloodGroups" AS ENUM ('A_POSITIVE', 'A_NEGATIVE', 'B_POSITIVE', 'B_NEGATIVE', 'AB_POSITIVE', 'AB_NEGATIVE', 'O_POSITIVE', 'O_NEGATIVE');
@@ -101,6 +119,7 @@ CREATE TYPE "public"."WalletTransactionType" AS ENUM ('ADMIN_TO_VENDOR', 'VENDOR
 CREATE TABLE "public"."LicenseCategory" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "tamilName" TEXT,
     "status" "public"."Status" NOT NULL DEFAULT 'ACTIVE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -112,6 +131,7 @@ CREATE TABLE "public"."LicenseCategory" (
 CREATE TABLE "public"."ProductUnit" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "tamilName" TEXT,
     "status" "public"."Status" NOT NULL DEFAULT 'ACTIVE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -123,6 +143,7 @@ CREATE TABLE "public"."ProductUnit" (
 CREATE TABLE "public"."ShopCategory" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "tamilName" TEXT,
     "vendorTypeId" TEXT NOT NULL,
     "status" "public"."Status" NOT NULL DEFAULT 'ACTIVE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -135,6 +156,7 @@ CREATE TABLE "public"."ShopCategory" (
 CREATE TABLE "public"."BankName" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "tamilName" TEXT,
     "status" "public"."Status" NOT NULL DEFAULT 'ACTIVE',
     "image" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -147,6 +169,7 @@ CREATE TABLE "public"."BankName" (
 CREATE TABLE "public"."BankPaymentType" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "tamilName" TEXT,
     "status" "public"."Status" NOT NULL DEFAULT 'ACTIVE',
     "image" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -170,8 +193,9 @@ CREATE TABLE "public"."ShopCity" (
 -- CreateTable
 CREATE TABLE "public"."Disclaimer" (
     "id" TEXT NOT NULL,
-    "image" TEXT NOT NULL,
-    "userType" "public"."UserType" NOT NULL,
+    "disclaimerType" "public"."DisclaimerType" NOT NULL,
+    "disclaimerHtml" TEXT NOT NULL,
+    "disclaimerHtmlTa" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -181,8 +205,11 @@ CREATE TABLE "public"."Disclaimer" (
 -- CreateTable
 CREATE TABLE "public"."TermsAndCondition" (
     "id" TEXT NOT NULL,
-    "image" TEXT NOT NULL,
     "userType" "public"."UserType" NOT NULL,
+    "type" "public"."TermsAndConditionType",
+    "vendorTypeId" TEXT,
+    "termsAndConditionHtml" TEXT NOT NULL,
+    "termsAndConditionHtmlTa" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -192,8 +219,11 @@ CREATE TABLE "public"."TermsAndCondition" (
 -- CreateTable
 CREATE TABLE "public"."PrivacyPolicy" (
     "id" TEXT NOT NULL,
-    "image" TEXT NOT NULL,
     "userType" "public"."UserType" NOT NULL,
+    "type" "public"."PrivacyPolicyType",
+    "vendorTypeId" TEXT,
+    "privacyPolicyHtml" TEXT NOT NULL,
+    "privacyPolicyHtmlTa" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -204,6 +234,8 @@ CREATE TABLE "public"."PrivacyPolicy" (
 CREATE TABLE "public"."VideoLink" (
     "id" TEXT NOT NULL,
     "heading" TEXT NOT NULL,
+    "tamilHeading" TEXT,
+    "vendorTypeId" TEXT,
     "link" TEXT NOT NULL,
     "status" "public"."Status" NOT NULL DEFAULT 'ACTIVE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -217,11 +249,35 @@ CREATE TABLE "public"."Poster" (
     "id" TEXT NOT NULL,
     "file" TEXT NOT NULL,
     "heading" TEXT NOT NULL,
+    "userType" "public"."UserType" NOT NULL,
+    "vendorTypeId" TEXT,
     "status" "public"."Status" NOT NULL DEFAULT 'ACTIVE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Poster_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."CoinImage" (
+    "id" TEXT NOT NULL,
+    "image" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CoinImage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."PlatformFees" (
+    "id" TEXT NOT NULL,
+    "startAmount" INTEGER NOT NULL,
+    "endAmount" INTEGER NOT NULL,
+    "fee" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PlatformFees_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -252,11 +308,16 @@ CREATE TABLE "public"."PreDefinedBanner" (
 CREATE TABLE "public"."Banner" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "nameTamil" TEXT,
     "bannerType" "public"."BannerType" NOT NULL DEFAULT 'REGULAR',
     "title" TEXT,
+    "titleTamil" TEXT,
     "subTitle" TEXT,
+    "subTitleTamil" TEXT,
     "subHeading" TEXT,
+    "subHeadingTamil" TEXT,
     "description" TEXT,
+    "descriptionTamil" TEXT,
     "vendorId" TEXT NOT NULL,
     "textColor" TEXT,
     "startDateTime" TIMESTAMP(3) NOT NULL,
@@ -338,6 +399,7 @@ CREATE TABLE "public"."BannerVendorItemsImage" (
 CREATE TABLE "public"."Booking" (
     "id" TEXT NOT NULL,
     "bookedId" TEXT NOT NULL,
+    "preferredPaymentMethod" "public"."BookingPaymentMethod" NOT NULL DEFAULT 'CASH',
     "userId" TEXT NOT NULL,
     "bookingStatus" "public"."OrderStatus" NOT NULL DEFAULT 'PENDING',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -470,6 +532,7 @@ CREATE TABLE "public"."FavouriteVendorForCustomer" (
 CREATE TABLE "public"."keyWord" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "tamilName" TEXT,
     "vendorTypeId" TEXT NOT NULL,
     "keyWordType" "public"."KeyWordType" NOT NULL,
     "status" "public"."Status" NOT NULL DEFAULT 'ACTIVE',
@@ -506,6 +569,7 @@ CREATE TABLE "public"."Order" (
     "totalPrice" DOUBLE PRECISION NOT NULL,
     "orderId" TEXT NOT NULL,
     "orderStatus" "public"."OrderStatus" NOT NULL DEFAULT 'PENDING',
+    "platformFee" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -551,147 +615,6 @@ CREATE TABLE "public"."OrderItemVendorServiceOption" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "OrderItemVendorServiceOption_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."Category" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "imageRef" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "relativeUrl" TEXT NOT NULL,
-    "vendorTypeId" TEXT NOT NULL,
-
-    CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."SubCategory" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "imageRef" TEXT NOT NULL,
-    "relativeUrl" TEXT NOT NULL,
-    "categoryId" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "SubCategory_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."Item" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "nameTamil" TEXT,
-    "description" TEXT NOT NULL,
-    "descriptionTamil" TEXT,
-    "price" DOUBLE PRECISION NOT NULL,
-    "discountPrice" DOUBLE PRECISION,
-    "minSellingQty" DOUBLE PRECISION NOT NULL DEFAULT 1,
-    "vendorId" TEXT NOT NULL,
-    "categoryId" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "subCategoryId" TEXT NOT NULL,
-    "quantityUnit" "public"."QuantityUnit" DEFAULT 'GENERAL',
-    "productUnitId" TEXT,
-    "dailyTotalQty" DOUBLE PRECISION NOT NULL,
-    "remainingQty" DOUBLE PRECISION NOT NULL,
-    "productstatus" "public"."ProductStatus" NOT NULL DEFAULT 'OUT_OF_STOCK',
-    "status" "public"."Status" NOT NULL DEFAULT 'ACTIVE',
-    "totalQtyEditCount" INTEGER NOT NULL DEFAULT 0,
-    "expiryDate" TIMESTAMP(3),
-
-    CONSTRAINT "Item_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."ItemImage" (
-    "id" TEXT NOT NULL,
-    "relativeUrl" TEXT NOT NULL,
-    "absoluteUrl" TEXT NOT NULL,
-    "itemId" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "ItemImage_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."Review" (
-    "id" TEXT NOT NULL,
-    "rating" INTEGER,
-    "review" TEXT,
-    "userId" TEXT NOT NULL,
-    "vendorId" TEXT,
-    "orderItemId" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."VendorServiceOption" (
-    "id" TEXT NOT NULL,
-    "vendorId" TEXT NOT NULL,
-    "serviceOptionId" TEXT NOT NULL,
-    "status" "public"."Status" NOT NULL DEFAULT 'ACTIVE',
-
-    CONSTRAINT "VendorServiceOption_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."Service" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "description" TEXT,
-    "serviceOptionId" TEXT NOT NULL,
-    "vendorId" TEXT NOT NULL,
-    "status" "public"."Status" NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Service_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."VendorSubService" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "serviceId" TEXT NOT NULL,
-    "price" DOUBLE PRECISION NOT NULL DEFAULT 0,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "VendorSubService_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."ServiceImage" (
-    "id" TEXT NOT NULL,
-    "serviceId" TEXT NOT NULL,
-    "relativeUrl" TEXT NOT NULL,
-    "absoluteUrl" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "ServiceImage_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."OrderSettlement" (
-    "id" TEXT NOT NULL,
-    "vendorId" TEXT NOT NULL,
-    "date" TIMESTAMP(3) NOT NULL,
-    "amount" DOUBLE PRECISION NOT NULL,
-    "status" "public"."SettlementStatus" NOT NULL DEFAULT 'UNPAID',
-    "proofImage" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "OrderSettlement_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -778,38 +701,201 @@ CREATE TABLE "public"."ManualRefund" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."VendorSubscription" (
-    "id" TEXT NOT NULL,
-    "vendorId" TEXT NOT NULL,
-    "paymentId" TEXT NOT NULL,
-    "planId" TEXT,
-    "planName" TEXT NOT NULL,
-    "planFeatures" JSONB NOT NULL,
-    "planBillingPeriod" "public"."BillingPeriod" NOT NULL,
-    "planPrice" INTEGER NOT NULL,
-    "planDiscountPrice" INTEGER,
-    "startDate" TIMESTAMP(3) NOT NULL,
-    "endDate" TIMESTAMP(3) NOT NULL,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "VendorSubscription_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "public"."PaymentErrorLog" (
     "id" TEXT NOT NULL,
     "referenceId" TEXT NOT NULL,
     "vendorUserId" TEXT NOT NULL,
     "purpose" "public"."PaymentPurpose",
+    "status" "public"."ErrorLogStatus" NOT NULL DEFAULT 'PENDING',
     "customerUserId" TEXT,
     "errorType" TEXT NOT NULL,
     "message" TEXT NOT NULL,
     "metaData" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "PaymentErrorLog_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."PaymentErrorLogFile" (
+    "id" TEXT NOT NULL,
+    "image" TEXT NOT NULL,
+    "paymentErrorLogId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PaymentErrorLogFile_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Category" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "tamilName" TEXT,
+    "imageRef" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "relativeUrl" TEXT NOT NULL,
+    "vendorTypeId" TEXT NOT NULL,
+
+    CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."SubCategory" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "tamilName" TEXT,
+    "imageRef" TEXT NOT NULL,
+    "relativeUrl" TEXT NOT NULL,
+    "categoryId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "SubCategory_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Item" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "nameTamil" TEXT,
+    "description" TEXT NOT NULL,
+    "descriptionTamil" TEXT,
+    "startAvailableTime" TEXT,
+    "endAvailableTime" TEXT,
+    "price" DOUBLE PRECISION NOT NULL,
+    "discountPrice" DOUBLE PRECISION,
+    "minSellingQty" DOUBLE PRECISION NOT NULL DEFAULT 1,
+    "vendorId" TEXT NOT NULL,
+    "categoryId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "subCategoryId" TEXT NOT NULL,
+    "quantityUnit" "public"."QuantityUnit" DEFAULT 'GENERAL',
+    "productUnitId" TEXT,
+    "dailyTotalQty" DOUBLE PRECISION NOT NULL,
+    "remainingQty" DOUBLE PRECISION NOT NULL,
+    "productstatus" "public"."ProductStatus" NOT NULL DEFAULT 'OUT_OF_STOCK',
+    "status" "public"."Status" NOT NULL DEFAULT 'ACTIVE',
+    "totalQtyEditCount" INTEGER NOT NULL DEFAULT 0,
+    "expiryDate" TIMESTAMP(3),
+
+    CONSTRAINT "Item_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."ItemImage" (
+    "id" TEXT NOT NULL,
+    "relativeUrl" TEXT NOT NULL,
+    "absoluteUrl" TEXT NOT NULL,
+    "itemId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ItemImage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."UserReport" (
+    "id" TEXT NOT NULL,
+    "orderId" TEXT,
+    "bookingId" TEXT,
+    "userId" TEXT NOT NULL,
+    "report" TEXT NOT NULL,
+    "status" "public"."UserReportStatusType" NOT NULL DEFAULT 'PENDING',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "UserReport_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Review" (
+    "id" TEXT NOT NULL,
+    "rating" INTEGER,
+    "review" TEXT,
+    "userId" TEXT NOT NULL,
+    "vendorId" TEXT,
+    "orderItemId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."VendorServiceOption" (
+    "id" TEXT NOT NULL,
+    "vendorId" TEXT NOT NULL,
+    "serviceOptionId" TEXT NOT NULL,
+    "status" "public"."Status" NOT NULL DEFAULT 'ACTIVE',
+
+    CONSTRAINT "VendorServiceOption_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Service" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "nameTamil" TEXT,
+    "description" TEXT,
+    "serviceOptionId" TEXT NOT NULL,
+    "vendorId" TEXT NOT NULL,
+    "status" "public"."Status" NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Service_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."VendorSubService" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "serviceId" TEXT NOT NULL,
+    "price" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "VendorSubService_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."ServiceImage" (
+    "id" TEXT NOT NULL,
+    "serviceId" TEXT NOT NULL,
+    "relativeUrl" TEXT NOT NULL,
+    "absoluteUrl" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ServiceImage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."OrderSettlement" (
+    "id" TEXT NOT NULL,
+    "vendorId" TEXT NOT NULL,
+    "date" TIMESTAMP(3) NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
+    "status" "public"."SettlementStatus" NOT NULL DEFAULT 'PAID',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "OrderSettlement_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."OrderSettlementFile" (
+    "id" TEXT NOT NULL,
+    "proofImage" TEXT NOT NULL,
+    "orderSettlementId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "OrderSettlementFile_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -829,6 +915,7 @@ CREATE TABLE "public"."User" (
     "email" TEXT,
     "password" TEXT,
     "referralCode" TEXT,
+    "referrerId" TEXT,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -922,6 +1009,39 @@ CREATE TABLE "public"."BloodRequest" (
 );
 
 -- CreateTable
+CREATE TABLE "public"."VendorSubscription" (
+    "id" TEXT NOT NULL,
+    "vendorId" TEXT NOT NULL,
+    "paymentId" TEXT,
+    "planId" TEXT,
+    "planName" TEXT NOT NULL,
+    "planFeatures" JSONB NOT NULL,
+    "planBillingPeriod" "public"."BillingPeriod" NOT NULL,
+    "planPrice" INTEGER NOT NULL,
+    "planDiscountPrice" INTEGER,
+    "referredVendorId" TEXT,
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "VendorSubscription_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."VendorFeatureUsage" (
+    "id" TEXT NOT NULL,
+    "itemId" TEXT,
+    "shopId" TEXT,
+    "feature" TEXT NOT NULL,
+    "usageCount" INTEGER NOT NULL DEFAULT 0,
+    "vendorSubscriptionId" TEXT NOT NULL,
+
+    CONSTRAINT "VendorFeatureUsage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "public"."Vendor" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -947,6 +1067,7 @@ CREATE TABLE "public"."VendorReferral" (
 CREATE TABLE "public"."VendorType" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "tamilName" TEXT,
     "imageRef" TEXT,
     "shopDynamicFields" JSONB,
     "type" "public"."VendorCategoryType" NOT NULL,
@@ -962,6 +1083,7 @@ CREATE TABLE "public"."VendorType" (
 CREATE TABLE "public"."ServiceOption" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "tamilName" TEXT,
     "vendorTypeId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -1084,6 +1206,7 @@ CREATE TABLE "public"."WalletTransaction" (
     "transactionType" "public"."WalletTransactionType" NOT NULL,
     "reason" TEXT,
     "metadata" JSONB,
+    "paymentId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -1100,6 +1223,28 @@ CREATE TABLE "public"."AdminVendorCredit" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "AdminVendorCredit_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."CoinsSettlement" (
+    "id" TEXT NOT NULL,
+    "walletTransactionId" TEXT NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CoinsSettlement_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."CoinsSettlementFile" (
+    "id" TEXT NOT NULL,
+    "proofImage" TEXT NOT NULL,
+    "coinsSettlementId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CoinsSettlementFile_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -1119,6 +1264,15 @@ CREATE UNIQUE INDEX "BankPaymentType_name_key" ON "public"."BankPaymentType"("na
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ShopCity_name_key" ON "public"."ShopCity"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PrivacyPolicy_vendorTypeId_key" ON "public"."PrivacyPolicy"("vendorTypeId");
+
+-- CreateIndex
+CREATE INDEX "PlatformFees_startAmount_idx" ON "public"."PlatformFees"("startAmount");
+
+-- CreateIndex
+CREATE INDEX "PlatformFees_endAmount_idx" ON "public"."PlatformFees"("endAmount");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "PreDefinedBanner_name_key" ON "public"."PreDefinedBanner"("name");
@@ -1220,6 +1374,42 @@ CREATE UNIQUE INDEX "OrderItem_itemId_orderId_key" ON "public"."OrderItem"("item
 CREATE UNIQUE INDEX "OrderItemVendorServiceOption_cartItemId_vendorServiceOption_key" ON "public"."OrderItemVendorServiceOption"("cartItemId", "vendorServiceOptionId");
 
 -- CreateIndex
+CREATE INDEX "SubscriptionPlan_vendorTypeId_idx" ON "public"."SubscriptionPlan"("vendorTypeId");
+
+-- CreateIndex
+CREATE INDEX "SubscriptionPlan_billingPeriod_idx" ON "public"."SubscriptionPlan"("billingPeriod");
+
+-- CreateIndex
+CREATE INDEX "SubscriptionPlan_status_idx" ON "public"."SubscriptionPlan"("status");
+
+-- CreateIndex
+CREATE INDEX "SubscriptionPlan_name_idx" ON "public"."SubscriptionPlan"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SubscriptionPlan_name_vendorTypeId_billingPeriod_key" ON "public"."SubscriptionPlan"("name", "vendorTypeId", "billingPeriod");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Payment_juspayOrderId_key" ON "public"."Payment"("juspayOrderId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Payment_orderId_key" ON "public"."Payment"("orderId");
+
+-- CreateIndex
+CREATE INDEX "Payment_purpose_referenceId_idx" ON "public"."Payment"("purpose", "referenceId");
+
+-- CreateIndex
+CREATE INDEX "Payment_paymentPageExpiry_idx" ON "public"."Payment"("paymentPageExpiry");
+
+-- CreateIndex
+CREATE INDEX "Payment_purpose_userId_status_idx" ON "public"."Payment"("purpose", "userId", "status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Refund_uniqueRequestId_key" ON "public"."Refund"("uniqueRequestId");
+
+-- CreateIndex
+CREATE INDEX "ManualRefund_paymentId_idx" ON "public"."ManualRefund"("paymentId");
+
+-- CreateIndex
 CREATE INDEX "Category_name_vendorTypeId_id_idx" ON "public"."Category"("name", "vendorTypeId", "id");
 
 -- CreateIndex
@@ -1295,6 +1485,9 @@ CREATE UNIQUE INDEX "ItemImage_absoluteUrl_key" ON "public"."ItemImage"("absolut
 CREATE INDEX "ItemImage_itemId_idx" ON "public"."ItemImage"("itemId");
 
 -- CreateIndex
+CREATE INDEX "UserReport_userId_idx" ON "public"."UserReport"("userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Review_orderItemId_key" ON "public"."Review"("orderItemId");
 
 -- CreateIndex
@@ -1340,45 +1533,6 @@ CREATE UNIQUE INDEX "ServiceImage_absoluteUrl_key" ON "public"."ServiceImage"("a
 CREATE UNIQUE INDEX "OrderSettlement_vendorId_date_key" ON "public"."OrderSettlement"("vendorId", "date");
 
 -- CreateIndex
-CREATE INDEX "SubscriptionPlan_vendorTypeId_idx" ON "public"."SubscriptionPlan"("vendorTypeId");
-
--- CreateIndex
-CREATE INDEX "SubscriptionPlan_billingPeriod_idx" ON "public"."SubscriptionPlan"("billingPeriod");
-
--- CreateIndex
-CREATE INDEX "SubscriptionPlan_status_idx" ON "public"."SubscriptionPlan"("status");
-
--- CreateIndex
-CREATE INDEX "SubscriptionPlan_name_idx" ON "public"."SubscriptionPlan"("name");
-
--- CreateIndex
-CREATE UNIQUE INDEX "SubscriptionPlan_name_vendorTypeId_billingPeriod_key" ON "public"."SubscriptionPlan"("name", "vendorTypeId", "billingPeriod");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Payment_juspayOrderId_key" ON "public"."Payment"("juspayOrderId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Payment_orderId_key" ON "public"."Payment"("orderId");
-
--- CreateIndex
-CREATE INDEX "Payment_purpose_referenceId_idx" ON "public"."Payment"("purpose", "referenceId");
-
--- CreateIndex
-CREATE INDEX "Payment_paymentPageExpiry_idx" ON "public"."Payment"("paymentPageExpiry");
-
--- CreateIndex
-CREATE INDEX "Payment_purpose_userId_status_idx" ON "public"."Payment"("purpose", "userId", "status");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Refund_uniqueRequestId_key" ON "public"."Refund"("uniqueRequestId");
-
--- CreateIndex
-CREATE INDEX "ManualRefund_paymentId_idx" ON "public"."ManualRefund"("paymentId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "VendorSubscription_paymentId_key" ON "public"."VendorSubscription"("paymentId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "User_mobile_key" ON "public"."User"("mobile");
 
 -- CreateIndex
@@ -1418,10 +1572,25 @@ CREATE UNIQUE INDEX "BloodDetails_userId_key" ON "public"."BloodDetails"("userId
 CREATE INDEX "BloodRequest_userId_donorId_idx" ON "public"."BloodRequest"("userId", "donorId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "VendorSubscription_paymentId_key" ON "public"."VendorSubscription"("paymentId");
+
+-- CreateIndex
+CREATE INDEX "VendorFeatureUsage_itemId_idx" ON "public"."VendorFeatureUsage"("itemId");
+
+-- CreateIndex
+CREATE INDEX "VendorFeatureUsage_shopId_idx" ON "public"."VendorFeatureUsage"("shopId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "VendorFeatureUsage_feature_vendorSubscriptionId_itemId_key" ON "public"."VendorFeatureUsage"("feature", "vendorSubscriptionId", "itemId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Vendor_userId_key" ON "public"."Vendor"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "VendorType_name_key" ON "public"."VendorType"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Staff_userId_key" ON "public"."Staff"("userId");
 
 -- CreateIndex
 CREATE INDEX "Staff_id_vendorId_idx" ON "public"."Staff"("id", "vendorId");
@@ -1457,10 +1626,28 @@ CREATE INDEX "BankDetail_upiId_idx" ON "public"."BankDetail"("upiId");
 CREATE UNIQUE INDEX "Wallet_userId_key" ON "public"."Wallet"("userId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "WalletTransaction_paymentId_key" ON "public"."WalletTransaction"("paymentId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "AdminVendorCredit_vendorId_key" ON "public"."AdminVendorCredit"("vendorId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CoinsSettlement_walletTransactionId_key" ON "public"."CoinsSettlement"("walletTransactionId");
 
 -- AddForeignKey
 ALTER TABLE "public"."ShopCategory" ADD CONSTRAINT "ShopCategory_vendorTypeId_fkey" FOREIGN KEY ("vendorTypeId") REFERENCES "public"."VendorType"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."TermsAndCondition" ADD CONSTRAINT "TermsAndCondition_vendorTypeId_fkey" FOREIGN KEY ("vendorTypeId") REFERENCES "public"."VendorType"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."PrivacyPolicy" ADD CONSTRAINT "PrivacyPolicy_vendorTypeId_fkey" FOREIGN KEY ("vendorTypeId") REFERENCES "public"."VendorType"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."VideoLink" ADD CONSTRAINT "VideoLink_vendorTypeId_fkey" FOREIGN KEY ("vendorTypeId") REFERENCES "public"."VendorType"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Poster" ADD CONSTRAINT "Poster_vendorTypeId_fkey" FOREIGN KEY ("vendorTypeId") REFERENCES "public"."VendorType"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."PreDefinedBanner" ADD CONSTRAINT "PreDefinedBanner_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -1571,6 +1758,30 @@ ALTER TABLE "public"."OrderItemVendorServiceOption" ADD CONSTRAINT "OrderItemVen
 ALTER TABLE "public"."OrderItemVendorServiceOption" ADD CONSTRAINT "OrderItemVendorServiceOption_cartItemId_fkey" FOREIGN KEY ("cartItemId") REFERENCES "public"."OrderItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "public"."SubscriptionPlan" ADD CONSTRAINT "SubscriptionPlan_vendorTypeId_fkey" FOREIGN KEY ("vendorTypeId") REFERENCES "public"."VendorType"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Payment" ADD CONSTRAINT "Payment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Refund" ADD CONSTRAINT "Refund_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "public"."Payment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ManualRefund" ADD CONSTRAINT "ManualRefund_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "public"."Payment"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ManualRefund" ADD CONSTRAINT "ManualRefund_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."PaymentErrorLog" ADD CONSTRAINT "PaymentErrorLog_vendorUserId_fkey" FOREIGN KEY ("vendorUserId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."PaymentErrorLog" ADD CONSTRAINT "PaymentErrorLog_customerUserId_fkey" FOREIGN KEY ("customerUserId") REFERENCES "public"."User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."PaymentErrorLogFile" ADD CONSTRAINT "PaymentErrorLogFile_paymentErrorLogId_fkey" FOREIGN KEY ("paymentErrorLogId") REFERENCES "public"."PaymentErrorLog"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."Category" ADD CONSTRAINT "Category_vendorTypeId_fkey" FOREIGN KEY ("vendorTypeId") REFERENCES "public"."VendorType"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1590,6 +1801,15 @@ ALTER TABLE "public"."Item" ADD CONSTRAINT "Item_productUnitId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "public"."ItemImage" ADD CONSTRAINT "ItemImage_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "public"."Item"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."UserReport" ADD CONSTRAINT "UserReport_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."UserReport" ADD CONSTRAINT "UserReport_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "public"."Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."UserReport" ADD CONSTRAINT "UserReport_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "public"."Booking"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Review" ADD CONSTRAINT "Review_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -1622,28 +1842,10 @@ ALTER TABLE "public"."ServiceImage" ADD CONSTRAINT "ServiceImage_serviceId_fkey"
 ALTER TABLE "public"."OrderSettlement" ADD CONSTRAINT "OrderSettlement_vendorId_fkey" FOREIGN KEY ("vendorId") REFERENCES "public"."Vendor"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."SubscriptionPlan" ADD CONSTRAINT "SubscriptionPlan_vendorTypeId_fkey" FOREIGN KEY ("vendorTypeId") REFERENCES "public"."VendorType"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."OrderSettlementFile" ADD CONSTRAINT "OrderSettlementFile_orderSettlementId_fkey" FOREIGN KEY ("orderSettlementId") REFERENCES "public"."OrderSettlement"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Payment" ADD CONSTRAINT "Payment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."Refund" ADD CONSTRAINT "Refund_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "public"."Payment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."ManualRefund" ADD CONSTRAINT "ManualRefund_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "public"."Payment"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."ManualRefund" ADD CONSTRAINT "ManualRefund_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."VendorSubscription" ADD CONSTRAINT "VendorSubscription_vendorId_fkey" FOREIGN KEY ("vendorId") REFERENCES "public"."Vendor"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."VendorSubscription" ADD CONSTRAINT "VendorSubscription_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "public"."Payment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."VendorSubscription" ADD CONSTRAINT "VendorSubscription_planId_fkey" FOREIGN KEY ("planId") REFERENCES "public"."SubscriptionPlan"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."User" ADD CONSTRAINT "User_referrerId_fkey" FOREIGN KEY ("referrerId") REFERENCES "public"."User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."OTP" ADD CONSTRAINT "OTP_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1662,6 +1864,27 @@ ALTER TABLE "public"."BloodRequest" ADD CONSTRAINT "BloodRequest_userId_fkey" FO
 
 -- AddForeignKey
 ALTER TABLE "public"."BloodRequest" ADD CONSTRAINT "BloodRequest_donorId_fkey" FOREIGN KEY ("donorId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."VendorSubscription" ADD CONSTRAINT "VendorSubscription_vendorId_fkey" FOREIGN KEY ("vendorId") REFERENCES "public"."Vendor"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."VendorSubscription" ADD CONSTRAINT "VendorSubscription_referredVendorId_fkey" FOREIGN KEY ("referredVendorId") REFERENCES "public"."Vendor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."VendorSubscription" ADD CONSTRAINT "VendorSubscription_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "public"."Payment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."VendorSubscription" ADD CONSTRAINT "VendorSubscription_planId_fkey" FOREIGN KEY ("planId") REFERENCES "public"."SubscriptionPlan"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."VendorFeatureUsage" ADD CONSTRAINT "VendorFeatureUsage_vendorSubscriptionId_fkey" FOREIGN KEY ("vendorSubscriptionId") REFERENCES "public"."VendorSubscription"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."VendorFeatureUsage" ADD CONSTRAINT "VendorFeatureUsage_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "public"."ShopInfo"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."VendorFeatureUsage" ADD CONSTRAINT "VendorFeatureUsage_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "public"."Item"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Vendor" ADD CONSTRAINT "Vendor_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -1724,4 +1947,13 @@ ALTER TABLE "public"."WalletTransaction" ADD CONSTRAINT "WalletTransaction_sende
 ALTER TABLE "public"."WalletTransaction" ADD CONSTRAINT "WalletTransaction_receiverWalletId_fkey" FOREIGN KEY ("receiverWalletId") REFERENCES "public"."Wallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "public"."WalletTransaction" ADD CONSTRAINT "WalletTransaction_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "public"."Payment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."AdminVendorCredit" ADD CONSTRAINT "AdminVendorCredit_vendorId_fkey" FOREIGN KEY ("vendorId") REFERENCES "public"."Vendor"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."CoinsSettlement" ADD CONSTRAINT "CoinsSettlement_walletTransactionId_fkey" FOREIGN KEY ("walletTransactionId") REFERENCES "public"."WalletTransaction"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."CoinsSettlementFile" ADD CONSTRAINT "CoinsSettlementFile_coinsSettlementId_fkey" FOREIGN KEY ("coinsSettlementId") REFERENCES "public"."CoinsSettlement"("id") ON DELETE CASCADE ON UPDATE CASCADE;
