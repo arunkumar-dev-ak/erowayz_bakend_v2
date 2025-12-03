@@ -10,6 +10,7 @@ export class CronjobsService {
     @InjectQueue('remainingQty') private remainingQueue: Queue,
     @InjectQueue('expiryPayment') private expiryPayment: Queue,
     @InjectQueue('closeVendorShop') private closeVendorShopQueue: Queue,
+    @InjectQueue('cleanup') private cleanupQueue: Queue,
   ) {}
 
   @Cron('*/1 * * * *') // every minute
@@ -67,6 +68,21 @@ export class CronjobsService {
         backoff: {
           type: 'exponential',
           delay: 3000,
+        },
+      },
+    );
+  }
+
+  @Cron('0 3 * * *', { timeZone: 'Asia/Kolkata' }) // Daily at 2 AM IST
+  async cleanupExpiredOtpAndTempRegister() {
+    await this.cleanupQueue.add(
+      'cleanup-expired-otp-temp-register-job',
+      {},
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 10000,
         },
       },
     );

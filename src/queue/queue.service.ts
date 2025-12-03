@@ -11,6 +11,7 @@ export class QueueService {
     @InjectQueue('expiryPayment') private expiryPaymentQueue: Queue,
     @InjectQueue('processPayment') private processPaymentQueue: Queue,
     @InjectQueue('closeVendorShop') private closeVendorShopQueue: Queue,
+    @InjectQueue('cleanup') private cleanupQueue: Queue,
   ) {}
 
   async addCancelOrderJob(orderId: string) {
@@ -89,5 +90,16 @@ export class QueueService {
         age: 129600000,
       },
     });
+  }
+
+  async addCleanupJob() {
+    await this.cleanupQueue.add(
+      'cleanup-expired-otp-temp-register-job',
+      {},
+      {
+        removeOnComplete: { age: 129600000 }, // 1.5 days
+        removeOnFail: { age: 129600000 },
+      },
+    );
   }
 }

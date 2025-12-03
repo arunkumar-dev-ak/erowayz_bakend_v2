@@ -11,6 +11,7 @@ import { VendorSubscriptionModule } from 'src/vendor-subscription/vendor-subscri
 import { OrderPaymentModule } from 'src/order-payment/order-payment.module';
 import { PaymentModule } from 'src/payment/payment.module';
 import { VendorShopCloseProcessor } from './consumers/close-shop-processor';
+import { CleanupProcessor } from './consumers/cleanup.processor';
 
 @Module({
   imports: [
@@ -32,6 +33,9 @@ import { VendorShopCloseProcessor } from './consumers/close-shop-processor';
       },
       {
         name: 'closeVendorShop', // add new queue
+      },
+      {
+        name: 'cleanup', // NEW QUEUE
       },
     ),
     BullBoardModule.forFeature(
@@ -55,6 +59,10 @@ import { VendorShopCloseProcessor } from './consumers/close-shop-processor';
         name: 'closeVendorShop', // add new monitoring
         adapter: BullAdapter,
       },
+      {
+        name: 'cleanup',
+        adapter: BullAdapter,
+      },
     ),
     WalletModule,
     VendorSubscriptionModule,
@@ -67,6 +75,7 @@ import { VendorShopCloseProcessor } from './consumers/close-shop-processor';
     ExpiryPaymentProcessor,
     ProcessPaymentProcessor,
     VendorShopCloseProcessor,
+    CleanupProcessor,
   ],
   exports: [
     BullModule,
@@ -75,6 +84,7 @@ import { VendorShopCloseProcessor } from './consumers/close-shop-processor';
     ExpiryPaymentProcessor,
     ProcessPaymentProcessor,
     VendorShopCloseProcessor,
+    CleanupProcessor,
   ],
 })
 export class QueueModule {}
