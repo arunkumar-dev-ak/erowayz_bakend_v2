@@ -20,7 +20,10 @@ export class FileUploadService {
 
   private generateUniqueFilename(originalName: string): string {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    return `${uniqueSuffix}-${originalName}`;
+    const sanitizedName = originalName
+      .replace(/\s+/g, '-') // spaces → hyphens
+      .replace(/[^a-zA-Z0-9.-]/g, '');
+    return `${uniqueSuffix}-${sanitizedName}`;
   }
 
   private getUploadPath(type?: string): string {

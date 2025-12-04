@@ -88,7 +88,7 @@ export class VendorTypeController {
   @ApiParam({ name: 'id', required: true, description: 'Vendor Type ID' })
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('imageRef'))
   @Put('update/:id')
   @UsePipes(new ValidationPipe())
   async updateVendorType(
