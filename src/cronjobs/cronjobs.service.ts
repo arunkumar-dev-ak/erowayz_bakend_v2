@@ -3,6 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { Queue } from 'bull';
 
+type JobState = 'completed' | 'failed' | 'wait';
+
 @Injectable()
 export class CronjobsService {
   constructor(
@@ -11,7 +13,13 @@ export class CronjobsService {
     @InjectQueue('expiryPayment') private expiryPayment: Queue,
     @InjectQueue('closeVendorShop') private closeVendorShopQueue: Queue,
     @InjectQueue('cleanup') private cleanupQueue: Queue,
+    @InjectQueue('processPayment') private processPaymentQueue: Queue,
   ) {}
+
+  private readonly completedAge = 2 * 24 * 60 * 60 * 1000; // 2 days
+  private readonly failedAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+  private readonly waitingAge = 10 * 24 * 60 * 60 * 1000; // 10 days
+  private readonly batchSize = 1000; // batch size for cleanup
 
   @Cron('*/1 * * * *') // every minute
   async handleExpiredOrders() {
@@ -86,5 +94,43 @@ export class CronjobsService {
         },
       },
     );
+  }
+
+  @Cron('0 5 * * *', { timeZone: 'Asia/Kolkata' }) // 5 AM IST
+  async cleanupAllQueues() {
+    // Non-payment queues
+    const nonPaymentQueues: Queue[] = [
+      this.cancelQueue,
+      this.remainingQueue,
+      this.closeVendorShopQueue,
+      this.cleanupQueue,
+    ];
+
+    for (const q of nonPaymentQueues) {
+      await this.batchCleanQueue(q, 'completed', this.completedAge);
+      await this.batchCleanQueue(q, 'failed', this.failedAge);
+      await this.batchCleanQueue(q, 'wait', this.waitingAge); // waiting jobs older than 10 days
+    }
+
+    // Payment queues
+    const paymentQueues: Queue[] = [
+      this.expiryPayment,
+      this.processPaymentQueue,
+    ];
+
+    for (const q of paymentQueues) {
+      await this.batchCleanQueue(q, 'completed', this.completedAge);
+      // Skip failed cleanup
+      // Optionally clean waiting jobs older than 10 days
+      await this.batchCleanQueue(q, 'wait', this.waitingAge);
+    }
+  }
+
+  private async batchCleanQueue(queue: Queue, type: JobState, age: number) {
+    let cleaned = 0;
+    do {
+      const job = await queue.clean(age, type, this.batchSize);
+      cleaned = job.length;
+    } while (cleaned === this.batchSize);
   }
 }

@@ -52,6 +52,10 @@ import { CleanupProcessor } from './consumers/cleanup.processor';
         adapter: BullAdapter,
       },
       {
+        name: 'processPayment',
+        adapter: BullAdapter,
+      },
+      {
         name: 'expiryPayment',
         adapter: BullAdapter,
       },
