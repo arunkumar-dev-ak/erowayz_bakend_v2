@@ -18,6 +18,7 @@ import { BannerVendorItemStatusDto } from './dto/banner-vendor-item-status.dto';
 import { GetBannerVendorItemQueryDto } from './dto/get-banner-vendor-item-query.dto';
 import { buildBannerVendorItemWhereFilter } from './utils/get-banner-vendor-item.utils';
 import { buildQueryParams } from 'src/common/functions/buildQueryParams';
+import { ProductUnitService } from 'src/product-unit/product-unit.service';
 
 @Injectable()
 export class BannerVendorItemService {
@@ -26,6 +27,7 @@ export class BannerVendorItemService {
     private readonly responseService: ResponseService,
     private readonly metaDataService: MetadataService,
     private readonly fileUploadService: FileUploadService,
+    private readonly productUnitService: ProductUnitService,
   ) {}
 
   async getBannerVendorItem({
@@ -68,6 +70,7 @@ export class BannerVendorItemService {
           },
         },
         bannerVendorItemsImage: true,
+        productUnit: true,
       },
       orderBy: {
         productstatus: 'asc',
@@ -121,6 +124,12 @@ export class BannerVendorItemService {
     if (existingItem) {
       throw new BadRequestException(`${body.name} is already present`);
     }
+    const productUnit = await this.productUnitService.getProductUnitById(
+      body.productUnitId,
+    );
+    if (!productUnit || productUnit.status == 'INACTIVE') {
+      throw new BadRequestException('Product Unit is inavlid');
+    }
 
     // Upload images
     const imageUrls: MultipleFileUploadInterface =
@@ -137,7 +146,6 @@ export class BannerVendorItemService {
           description: body.description,
           price: body.price,
           discountPrice: body.discountPrice,
-          quantityUnit: body.quantityUnit,
           productstatus: body.productstatus,
           status: body.status,
           vendorId,
@@ -151,6 +159,7 @@ export class BannerVendorItemService {
               })),
             },
           },
+          productUnitId: body.productUnitId,
         },
         include: {
           bannerVendorItemsImage: true,
@@ -196,6 +205,7 @@ export class BannerVendorItemService {
         fileUploadService: this.fileUploadService,
         bannerVendorItemService: this,
         bannerVendorItemId,
+        productUnitService: this.productUnitService,
       });
 
     try {

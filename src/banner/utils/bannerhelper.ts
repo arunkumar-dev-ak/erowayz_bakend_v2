@@ -100,15 +100,15 @@ export function checkFieldsForBanner({
   vendorType: VendorType;
 }) {
   if (bannerType === 'REGULAR') {
-    if (!body.qty || !body.originalPricePerUnit || !body.qtyUnit) {
+    if (!body.qty || !body.originalPricePerUnit || !body.productUnitId) {
       throw new BadRequestException(
-        `Quantity(qty), Original Price Per Unit(originalPricePerUnit), and Quantity Unit(qtyUnit) are required when creating a banner for ${vendorType.name}.`,
+        `Quantity(qty), Original Price Per Unit(originalPricePerUnit), and Quantity Unit are required when creating a banner for ${vendorType.name}.`,
       );
     }
   } else {
-    if (body.qty || body.originalPricePerUnit || body.qtyUnit) {
+    if (body.qty || body.originalPricePerUnit || body.productUnitId) {
       throw new BadRequestException(
-        `Quantity(qty), Original Price Per Unit(originalPricePerUnit), and Quantity Unit(qtyUnit) should not be provided for ${vendorType.name}.`,
+        `Quantity(qty), Original Price Per Unit(originalPricePerUnit), and Quantity Unit should not be provided for ${vendorType.name}.`,
       );
     }
   }

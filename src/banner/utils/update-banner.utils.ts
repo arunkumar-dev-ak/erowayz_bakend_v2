@@ -13,6 +13,7 @@ import {
 import { createBannerItemImages } from './create-banner.utils';
 import { MultipleFileUploadInterface } from 'src/vendor/vendor.service';
 import { KeywordService } from 'src/keyword/keyword.service';
+import { ProductUnitService } from 'src/product-unit/product-unit.service';
 
 export const UpdateBannerValidation = async ({
   bannerService,
@@ -20,12 +21,14 @@ export const UpdateBannerValidation = async ({
   vendorId,
   bannerId,
   keywordService,
+  productUnitService,
 }: {
   bannerService: BannerService;
   body: UpdateBannerDto;
   keywordService: KeywordService;
   vendorId: string;
   bannerId: string;
+  productUnitService: ProductUnitService;
 }) => {
   const { deletedItemImageIds } = body;
   //check banner is associated with vendor
@@ -37,6 +40,15 @@ export const UpdateBannerValidation = async ({
     throw new BadRequestException(
       'Banner not found or not associated with Vendor',
     );
+  }
+
+  if (body.productUnitId) {
+    const productUnit = await productUnitService.getProductUnitById(
+      body.productUnitId,
+    );
+    if (!productUnit || productUnit.status == 'INACTIVE') {
+      throw new BadRequestException('Product Unit is inavlid');
+    }
   }
 
   //check unique name if name is provided
@@ -178,9 +190,9 @@ export function checkBannerFieldsForUpdate({
   vendorType: VendorType;
 }) {
   if (bannerType === 'PRODUCT') {
-    if (body.qty || body.originalPricePerUnit || body.qtyUnit) {
+    if (body.qty || body.originalPricePerUnit || body.productUnitId) {
       throw new BadRequestException(
-        `Quantity(qty), Original Price Per Unit(originalPricePerUnit), and Quantity Unit(qtyUnit) should not be provided for ${vendorType.name}.`,
+        `Quantity, Original Price Per Unit, and Product Unit should not be provided for ${vendorType.name}.`,
       );
     }
   }
@@ -214,8 +226,7 @@ export const buildUpdateBannerData = ({
     offerValue,
     status,
     originalPricePerUnit,
-    qty,
-    qtyUnit,
+    productUnitId,
     keyWordIds,
     title,
     subHeading,
@@ -251,8 +262,13 @@ export const buildUpdateBannerData = ({
     ...(fgImageRelativeUrl && { fgImageRelativeUrl }),
     ...(fgImagePosition && { fgImagePosition }),
     ...(originalPricePerUnit && { originalPricePerUnit }),
-    ...(qty && { qty }),
-    ...(qtyUnit && { qtyUnit }),
+    ...(productUnitId && {
+      productUnit: {
+        connect: {
+          id: productUnitId,
+        },
+      },
+    }),
     ...(subTitle && { subTitle }),
     bannerItemImages: bannerProductImage
       ? createBannerItemImages(bannerProductImage)

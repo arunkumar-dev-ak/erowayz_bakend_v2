@@ -67,7 +67,7 @@ model Banner {
   status               BannerStatus       @default(ACTIVE)
   originalPricePerUnit Float?
   qty                  Float?
-  qtyUnit              QuantityUnit?
+  productUnitId        String
   vendor               Vendor             @relation(fields: [vendorId], references: [id])
   bannerItemImages     BannerItemImages[]
   keyWordBanner        KeywordBanner[]
@@ -79,6 +79,8 @@ model Banner {
   @@index([id, vendorId])
   @@index([id, name, vendorId])
   @@index([name])
+
+  productUnit       ProductUnit?  @relation(fields: [productUnitId], references: [id], onDelete: Cascade)
 }
 
 model KeywordBanner {
@@ -139,7 +141,7 @@ model BannerVendorItem {
   price             Float
   discountPrice     Float?
   vendorId          String
-  quantityUnit      QuantityUnit  @default(GENERAL)
+  productUnitId     String
   quantity          Int
   productstatus     ProductStatus @default(OUT_OF_STOCK)
   status            Status        @default(ACTIVE)
@@ -150,6 +152,7 @@ model BannerVendorItem {
   updatedAt   DateTime @updatedAt
 
   vendor            Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  productUnit       ProductUnit?   @relation(fields: [productUnitId], references: [id], onDelete: Cascade)
   
   @@unique([vendorId,name])
 }

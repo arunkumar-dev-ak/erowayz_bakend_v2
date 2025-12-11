@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { BannerVendorItemsImage, Prisma } from '@prisma/client';
 import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
+import { ProductUnitService } from 'src/product-unit/product-unit.service';
 
 export const UpdateBannerVendorItemVerification = async ({
   body,
@@ -16,6 +17,7 @@ export const UpdateBannerVendorItemVerification = async ({
   fileUploadService,
   bannerVendorItemService,
   bannerVendorItemId,
+  productUnitService,
 }: {
   body: UpdateBannerVendorItemDto;
   vendorId: string;
@@ -23,6 +25,7 @@ export const UpdateBannerVendorItemVerification = async ({
   fileUploadService: FileUploadService;
   bannerVendorItemService: BannerVendorItemService;
   bannerVendorItemId: string;
+  productUnitService: ProductUnitService;
 }) => {
   //Fetch existing banner vendor item
   const existingItem =
@@ -34,6 +37,15 @@ export const UpdateBannerVendorItemVerification = async ({
 
   if (existingItem.vendorId !== vendorId) {
     throw new ForbiddenException('You are not authorized to update this item.');
+  }
+
+  if (body.productUnitId) {
+    const productUnit = await productUnitService.getProductUnitById(
+      body.productUnitId,
+    );
+    if (!productUnit || productUnit.status == 'INACTIVE') {
+      throw new BadRequestException('Product Unit is inavlid');
+    }
   }
 
   // Check if name is being updated and verify uniqueness
@@ -93,7 +105,13 @@ export const UpdateBannerVendorItemVerification = async ({
     ...(body.description && { description: body.description }),
     ...(body.price && { price: body.price }),
     ...(body.discountPrice && { discountPrice: body.discountPrice }),
-    ...(body.quantityUnit && { quantityUnit: body.quantityUnit }),
+    ...(body.productUnitId && {
+      productUnit: {
+        connect: {
+          id: body.productUnitId,
+        },
+      },
+    }),
     ...(body.productstatus && { productstatus: body.productstatus }),
     ...(body.status && { status: body.status }),
     ...(body.quantity && { quantity: body.quantity }),

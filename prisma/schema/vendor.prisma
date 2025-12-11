@@ -124,13 +124,11 @@ model ShopInfo {
   nameTamil       String?
   address         String
   addressTamil    String?
-  city            String? //need to delete
-  shopCityId      String? //need to remove ?
+  shopCityId      String
   pincode         String
   shopImageRef    String?
   relativeUrl     String?
-  shopType        ShopType? //need to delete
-  shopCategoryId  String?   //need to remove ?
+  shopCategoryId  String
   istermsAccepted Boolean  @default(false)
   latitude        Float
   longitude       Float
@@ -179,8 +177,7 @@ model License {
   expiryDate        DateTime
   relativeUrl       String?
   image             String?
-  licenseType       LicenseType?  //need to delete
-  licenseCategoryId String?       //newly added need to remove ?
+  licenseCategoryId String
   shopInfoId        String   @unique
   isLicenseApproved Boolean  @default(false)
   createdAt         DateTime @default(now())
@@ -223,12 +220,10 @@ model BankDetail {
   accountHolderName  String
   accountNumber      String
   ifscCode           String
-  bankName           String?  //need to delete
-  bankNameId         String?  //need to remove ?
+  bankNameId         String
   branchName         String
   accountType        AccountType
-  bankPlatformType   BankPlatformType?  //need to delete
-  bankPaymentTypeId  String?  //need to remove ?
+  bankPaymentTypeId  String
   linkedPhoneNumber  String?
   upiId              String?
   isVerified          Boolean   @default(false)

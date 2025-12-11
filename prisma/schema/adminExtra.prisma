@@ -47,6 +47,8 @@ model ProductUnit {
     updatedAt        DateTime           @updatedAt
 
     item            Item[]
+    banner          Banner[]
+    bannerVendorItem    BannerVendorItem[]
 }
 
 model ShopCategory {

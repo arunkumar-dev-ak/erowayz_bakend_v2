@@ -15,12 +15,7 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
-import {
-  BannerStatus,
-  fgBannerImagePosition,
-  OfferType,
-  QuantityUnit,
-} from '@prisma/client';
+import { BannerStatus, fgBannerImagePosition, OfferType } from '@prisma/client';
 import { extractMilliSecond } from 'src/common/functions/extract_millisecond';
 import { IsUniqueArrayConstraint } from 'src/vendor/dto/testregistervendor.dto';
 
@@ -170,16 +165,14 @@ export class UpdateBannerDto {
   qty?: number;
 
   @ApiProperty({
-    description: 'QuantityUnit should be one of the predefined values',
+    description: 'ProductUnitId should not be empty',
     required: true,
-    enum: QuantityUnit,
+    example: 'Your ProductUnitId here',
   })
+  @IsString()
+  @IsNotEmpty({ message: 'ProductUnitId should not be empty' })
   @IsOptional()
-  @IsEnum(QuantityUnit, {
-    message:
-      'Invalid Quantity Unit. Must be one of: GENERAL, KG, GRAM, BOX, SET, PIECE, LITRE, MILLILITRE, UNIT, SERVE.',
-  })
-  qtyUnit?: QuantityUnit;
+  productUnitId: string;
 
   @ApiProperty({
     description:

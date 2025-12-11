@@ -71,9 +71,8 @@ export class CreateBankDetailDto {
     required: true,
   })
   @IsString()
-  @IsOptional()
   @IsNotEmpty({ message: 'Bank Id should not be empty' })
-  bankPaymentTypeId?: string;
+  bankPaymentTypeId: string;
 
   @ApiProperty({
     description: 'Linked phone number',

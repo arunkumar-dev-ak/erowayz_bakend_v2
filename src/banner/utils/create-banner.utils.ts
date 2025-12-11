@@ -14,6 +14,7 @@ import {
 } from '@prisma/client';
 import { KeywordService } from 'src/keyword/keyword.service';
 import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
+import { ProductUnitService } from 'src/product-unit/product-unit.service';
 
 export const CreateBannerValidation = async ({
   bannerService,
@@ -23,6 +24,7 @@ export const CreateBannerValidation = async ({
   vendorId,
   vendorSubscriptionService,
   currentVendorSubscription,
+  productUnitService,
 }: {
   bannerService: BannerService;
   vendorService: VendorService;
@@ -31,6 +33,7 @@ export const CreateBannerValidation = async ({
   vendorId: string;
   vendorSubscriptionService: VendorSubscriptionService;
   currentVendorSubscription: VendorSubscription;
+  productUnitService: ProductUnitService;
 }) => {
   let updateVendorUsageQuery: Prisma.VendorFeatureUsageUpdateArgs | null = null;
 
@@ -52,6 +55,13 @@ export const CreateBannerValidation = async ({
     throw new BadRequestException(
       'You have reached the limit to create the banner',
     );
+  }
+
+  const productUnit = await productUnitService.getProductUnitById(
+    body.productUnitId,
+  );
+  if (!productUnit || productUnit.status == 'INACTIVE') {
+    throw new BadRequestException('Product Unit is inavlid');
   }
 
   updateVendorUsageQuery = {
@@ -145,7 +155,7 @@ export const buildCreateBannerData = ({
     status,
     originalPricePerUnit,
     qty,
-    qtyUnit,
+    productUnitId,
     keyWordIds,
     title,
     subHeading,
@@ -172,6 +182,11 @@ export const buildCreateBannerData = ({
     subHeadingTamil,
     subTitleTamil,
     descriptionTamil,
+    productUnit: {
+      connect: {
+        id: productUnitId,
+      },
+    },
     ...(title && { title }),
     ...(subHeading && { subHeading }),
     ...(description && { description }),
@@ -184,7 +199,6 @@ export const buildCreateBannerData = ({
     ...(fgImagePosition && { fgImagePosition }),
     ...(originalPricePerUnit && { originalPricePerUnit }),
     ...(qty && { qty }),
-    ...(qtyUnit && { qtyUnit }),
     ...(subTitle && { subTitle }),
     bannerItemImages: bannerProductImage
       ? createBannerItemImages(bannerProductImage)

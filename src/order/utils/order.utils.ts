@@ -6,7 +6,6 @@ import {
   OrderStatus,
   PaymentMethod,
   ProductStatus,
-  QuantityUnit,
   Role,
   ShopInfo,
   Staff,
@@ -187,7 +186,6 @@ export function groupedItem(cartItems: CartItemWithItem[]) {
     return {
       itemId: baseItem.itemId,
       quantity: baseItem.quantity,
-      quantityUnit: baseItem.quantityUnit as QuantityUnit,
       price: baseItem.price,
       discountPrice: baseItem.discountPrice,
       orderItemVendorServiceOption: {

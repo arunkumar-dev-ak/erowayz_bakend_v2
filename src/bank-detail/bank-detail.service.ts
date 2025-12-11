@@ -195,7 +195,7 @@ export class BankDetailService {
         upiId,
         vendorId,
         linkedPhoneNumber,
-        ...(bankPaymentTypeId && { bankPaymentTypeId }),
+        bankPaymentTypeId,
       },
     });
 

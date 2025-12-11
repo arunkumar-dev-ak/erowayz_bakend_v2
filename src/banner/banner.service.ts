@@ -43,6 +43,7 @@ import {
 import { GetBannerForAdminQueryDto } from './dto/get-banner-for-admin.dto';
 import { buildBannerForAdminWhereFilter } from './utils/get-banner-for-admin-filter';
 import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
+import { ProductUnitService } from 'src/product-unit/product-unit.service';
 
 @Injectable()
 export class BannerService {
@@ -55,6 +56,7 @@ export class BannerService {
     private readonly itemService: ItemService,
     private readonly keywordService: KeywordService,
     private readonly vendorSubscriptionService: VendorSubscriptionService,
+    private readonly productUnitService: ProductUnitService,
   ) {}
 
   /*---- Get Banners -----*/
@@ -126,6 +128,7 @@ export class BannerService {
           },
         },
         bannerItemImages: true,
+        productUnit: true,
       },
     });
 
@@ -230,6 +233,7 @@ export class BannerService {
           },
         },
         bannerItemImages: true,
+        productUnit: true,
       },
     });
 
@@ -316,6 +320,7 @@ export class BannerService {
             keyWord: true,
           },
         },
+        productUnit: true,
         bannerItemImages: true,
       },
       orderBy: [{ status: 'asc' }, { endDateTime: 'desc' }],
@@ -398,6 +403,7 @@ export class BannerService {
           },
         },
         bannerItemImages: true,
+        productUnit: true,
       },
     });
 
@@ -448,6 +454,7 @@ export class BannerService {
         keywordService: this.keywordService,
         vendorSubscriptionService: this.vendorSubscriptionService,
         currentVendorSubscription,
+        productUnitService: this.productUnitService,
       },
     );
 
@@ -558,6 +565,7 @@ export class BannerService {
       body,
       vendorId,
       bannerId,
+      productUnitService: this.productUnitService,
     });
 
     //check fg ground and bg image

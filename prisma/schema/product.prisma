@@ -51,8 +51,7 @@ model Item {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   subCategoryId     String
-  quantityUnit      QuantityUnit?  @default(GENERAL)  //need to delete
-  productUnitId     String?                           //need to remove ?
+  productUnitId     String
   dailyTotalQty     Float
   remainingQty      Float
   productstatus     ProductStatus @default(OUT_OF_STOCK)
@@ -62,7 +61,7 @@ model Item {
   category          Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   subCategory       SubCategory   @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
   vendor            Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  productUnit       ProductUnit?   @relation(fields: [productUnitId], references: [id], onDelete: Cascade)
+  productUnit       ProductUnit?  @relation(fields: [productUnitId], references: [id], onDelete: Cascade)
 
   cartItem          CartItem[]
   itemImage         ItemImage[]
@@ -96,20 +95,6 @@ model ItemImage {
   item        Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@index([itemId])
-}
-
-/// ----- Vendors -----
-enum QuantityUnit {
-  GENERAL
-  KG
-  GRAM
-  BOX
-  SET
-  PIECE
-  LITRE
-  MILLILITRE
-  UNIT
-  SERVE
 }
 
 enum ProductStatus {

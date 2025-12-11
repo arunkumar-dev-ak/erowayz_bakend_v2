@@ -154,8 +154,7 @@ export class TempRegisterVendorDto {
   @ApiProperty({ description: 'ShopCategoryId is required', required: true })
   @IsString()
   @IsNotEmpty({ message: 'ShopCategoryId is required' })
-  @IsOptional()
-  shopCategoryId?: string;
+  shopCategoryId: string;
 
   @ApiProperty({
     type: 'array',

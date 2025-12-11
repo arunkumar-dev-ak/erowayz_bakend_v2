@@ -925,7 +925,7 @@ export class VendorService {
                     shopImageRef: shopImage.imageUrl,
                     relativeUrl: shopImage.relativePath,
                     license: licenseData,
-                    ...(shopCategoryId && { shopCategoryId }),
+                    shopCategoryId: shopCategoryId,
                   },
                 },
                 ...(serviceOptionIds?.length
