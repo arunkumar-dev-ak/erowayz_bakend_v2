@@ -144,7 +144,9 @@ export class RegisterUtils {
               license: licenseData,
               nameTamil: parsedValue.shopNameTamil,
               addressTamil: parsedValue.addressTamil,
-              shopCategoryId: parsedValue.shopCategoryId,
+              ...(parsedValue.shopCategoryId && {
+                shopCategoryId: parsedValue.shopCategoryId,
+              }),
             },
           },
           ...(serviceOptionIds?.length

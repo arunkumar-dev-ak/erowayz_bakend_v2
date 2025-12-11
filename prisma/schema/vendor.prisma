@@ -128,7 +128,7 @@ model ShopInfo {
   pincode         String
   shopImageRef    String?
   relativeUrl     String?
-  shopCategoryId  String
+  shopCategoryId  String?
   istermsAccepted Boolean  @default(false)
   latitude        Float
   longitude       Float
