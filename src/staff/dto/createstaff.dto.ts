@@ -1,12 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
-  IsBoolean,
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsString,
   Matches,
 } from 'class-validator';
+import { TrueOrFalseStatus } from 'src/user/dto/edit-user.dto';
 
 export class CreateStaffDto {
   @ApiProperty({ description: 'Name is required', required: true })
@@ -38,8 +39,13 @@ export class CreateStaffDto {
   )
   password: string;
 
-  @ApiProperty({ description: 'Status is either true or false' })
-  @IsBoolean({ message: 'status is either true or false' })
-  @IsNotEmpty({ message: 'status is required' })
-  status: boolean;
+  @ApiProperty({
+    description: 'Status is either true or false',
+    enum: TrueOrFalseStatus,
+    required: false,
+  })
+  @IsEnum(TrueOrFalseStatus, {
+    message: `Status must be either '${TrueOrFalseStatus.TRUE}' or '${TrueOrFalseStatus.FALSE}'`,
+  })
+  status: TrueOrFalseStatus;
 }

@@ -16,6 +16,7 @@ import { Prisma, Role, VendorSubscription } from '@prisma/client';
 import { TokenService } from 'src/token/token.service';
 import { Response } from 'express';
 import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
+import { TrueOrFalseMap } from 'src/user/dto/edit-user.dto';
 
 @Injectable()
 export class StaffService {
@@ -96,7 +97,7 @@ export class StaffService {
         email,
         password: hashedPassword,
         role: Role.STAFF,
-        status,
+        status: TrueOrFalseMap[status],
         staff: {
           create: {
             vendorId,
@@ -147,18 +148,28 @@ export class StaffService {
         throw new ConflictException('Email already exists');
       }
     }
+    let hashedPwd: string | null = null;
     if (password) {
-      body.password = await bcrypt.hash(password, 10);
+      hashedPwd = await bcrypt.hash(password, 10);
     }
     let salt: string | undefined = undefined;
     // Set a new salt if username or password is changed
-    if (password || email || status !== existingStaff.user['status']) {
+    if (
+      password ||
+      email ||
+      TrueOrFalseMap[status] !== existingStaff.user['status']
+    ) {
       salt = uuidv4();
     }
     const result = await this.prisma.$transaction(async (tx) => {
       const updatedStaff = await this.prisma.user.update({
         where: { id: existingStaff.userId },
-        data: { ...body, salt },
+        data: {
+          ...(email && { email }),
+          ...(hashedPwd && { password: hashedPwd }),
+          ...(status && { status: TrueOrFalseMap[status] }),
+          salt,
+        },
       });
       if (salt !== undefined) {
         await this.logoutStaffAccountByStaffId({
