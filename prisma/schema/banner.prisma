@@ -141,7 +141,7 @@ model BannerVendorItem {
   price             Float
   discountPrice     Float?
   vendorId          String
-  productUnitId     String
+  productUnitId     String?
   quantity          Int
   productstatus     ProductStatus @default(OUT_OF_STOCK)
   status            Status        @default(ACTIVE)

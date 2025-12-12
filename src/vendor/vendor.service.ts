@@ -330,6 +330,8 @@ export class VendorService {
             mobile: true,
             email: true,
             referralCode: true,
+            referees: true,
+            referrer: true,
           },
         },
         shopInfo: {

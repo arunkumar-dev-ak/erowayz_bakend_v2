@@ -189,8 +189,9 @@ export class CreateBannerDto {
     example: 'Your ProductUnitId here',
   })
   @IsString()
+  @IsOptional()
   @IsNotEmpty({ message: 'ProductUnitId should not be empty' })
-  productUnitId: string;
+  productUnitId?: string;
 
   @ApiProperty({
     description:

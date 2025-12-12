@@ -57,11 +57,13 @@ export const CreateBannerValidation = async ({
     );
   }
 
-  const productUnit = await productUnitService.getProductUnitById(
-    body.productUnitId,
-  );
-  if (!productUnit || productUnit.status == 'INACTIVE') {
-    throw new BadRequestException('Product Unit is inavlid');
+  if (body.productUnitId) {
+    const productUnit = await productUnitService.getProductUnitById(
+      body.productUnitId,
+    );
+    if (!productUnit || productUnit.status == 'INACTIVE') {
+      throw new BadRequestException('Product Unit is inavlid');
+    }
   }
 
   updateVendorUsageQuery = {
