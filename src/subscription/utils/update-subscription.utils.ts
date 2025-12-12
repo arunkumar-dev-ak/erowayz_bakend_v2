@@ -27,7 +27,7 @@ export const UpdateSubscriptionPlanVerification = async ({
   //Validate vendorTypeId
   if (vendorTypeId) {
     const vendorType = await vendorTypeService.findVendorTypeById(vendorTypeId);
-    if (!vendorType) {
+    if (!vendorType || vendorType.status == 'INACTIVE') {
       throw new BadRequestException('Invalid vendorTypeId');
     }
   }

@@ -80,7 +80,7 @@ export const updateVendorServiceUtils = async ({
     throw new BadRequestException('Service not found.');
   }
 
-  if (serviceOptId && !serviceOption) {
+  if (serviceOptId && (!serviceOption || serviceOption.status == 'INACTIVE')) {
     throw new BadRequestException('Service option not found.');
   }
 

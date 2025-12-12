@@ -6,7 +6,7 @@ export function buildVendorTypeWhereFilter({
 }: {
   query: GetVendorTypeQueryDto;
 }): Prisma.VendorTypeWhereInput {
-  const { name } = query;
+  const { name, status } = query;
   const where: Prisma.VendorTypeWhereInput = {};
 
   if (name) {
@@ -14,6 +14,10 @@ export function buildVendorTypeWhereFilter({
       contains: name,
       mode: 'insensitive',
     };
+  }
+
+  if (status) {
+    where.status = status;
   }
 
   return where;

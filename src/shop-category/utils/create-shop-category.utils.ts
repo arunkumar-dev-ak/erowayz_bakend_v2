@@ -16,7 +16,7 @@ export const CreateShopCategoryUtils = async ({
   const { name, status, vendorTypeId, tamilName } = body;
 
   const vendorType = await vendorTypeService.findVendorTypeById(vendorTypeId);
-  if (!vendorType) {
+  if (!vendorType || vendorType.status == 'INACTIVE') {
     throw new BadRequestException('Vendor type not found');
   }
 

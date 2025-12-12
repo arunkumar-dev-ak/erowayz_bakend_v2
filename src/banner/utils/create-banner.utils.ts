@@ -184,11 +184,13 @@ export const buildCreateBannerData = ({
     subHeadingTamil,
     subTitleTamil,
     descriptionTamil,
-    productUnit: {
-      connect: {
-        id: productUnitId,
+    ...(productUnitId && {
+      productUnit: {
+        connect: {
+          id: productUnitId,
+        },
       },
-    },
+    }),
     ...(title && { title }),
     ...(subHeading && { subHeading }),
     ...(description && { description }),

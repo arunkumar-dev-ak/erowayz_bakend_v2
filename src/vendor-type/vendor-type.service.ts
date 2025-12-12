@@ -54,9 +54,10 @@ export class VendorTypeService {
       include: { serviceOptions: true },
     });
 
-    const { name } = query;
+    const { name, status } = query;
     const queries = buildQueryParams({
       name,
+      status,
     });
 
     const meta = this.metaDataService.createMetaData({
@@ -109,6 +110,7 @@ export class VendorTypeService {
             relativeUrl: relativePath,
             type: body.type,
             tamilName: body.tamilName,
+            status: body.status,
           },
         });
       });
@@ -137,7 +139,7 @@ export class VendorTypeService {
     image?: Express.Multer.File;
   }) {
     const initialDate = new Date();
-    const { name, type, tamilName } = body;
+    const { name, type, tamilName, status } = body;
 
     if (!name && !type && !tamilName && !image) {
       throw new BadRequestException('No valid fields provided for update');
@@ -163,6 +165,7 @@ export class VendorTypeService {
       imageRef: uploadedImage?.imageUrl ?? undefined,
       relativeUrl: uploadedImage?.relativePath ?? undefined,
       tamilName: tamilName ?? undefined,
+      status: status ?? undefined,
     };
 
     try {

@@ -4,6 +4,7 @@ import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
 } from 'class-validator';
@@ -14,6 +15,12 @@ export class CreateStaffDto {
   @IsString()
   @IsNotEmpty({ message: 'Name is required' })
   name: string;
+
+  @ApiProperty({ description: 'NameTamil is required', required: true })
+  @IsString()
+  @IsNotEmpty({ message: 'NameTamil is required' })
+  @IsOptional()
+  nameTamil?: string;
 
   @ApiProperty({ description: 'Email is required', required: true })
   @IsEmail()

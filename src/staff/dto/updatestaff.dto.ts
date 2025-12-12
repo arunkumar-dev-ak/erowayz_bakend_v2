@@ -17,6 +17,12 @@ export class UpdateStaffDto {
   @IsNotEmpty({ message: 'Name is required' })
   name: string;
 
+  @ApiProperty({ description: 'NameTamil is required', required: true })
+  @IsString()
+  @IsNotEmpty({ message: 'NameTamil is required' })
+  @IsOptional()
+  nameTamil?: string;
+
   @ApiProperty({ description: 'Email Should not be empty, if defined' })
   @IsOptional()
   @IsEmail()
@@ -49,5 +55,6 @@ export class UpdateStaffDto {
   @IsEnum(TrueOrFalseStatus, {
     message: `Status must be either '${TrueOrFalseStatus.TRUE}' or '${TrueOrFalseStatus.FALSE}'`,
   })
-  status: TrueOrFalseStatus;
+  @IsOptional()
+  status?: TrueOrFalseStatus;
 }

@@ -237,8 +237,8 @@ function validateUserByMobile(userByMobile: any) {
   }
 }
 
-function validateVendorType(vendorType: any) {
-  if (!vendorType) {
+function validateVendorType(vendorType?: VendorType | null) {
+  if (!vendorType || vendorType.status == 'INACTIVE') {
     throw new BadRequestException('Invalid vendor type');
   }
 }

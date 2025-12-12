@@ -65,7 +65,7 @@ export class StaffService {
     currentVendorSubscription: VendorSubscription;
   }) {
     const initialDate = new Date();
-    const { email, password, name, status } = body;
+    const { email, password, name, status, nameTamil } = body;
     if (await this.findStaffByName(email)) {
       throw new ConflictException('Email already exists');
     }
@@ -94,6 +94,7 @@ export class StaffService {
     const result = await this.prisma.user.create({
       data: {
         name,
+        nameTamil,
         email,
         password: hashedPassword,
         role: Role.STAFF,
@@ -129,7 +130,7 @@ export class StaffService {
     if (!body || Object.keys(body).length === 0) {
       throw new BadRequestException('No valid fields provided for update');
     }
-    const { email, password, status } = body;
+    const { email, password, status, nameTamil } = body;
     const existingStaff = await this.findStaffByVendorId({
       vendorId,
       staffId,
@@ -157,7 +158,7 @@ export class StaffService {
     if (
       password ||
       email ||
-      TrueOrFalseMap[status] !== existingStaff.user['status']
+      (status && TrueOrFalseMap[status] !== existingStaff.user['status'])
     ) {
       salt = uuidv4();
     }
@@ -165,6 +166,7 @@ export class StaffService {
       const updatedStaff = await this.prisma.user.update({
         where: { id: existingStaff.userId },
         data: {
+          ...(nameTamil && { nameTamil }),
           ...(email && { email }),
           ...(hashedPwd && { password: hashedPwd }),
           ...(status && { status: TrueOrFalseMap[status] }),

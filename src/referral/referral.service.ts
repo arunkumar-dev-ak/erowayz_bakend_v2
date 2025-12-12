@@ -19,7 +19,7 @@ export class ReferralService {
     private readonly vendorSubscriptionService: VendorSubscriptionService,
   ) {
     this.referralCodeUsageLimit = parseInt(
-      configService.get<string>('REFERRAL_CODE_USAGE_LIMIT') || '1',
+      configService.get<string>('REFERRAL_CODE_USAGE_LIMIT') || '3',
     );
   }
 

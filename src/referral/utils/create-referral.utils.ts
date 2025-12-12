@@ -46,6 +46,12 @@ export const CreateReferralUtils = async ({
     );
   }
 
+  if (futureSubscription) {
+    throw new BadRequestException(
+      'You cannot use this referral because the vendor already has a upcoming subscription.',
+    );
+  }
+
   const plan = currentSubscription.plan;
   if (!plan || plan.status === 'INACTIVE') {
     throw new BadRequestException(

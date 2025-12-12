@@ -102,7 +102,7 @@ export class KeywordService {
       throw new BadRequestException(
         `${name} already exists for this vendorType`,
       );
-    } else if (!VendorType) {
+    } else if (!VendorType || VendorType.status == 'INACTIVE') {
       throw new BadRequestException(`VendorType not exists`);
     }
 

@@ -1,5 +1,6 @@
-import { IsOptional, IsString, IsNumberString } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, IsNumberString, IsEnum } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Status } from '@prisma/client';
 
 export class GetServiceOptionQueryDto {
   @ApiPropertyOptional({
@@ -9,6 +10,15 @@ export class GetServiceOptionQueryDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @ApiProperty({
+    enum: Status,
+  })
+  @IsOptional()
+  @IsEnum(Status, {
+    message: `Status must be one of the following: ${Object.values(Status).join(', ')}`,
+  })
+  status?: Status;
 
   @ApiPropertyOptional({
     description: 'Pagination offset, defaults to 0',

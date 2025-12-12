@@ -67,7 +67,7 @@ model Banner {
   status               BannerStatus       @default(ACTIVE)
   originalPricePerUnit Float?
   qty                  Float?
-  productUnitId        String
+  productUnitId        String?
   vendor               Vendor             @relation(fields: [vendorId], references: [id])
   bannerItemImages     BannerItemImages[]
   keyWordBanner        KeywordBanner[]

@@ -6,7 +6,7 @@ export function buildServiceOptionWhereFilter({
 }: {
   query: GetServiceOptionQueryDto;
 }): Prisma.ServiceOptionWhereInput {
-  const { name } = query;
+  const { name, status } = query;
   const where: Prisma.ServiceOptionWhereInput = {};
 
   if (name) {
@@ -14,6 +14,10 @@ export function buildServiceOptionWhereFilter({
       contains: name,
       mode: 'insensitive',
     };
+  }
+
+  if (status) {
+    where.status = status;
   }
 
   return where;

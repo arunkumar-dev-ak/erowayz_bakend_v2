@@ -10,6 +10,7 @@ model Category {
   vendorType   VendorType    @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
   item         Item[]
   subCategory  SubCategory[]
+  status            Status             @default(ACTIVE)
 
   @@unique([name, vendorTypeId])
   @@index([name, vendorTypeId, id])
@@ -26,6 +27,7 @@ model SubCategory {
   categoryId  String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  status            Status             @default(ACTIVE)
   item        Item[]
   category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 

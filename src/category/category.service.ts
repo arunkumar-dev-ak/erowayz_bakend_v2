@@ -38,7 +38,7 @@ export class CategoryService {
     query: GetCategoryQueryDto;
   }) {
     const initialDate = new Date();
-    const { name, vendorId, vendorTypeId } = query;
+    const { name, vendorId, vendorTypeId, status } = query;
     const where: Prisma.CategoryWhereInput = {};
     if (name) {
       where.name = {
@@ -56,6 +56,9 @@ export class CategoryService {
     if (vendorTypeId) {
       where.vendorTypeId = vendorTypeId;
     }
+    if (status) {
+      where.status = status;
+    }
 
     const totalCount = await this.prisma.category.count({ where });
 
@@ -72,6 +75,7 @@ export class CategoryService {
       name,
       vendorId,
       vendorTypeId,
+      status,
     });
 
     const meta = this.metaDataService.createMetaData({
@@ -162,11 +166,15 @@ export class CategoryService {
     categoryImage: Express.Multer.File;
   }) {
     const initialDate = new Date();
-    const { name, vendorTypeId, tamilName } = body;
+    const { name, vendorTypeId, tamilName, status } = body;
     //check vendorTypeId
     const vendorType =
       await this.vendorTypeService.findVendorTypeById(vendorTypeId);
-    if (!vendorType || vendorType.type != VendorCategoryType.PRODUCT) {
+    if (
+      !vendorType ||
+      vendorType.status == 'INACTIVE' ||
+      vendorType.type != VendorCategoryType.PRODUCT
+    ) {
       throw new Error(
         'Vendor Type not found or VendorType is not Product Type',
       );
@@ -192,6 +200,7 @@ export class CategoryService {
           imageRef: imageUrl,
           relativeUrl: relativePath,
           tamilName,
+          status,
         },
       });
 
@@ -223,12 +232,12 @@ export class CategoryService {
 
     if (
       body === undefined ||
-      (!body.name && !categoryImage && !body.tamilName)
+      (!body.name && !categoryImage && !body.tamilName && !body.status)
     ) {
       throw new Error('No valid fields provided for update');
     }
 
-    const { name, tamilName } = body;
+    const { name, tamilName, status } = body;
 
     const category = await this.checkCategoryById(categoryId);
     //check category
@@ -263,6 +272,7 @@ export class CategoryService {
       imageRef: updatedImage ? updatedImage.imageUrl : undefined,
       relativeUrl: updatedImage ? updatedImage.relativePath : undefined,
       tamilName: tamilName ?? undefined,
+      status: status ?? undefined,
     };
 
     try {

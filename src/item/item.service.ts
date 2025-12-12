@@ -213,9 +213,16 @@ export class ItemService {
       });
     if (!subCategory) {
       throw new NotFoundException(
-        'Subcategory not found or not associated with categoryId',
+        'Subcategory not found or not associated with category',
       );
     }
+    if (subCategory.status == 'INACTIVE') {
+      throw new NotFoundException('Subcategory not found');
+    }
+    if (category.status == 'INACTIVE') {
+      throw new NotFoundException('Category not found');
+    }
+
     //upload image
     const imageUrls: MultipleFileUploadInterface =
       this.fileUploadService.handleMultipleFileUpload({

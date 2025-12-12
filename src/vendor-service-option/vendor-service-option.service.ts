@@ -156,10 +156,10 @@ export class VendorServiceOptionService {
 
     //check vendorServiceOption is applicable for vendor
     const [serviceOption, vendor] = await Promise.all([
-      await this.serviceOption.getServiceOptionById(serviceOptionId),
-      await this.vendorService.findVendorByVendorId(vendorId),
+      this.serviceOption.getServiceOptionById(serviceOptionId),
+      this.vendorService.findVendorByVendorId(vendorId),
     ]);
-    if (!serviceOption) {
+    if (!serviceOption || serviceOption.status == 'INACTIVE') {
       throw new BadRequestException('Service Option not found');
     } else if (!vendor) {
       throw new BadRequestException('Vendor not found');
@@ -205,13 +205,13 @@ export class VendorServiceOptionService {
   }) {
     const initialDate = new Date();
     const [totalVendorServiceOption, vendorServiceOption] = await Promise.all([
-      await this.prisma.vendorServiceOption.count({
+      this.prisma.vendorServiceOption.count({
         where: {
           vendorId,
           status: Status.ACTIVE,
         },
       }),
-      await this.prisma.vendorServiceOption.findFirst({
+      this.prisma.vendorServiceOption.findFirst({
         where: {
           id: vendorServiceOptId,
           vendorId,

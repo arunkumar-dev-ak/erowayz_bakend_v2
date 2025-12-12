@@ -64,6 +64,7 @@ model VendorType {
   type              VendorCategoryType
   creatorId         String
   relativeUrl       String?
+  status            Status             @default(ACTIVE)
 
   category          Category[]
   serviceOptions    ServiceOption[]
@@ -93,6 +94,7 @@ model ServiceOption {
   description         String?
   relativeUrl         String?
   serviceOptImageRef  String?
+  status            Status             @default(ACTIVE)
   vendorType          VendorType            @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
   vendorServiceOption VendorServiceOption[]
   service             Service[]

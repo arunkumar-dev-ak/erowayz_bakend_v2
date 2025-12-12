@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { VendorCategoryType } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { Status, VendorCategoryType } from '@prisma/client';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateVendorTypeDto {
   @ApiProperty({ description: 'name should not be empty', required: true })
@@ -11,6 +11,15 @@ export class CreateVendorTypeDto {
   @ApiProperty()
   @IsNotEmpty({ message: 'tamilName is required' })
   tamilName: string;
+
+  @ApiProperty({
+    enum: Status,
+  })
+  @IsOptional()
+  @IsEnum(Status, {
+    message: `Status must be one of the following: ${Object.values(Status).join(', ')}`,
+  })
+  status?: Status;
 
   @ApiProperty({
     format: 'binary',

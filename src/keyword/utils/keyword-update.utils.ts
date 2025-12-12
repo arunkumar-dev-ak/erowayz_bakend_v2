@@ -20,11 +20,11 @@ export const KeyWordUpdateUtils = async ({
   const { vendorTypeId, keyWordType, name } = body;
 
   //check vendorType
-  if (
-    vendorTypeId &&
-    !(await vendorTypeService.findVendorTypeById(vendorTypeId))
-  ) {
-    throw new BadRequestException('VendorType not exists');
+  if (vendorTypeId) {
+    const vendorType = await vendorTypeService.findVendorTypeById(vendorTypeId);
+    if (!vendorType || vendorType.status == 'INACTIVE') {
+      throw new BadRequestException('VendorType not exists');
+    }
   }
 
   //check vendor using this

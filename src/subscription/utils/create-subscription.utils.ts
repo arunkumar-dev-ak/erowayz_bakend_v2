@@ -20,7 +20,7 @@ export const CreateSubscriptionValidation = async ({
   const vendorType = await vendorTypeService.findVendorTypeById(
     body.vendorTypeId,
   );
-  if (!vendorType) {
+  if (!vendorType || vendorType.status == 'INACTIVE') {
     throw new BadRequestException('Invalid vendorTypeId');
   }
 

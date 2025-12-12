@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { Status } from '@prisma/client';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateServiceOptionDto {
   @ApiProperty({ description: 'Name is required', required: true })
@@ -20,6 +21,15 @@ export class CreateServiceOptionDto {
   @IsNotEmpty({ message: 'Vendor Type ID is required' })
   @IsString()
   vendorTypeId: string;
+
+  @ApiProperty({
+    enum: Status,
+  })
+  @IsOptional()
+  @IsEnum(Status, {
+    message: `Status must be one of the following: ${Object.values(Status).join(', ')}`,
+  })
+  status?: Status;
 
   @ApiProperty({
     format: 'binary',

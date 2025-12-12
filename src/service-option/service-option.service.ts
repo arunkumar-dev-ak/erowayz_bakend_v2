@@ -58,9 +58,10 @@ export class ServiceOptionService {
       },
     });
 
-    const { name } = query;
+    const { name, status } = query;
     const queries = buildQueryParams({
       name,
+      status,
     });
 
     const meta = this.metaDataService.createMetaData({
@@ -115,10 +116,14 @@ export class ServiceOptionService {
     serviceImage: Express.Multer.File;
   }) {
     const initialDate = new Date();
-    const { name, vendorTypeId, description, tamilName } = body;
+    const { name, vendorTypeId, description, tamilName, status } = body;
     const vendorType =
       await this.vendorTypeService.findVendorTypeById(vendorTypeId);
-    if (!vendorType || vendorType.type === VendorCategoryType.BANNER) {
+    if (
+      !vendorType ||
+      vendorType.status == 'INACTIVE' ||
+      vendorType.type === VendorCategoryType.BANNER
+    ) {
       throw new NotFoundException(
         'Vendor Type is not found or VendorType has no service option creation',
       );
@@ -142,6 +147,7 @@ export class ServiceOptionService {
           serviceOptImageRef: imageUrl,
           relativeUrl: relativePath,
           tamilName,
+          status,
         },
       });
 
@@ -170,8 +176,8 @@ export class ServiceOptionService {
     serviceImage?: Express.Multer.File;
   }) {
     const initialDate = new Date();
-    const { name, vendorTypeId, description, tamilName } = body;
-    if (!name && !description && !serviceImage && !tamilName) {
+    const { name, vendorTypeId, description, tamilName, status } = body;
+    if (!name && !description && !serviceImage && !tamilName && !status) {
       throw new BadRequestException('No valid fields provided for update');
     }
 
@@ -183,7 +189,7 @@ export class ServiceOptionService {
     if (!serviceOption) {
       throw new NotFoundException('Service not found');
     }
-    if (!vendorType) {
+    if (!vendorType || vendorType.status == 'INACTIVE') {
       throw new NotFoundException('Vendor type not found');
     }
     //checking uniqueness
@@ -217,6 +223,7 @@ export class ServiceOptionService {
       serviceOptImageRef: uploadedImage?.imageUrl ?? undefined,
       relativeUrl: uploadedImage?.relativePath ?? undefined,
       tamilName: tamilName ?? undefined,
+      status: status ?? undefined,
     };
 
     try {

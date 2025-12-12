@@ -52,7 +52,7 @@ export const createVendorServiceUtils = async ({
   }
 
   // Validate service option existence
-  if (!serviceOption) {
+  if (!serviceOption || serviceOption.status == 'INACTIVE') {
     throw new BadRequestException('Service option not found.');
   }
 

@@ -94,6 +94,12 @@ export const UpdateItemVerification = async ({
       'Subcategory not found or not associated with categoryId',
     );
   }
+  if (subCategory && subCategory.status == 'INACTIVE') {
+    throw new NotFoundException('Subcategory not found');
+  }
+  if (subCategory && subCategory.category.status == 'INACTIVE') {
+    throw new NotFoundException('Category not found');
+  }
 
   // Validate minSellingQty constraints
   if (

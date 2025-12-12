@@ -39,13 +39,16 @@ export class SubCategoryService {
     query: GetSubCategoryQueryDto;
   }) {
     const initialDate = new Date();
-    const { name } = query;
+    const { name, status } = query;
     const where: Prisma.SubCategoryWhereInput = {};
     if (name) {
       where.name = {
         contains: name,
         mode: 'insensitive',
       };
+    }
+    if (status) {
+      where.status = status;
     }
 
     const totalCount = await this.prisma.subCategory.count({ where });
@@ -61,6 +64,7 @@ export class SubCategoryService {
 
     const queries = buildQueryParams({
       name,
+      status,
     });
 
     const meta = this.metadataService.createMetaData({
@@ -95,7 +99,7 @@ export class SubCategoryService {
     const initialDate = new Date();
     //check category
     const category = await this.categoryService.checkCategoryById(categoryId);
-    if (!category) {
+    if (!category || category.status == 'INACTIVE') {
       throw new NotFoundException('Category not found');
     }
     const totalCount = await this.prisma.subCategory.count({
@@ -138,11 +142,11 @@ export class SubCategoryService {
     subCategoryImage: Express.Multer.File;
   }) {
     const initialDate = new Date();
-    const { name, categoryId, tamilName } = body;
+    const { name, categoryId, tamilName, status } = body;
     const category = await this.categoryService.checkCategoryById(categoryId);
 
     //check category
-    if (!category) {
+    if (!category || category.status == 'INACTIVE') {
       throw new NotFoundException('Category not found');
     }
     //check unique name
@@ -164,6 +168,7 @@ export class SubCategoryService {
           imageRef: imageUrl,
           relativeUrl: relativePath,
           tamilName,
+          status,
         },
       });
 
@@ -196,7 +201,7 @@ export class SubCategoryService {
       throw new ConflictException('No valid fields provided for update');
     }
 
-    const { name, tamilName } = body;
+    const { name, tamilName, status } = body;
     //check subCategory
     const subCategory = await this.getSubCategoryId(subCategoryId);
     if (!subCategory) {
@@ -225,6 +230,7 @@ export class SubCategoryService {
     const updateQuery = {
       name: name ?? undefined,
       tamilName: tamilName ?? undefined,
+      status: status ?? undefined,
       imageRef: updatedImage?.imageUrl ?? undefined,
       relativeUrl: updatedImage?.relativePath ?? undefined,
     };
@@ -335,6 +341,9 @@ export class SubCategoryService {
       where: {
         id: subCategoryId,
         categoryId,
+      },
+      include: {
+        category: true,
       },
     });
 
