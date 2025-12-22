@@ -74,17 +74,17 @@ export const initiateVendorSubscriptionVerification = async ({
     );
   }
 
-  const oneDayAgo = currentDate;
-  oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-  if (
-    existingSubscriptionPlan &&
-    existingSubscriptionPlan.endDate < oneDayAgo
-  ) {
-    throw new BadRequestException(
-      `You are allowed to renew the subscription only one day before it expires on ${convertUTCToISTFormatted(
-        existingSubscriptionPlan.endDate,
-      )}.`,
-    );
+  if (existingSubscriptionPlan) {
+    const oneDayBeforeExpiry = new Date(existingSubscriptionPlan.endDate);
+    oneDayBeforeExpiry.setDate(oneDayBeforeExpiry.getDate() - 1);
+
+    if (currentDate < oneDayBeforeExpiry) {
+      throw new BadRequestException(
+        `You are allowed to renew the subscription only one day before it expires on ${convertUTCToISTFormatted(
+          existingSubscriptionPlan.endDate,
+        )}.`,
+      );
+    }
   }
 
   return { subPlan, existingSubscriptionPlan, futureVendorSubscription };
