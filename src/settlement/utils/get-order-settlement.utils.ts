@@ -51,7 +51,6 @@ export function getSettlements({
       bd."accountNumber",
       bd."ifscCode",
       bd."linkedPhoneNumber",
-      bd."bankPlatformType",
       bn.name AS bankName,
       bpt.name AS bankPaymentType,
       COALESCE(SUM(op."paidedAmount"),0) AS totalAmount,
@@ -83,7 +82,6 @@ export function getSettlements({
       bd."accountNumber",
       bd."ifscCode",
       bd."linkedPhoneNumber",
-      bd."bankPlatformType",
       bn.name,
       bpt.name,
       vs."planName"
@@ -120,7 +118,6 @@ export function getSettlements({
       bd."accountNumber",
       bd."ifscCode",
       bd."linkedPhoneNumber",
-      bd."bankPlatformType",
       bn.name,
       bpt.name,
       vs."planName"

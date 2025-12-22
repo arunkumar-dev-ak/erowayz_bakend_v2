@@ -111,7 +111,7 @@ export class CategoryService {
   }) {
     const initialDate = new Date();
 
-    const { name, vendorId } = query;
+    const { name, vendorId, status } = query;
 
     const where: Prisma.CategoryWhereInput = {
       vendorTypeId,
@@ -121,6 +121,9 @@ export class CategoryService {
         contains: name,
         mode: 'insensitive',
       };
+    }
+    if (status) {
+      where.status = status;
     }
     if (vendorId) {
       where.item = {
@@ -139,11 +142,18 @@ export class CategoryService {
       skip: offset,
     });
 
+    const queries = buildQueryParams({
+      name,
+      vendorId,
+      status,
+    });
+
     const metadata = this.metaDataService.createMetaData({
       totalCount,
       offset,
       limit,
       path: `category/${vendorTypeId}`,
+      queries,
     });
 
     return this.response.successResponse({

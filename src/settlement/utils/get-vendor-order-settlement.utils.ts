@@ -86,7 +86,6 @@ export function getOrderSettlementsForVendor({
     bd."accountNumber",
     bd."ifscCode",
     bd."linkedPhoneNumber",
-    bd."bankPlatformType",
     bn.name AS bankName,
     bpt.name AS bankPaymentType,
     SUM(op."paidedAmount") AS totalAmount,
@@ -131,7 +130,6 @@ export function getOrderSettlementsForVendor({
     bd."accountNumber",
     bd."ifscCode",
     bd."linkedPhoneNumber",
-    bd."bankPlatformType",
     bn.name,
     bpt.name
   LIMIT ${limit} OFFSET ${offset};
