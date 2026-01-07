@@ -23,9 +23,9 @@ export class CleanupProcessor {
 
     while (otpHasMore) {
       const otps: OtpRecord[] = await this.prisma.oTP.findMany({
+        ...(otpLastId ? { cursor: { id: otpLastId }, skip: 1 } : {}),
         where: {
           createdAt: { lt: cutoffDate },
-          ...(otpLastId ? { cursor: { id: otpLastId }, skip: 1 } : {}),
         },
         select: { id: true },
         take: batchSize,
@@ -53,9 +53,9 @@ export class CleanupProcessor {
     while (tempHasMore) {
       const tempRegisters: TempRegisterRecord[] =
         await this.prisma.tempRegister.findMany({
+          ...(tempLastId ? { cursor: { id: tempLastId }, skip: 1 } : {}),
           where: {
             createdAt: { lt: cutoffDate },
-            ...(tempLastId ? { cursor: { id: tempLastId }, skip: 1 } : {}),
           },
           select: { id: true, cacheKey: true },
           take: batchSize,

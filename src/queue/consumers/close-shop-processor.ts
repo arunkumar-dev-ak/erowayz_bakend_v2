@@ -20,9 +20,9 @@ export class VendorShopCloseProcessor {
     while (hasMore) {
       // Tell TS what type to expect from findMany
       const vendors: ShopInfoVendor[] = await this.prisma.shopInfo.findMany({
+        ...(lastId ? { cursor: { id: lastId }, skip: 1 } : {}),
         where: {
           isShopOpen: true,
-          ...(lastId ? { cursor: { id: lastId }, skip: 1 } : {}),
         },
         select: {
           vendorId: true,

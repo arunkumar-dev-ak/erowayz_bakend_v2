@@ -24,12 +24,14 @@ export const includeItem = (userId?: string) => {
       select: {
         id: true,
         name: true,
+        tamilName: true,
       },
     },
     subCategory: {
       select: {
         id: true,
         name: true,
+        tamilName: true,
       },
     },
     itemImage: {

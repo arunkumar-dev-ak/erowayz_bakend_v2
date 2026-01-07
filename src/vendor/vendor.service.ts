@@ -1061,7 +1061,22 @@ export class VendorService {
     const user = await this.prisma.user.findFirst({
       where: { mobile },
       include: {
-        vendor: { include: { shopInfo: { include: { license: true } } } },
+        vendor: {
+          include: {
+            shopInfo: {
+              include: {
+                shopCategory: true,
+                shopCity: true,
+              },
+            },
+            vendorServiceOption: {
+              include: {
+                serviceOption: true,
+              },
+            },
+            vendorType: true,
+          },
+        },
       },
     });
     if (!user) {
