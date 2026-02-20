@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Body, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentPurpose, PaymentStatus, Prisma, User } from '@prisma/client';
 import axios from 'axios';
@@ -12,6 +12,10 @@ import { createUniqueOrderId } from './utils/payment.utils';
 import { GetEaseBuzzPaymentDto } from './dto/get-easebuzz.dto';
 import { Response } from 'express';
 import { ResponseService } from 'src/response/response.service';
+import { EasebuzzWebhookDto } from './dto/easebuzz-webhook.dto';
+import { processWebHookUtils } from './utils/process-webhook.utils';
+import { QueueService } from 'src/queue/queue.service';
+import { GetEaseBuzzSuccessQueryDto } from './dto/get-easebuzz-success-response.dto';
 
 @Injectable()
 export class EasebuzzService {
@@ -22,6 +26,7 @@ export class EasebuzzService {
 
   constructor(
     private readonly configService: ConfigService,
+    private readonly queueService: QueueService,
     private readonly prisma: PrismaService,
     private readonly response: ResponseService,
   ) {
@@ -89,8 +94,8 @@ export class EasebuzzService {
       amount,
       email: params.user.email,
       phone: params.user.mobile,
-      surl: 'https://erowayz.in/',
-      furl: 'https://erowayz.in/index.php/contact-us/',
+      surl: 'https://admin.erowayz.in/api/v2/easebuzz/success',
+      furl: 'https://admin.erowayz.in/api/v2/easebuzz/failure',
       unique_id: params.user.id.replaceAll('-', '_'),
       productinfo: 'paymentPage',
       firstname: params.user.name,
@@ -191,6 +196,42 @@ export class EasebuzzService {
       statusCode: 200,
       initialDate,
     });
+  }
+
+  async handleFailureResponse({
+    res,
+    query,
+  }: {
+    res: Response;
+    query: GetEaseBuzzSuccessQueryDto;
+  }) {
+    const payment = await this.getPaymentById(query.txnId);
+
+    const message = encodeURIComponent(
+      payment?.statusMessage ?? 'Payment declined',
+    );
+
+    const deepLink = `easebuzz://payment/failure?txnid=${query.txnId}&message=${message}`;
+
+    return res.redirect(deepLink);
+  }
+
+  /*----- Webhook -----*/
+  async getPaymentById(txnId: string) {
+    return await this.prisma.payment.findUnique({
+      where: {
+        txnid: txnId,
+      },
+    });
+  }
+
+  async handleWebHook(@Body() body: EasebuzzWebhookDto) {
+    await processWebHookUtils({
+      queueService: this.queueService,
+      prismaService: this.prisma,
+      body,
+    });
+    return;
   }
 
   /*----- helper func -----*/
