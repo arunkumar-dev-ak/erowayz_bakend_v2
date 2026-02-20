@@ -1,18 +1,19 @@
-import { forwardRef, Global, Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { VendorSubscriptionService } from './vendor-subscription.service';
 import { VendorSubscriptionController } from './vendor-subscription.controller';
 import { VendorModule } from 'src/vendor/vendor.module';
 import { SubscriptionModule } from 'src/subscription/subscription.module';
-import { PaymentModule } from 'src/payment/payment.module';
 import { ManualRefundModule } from 'src/manual-refund/manual-refund.module';
+import { EasebuzzModule } from 'src/easebuzz/easebuzz.module';
 
 @Global()
 @Module({
   imports: [
     VendorModule,
     SubscriptionModule,
-    forwardRef(() => PaymentModule),
+    EasebuzzModule,
     ManualRefundModule,
+    EasebuzzModule,
   ],
   controllers: [VendorSubscriptionController],
   providers: [VendorSubscriptionService],

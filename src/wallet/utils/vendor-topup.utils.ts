@@ -7,7 +7,7 @@ import {
 import { VendorTopUpDto } from '../dto/vendor-topup.dto';
 import { WalletService } from '../wallet.service';
 import { BadRequestException } from '@nestjs/common';
-import { PaymentError } from 'src/payment/utils/payment-error.utils';
+import { PaymentError } from 'src/easebuzz/utils/payment-error.utils';
 
 export async function vendorTopUpPaymentInitiation({
   body,

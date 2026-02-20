@@ -41,7 +41,6 @@ import { OrderGatewayModule } from './order-gateway/order-gateway.module';
 import { RedisModule } from './redis/redis.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { RedisOptions } from './configs/redis-options-constants';
-import { PaymentModule } from './payment/payment.module';
 import { ReviewModule } from './review/review.module';
 import { BannerBookingModule } from './banner-booking/banner-booking.module';
 import { ServiceBookingModule } from './service-booking/service-booking.module';
@@ -82,6 +81,7 @@ import { PlatformFeeModule } from './platform-fee/platform-fee.module';
 import { UserReportModule } from './user-report/user-report.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { CoinImageModule } from './coin-image/coin-image.module';
+import { EasebuzzModule } from './easebuzz/easebuzz.module';
 
 @Module({
   imports: [
@@ -117,7 +117,6 @@ import { CoinImageModule } from './coin-image/coin-image.module';
     QueueModule,
     OrderGatewayModule,
     RedisModule,
-    PaymentModule,
     ReviewModule,
     BannerBookingModule,
     ServiceBookingModule,
@@ -161,6 +160,7 @@ import { CoinImageModule } from './coin-image/coin-image.module';
     UserReportModule,
     DashboardModule,
     CoinImageModule,
+    EasebuzzModule,
   ],
   controllers: [AppController],
   providers: [

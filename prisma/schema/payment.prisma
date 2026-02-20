@@ -48,40 +48,107 @@ enum PaymentPurpose {
 }
 
 /*----- Payment gateway -----*/
+// model Payment {
+//   // ✅ Primary IDs
+//   id                String   @id @default(uuid())
+//   juspayOrderId     String   @unique                      // From session response: id (e.g., "ordeh_...")
+//   orderId           String   @unique                      // From session response: order_id (your internal order ID)
+
+//   /// --- Payment Information ---
+//   amount            Int                                   // From session request
+//   purpose           PaymentPurpose                        // Your internal enum (e.g., FOOD, PLAN, etc.)
+//   referenceId       String                                // Maps to reference entity like order, subscription, etc.
+//   status            PaymentStatus  @default(PENDING)      // You maintain this: PENDING / CHARGED / FAILED
+//   userId            String                                // Foreign key to User
+
+//   /// --- Juspay Session Metadata ---
+//   paymentPageExpiry DateTime                              // From session.payment_links.expiry (used only if using web link)
+//   paymentLinkWeb    String                                // From session.payment_links.web (skip if using plugin only)
+
+//   /// --- Gateway Transaction Metadata (From SDK / Webhook) ---
+//   juspayTxnId       String?                               // From SDK/webhook: txn.txn_id
+//   gatewayTxnUuid    String?                               // From SDK/webhook: txn.gateway_reference_id
+//   gatewayId         Int?                                  // From SDK/webhook: txn.gateway_id
+//   gateway           String?                               // From SDK/webhook: txn.gateway
+
+//   status_id         String?                               // From SDK/webhook: txn.status_id (e.g., CHARGED, AUTHORIZED)
+//   auth_type         String?                               // From SDK/webhook: txn.auth_type (e.g., preauth, finalauth)
+//   paymentMethod     String?                               // From SDK/webhook: txn.payment_method_type (CARD / UPI / NB)
+
+//   /// --- Card Details (from webhook or Juspay plugin callback) ---
+//   cardLast4         String?                               // From txn.card.last_four_digits
+//   cardType          String?                               // From txn.card.card_type (CREDIT / DEBIT)
+//   cardBrand         String?                               // From txn.card.card_brand (VISA / MASTERCARD)
+//   cardIssuerCountry String?                               // From txn.card.issuer_country
+
+//   /// --- Refund Info ---
+//   refunds             Refund[]
+//   manualRefund        ManualRefund[]
+
+//   vendorSubscription  VendorSubscription?
+//   orderPayment        OrderPayment?
+//   walletTransaction   WalletTransaction?
+
+//   /// --- Timestamp Metadata ---
+//   createdAt         DateTime @default(now())
+//   updatedAt         DateTime @updatedAt
+
+//   /// --- Relations ---
+//   user              User     @relation(fields: [userId], references: [id])
+
+//   @@index([purpose, referenceId])
+//   @@index([paymentPageExpiry])
+//   @@index([purpose,userId,status])
+// }
+
 model Payment {
   // ✅ Primary IDs
   id                String   @id @default(uuid())
-  juspayOrderId     String   @unique                      // From session response: id (e.g., "ordeh_...")
-  orderId           String   @unique                      // From session response: order_id (your internal order ID)
+  
+  txnid             String   @unique
+  accessKey         String   @unique
 
-  /// --- Payment Information ---
-  amount            Int                                   // From session request
-  purpose           PaymentPurpose                        // Your internal enum (e.g., FOOD, PLAN, etc.)
-  referenceId       String                                // Maps to reference entity like order, subscription, etc.
-  status            PaymentStatus  @default(PENDING)      // You maintain this: PENDING / CHARGED / FAILED
-  userId            String                                // Foreign key to User
+  // --- Payment Info ---
+  amount            Float                             // Easebuzz returns string, better store as Float
+  purpose           PaymentPurpose
+  referenceId       String
+  status            PaymentStatus  @default(PENDING)
+  userId            String
 
-  /// --- Juspay Session Metadata ---
-  paymentPageExpiry DateTime                              // From session.payment_links.expiry (used only if using web link)
-  paymentLinkWeb    String                                // From session.payment_links.web (skip if using plugin only)
+  /* --- Easebuzz Transaction Details --- */
+  easepayid         String?   @unique
+  mode              String?                          // UPI / DC / CC / NB
+  statusMessage     String?                          // error or error_Message
+  unmappedstatus    String?
+  bankRefNum        String?                          // bank_ref_num
+  bankCode          String?
+  paymentSource     String?                          // Easebuzz
+  productInfo       String?
 
-  /// --- Gateway Transaction Metadata (From SDK / Webhook) ---
-  juspayTxnId       String?                               // From SDK/webhook: txn.txn_id
-  gatewayTxnUuid    String?                               // From SDK/webhook: txn.gateway_reference_id
-  gatewayId         Int?                                  // From SDK/webhook: txn.gateway_id
-  gateway           String?                               // From SDK/webhook: txn.gateway
+  /* --- UPI Details --- */
+  upiVa             String?
 
-  status_id         String?                               // From SDK/webhook: txn.status_id (e.g., CHARGED, AUTHORIZED)
-  auth_type         String?                               // From SDK/webhook: txn.auth_type (e.g., preauth, finalauth)
-  paymentMethod     String?                               // From SDK/webhook: txn.payment_method_type (CARD / UPI / NB)
+  /* --- Card Details --- */
+  cardLast4         String?
+  cardType          String?
+  issuingBank       String?
 
-  /// --- Card Details (from webhook or Juspay plugin callback) ---
-  cardLast4         String?                               // From txn.card.last_four_digits
-  cardType          String?                               // From txn.card.card_type (CREDIT / DEBIT)
-  cardBrand         String?                               // From txn.card.card_brand (VISA / MASTERCARD)
-  cardIssuerCountry String?                               // From txn.card.issuer_country
+  /* --- Financial Details --- */
+  netAmountDebit    Float?
+  deductionPercentage Float?
+  cashbackPercentage  Float?
 
-  /// --- Refund Info ---
+  paymentPageExpiry DateTime
+
+  /* --- Hash Validation --- */
+  responseHash      String?
+
+  /* --- Timestamps --- */
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  /* --- Relations --- */
+  user              User     @relation(fields: [userId], references: [id])
   refunds             Refund[]
   manualRefund        ManualRefund[]
 
@@ -89,16 +156,9 @@ model Payment {
   orderPayment        OrderPayment?
   walletTransaction   WalletTransaction?
 
-  /// --- Timestamp Metadata ---
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  /// --- Relations ---
-  user              User     @relation(fields: [userId], references: [id])
-
   @@index([purpose, referenceId])
-  @@index([paymentPageExpiry])
-  @@index([purpose,userId,status])
+  @@index([purpose, userId, status])
+
 }
 
 model Refund {

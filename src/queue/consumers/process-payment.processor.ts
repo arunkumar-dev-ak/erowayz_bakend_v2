@@ -14,7 +14,7 @@ import {
 import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
 import { WalletService } from 'src/wallet/wallet.service';
 import { OrderPaymentService } from 'src/order-payment/order-payment.service';
-import { PaymentError } from 'src/payment/utils/payment-error.utils';
+import { PaymentError } from 'src/easebuzz/utils/payment-error.utils';
 
 @Processor('processPayment')
 @Injectable()

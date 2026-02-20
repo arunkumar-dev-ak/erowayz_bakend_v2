@@ -1,4 +1,3 @@
-import { PaymentSerice } from 'src/payment/payment.service';
 import { OrderPaymentDto } from '../dto/order-payment.dto';
 import { OrderService } from '../order.service';
 import { WalletService } from 'src/wallet/wallet.service';
@@ -11,30 +10,27 @@ import {
   WalletTransactionType,
 } from '@prisma/client';
 import { ErrorLogService } from 'src/error-log/error-log.service';
-import { PaymentJuspayService } from 'src/payment/payment.juspay.service';
-import { JuspayOrderResponse } from 'src/payment/dto/juspay-webhook.dto';
+import { EasebuzzService } from 'src/easebuzz/easebuzz.service';
 
 export const OrderPaymentUtils = async ({
   tx,
   body,
   orderService,
   userId,
-  paymentService,
   walletService,
   vendorWalletLimit,
   errorLogService,
-  paymentJuspayService,
+  easebuzzService,
   orderMaxInitiationCount,
 }: {
   body: OrderPaymentDto;
   orderService: OrderService;
-  paymentService: PaymentSerice;
   walletService: WalletService;
+  easebuzzService: EasebuzzService;
   userId: string;
   tx: Prisma.TransactionClient;
   vendorWalletLimit: number;
   errorLogService: ErrorLogService;
-  paymentJuspayService: PaymentJuspayService;
   orderMaxInitiationCount: number;
 }) => {
   const { orderId } = body;
@@ -88,16 +84,15 @@ export const OrderPaymentUtils = async ({
         'You have exceeded the limit for order payment initiation. Please try again after 5 minutes.',
       );
     }
-    // Placeholder: Juspay logic
-    const jusPayOrder: JuspayOrderResponse | undefined =
-      await paymentJuspayService.createOrder({
-        amount: existingOrder.finalPayableAmount + existingOrder.platformFee,
-        user: existingOrder.orderedUser,
-        referenceId: existingOrder.id,
-        paymentPurpose: PaymentPurpose.PRODUCT_PURCHASE,
-      });
+    // Easebuzz logic
+    const { transaction, accessKey } = await easebuzzService.initiatePayment({
+      amount: existingOrder.finalPayableAmount + existingOrder.platformFee,
+      user: existingOrder.orderedUser,
+      referenceId: existingOrder.id,
+      paymentPurpose: PaymentPurpose.PRODUCT_PURCHASE,
+    });
 
-    if (!jusPayOrder) {
+    if (!transaction) {
       return {
         paymentCreateQuery,
         sdk_payload: null,
@@ -107,24 +102,55 @@ export const OrderPaymentUtils = async ({
       };
     }
 
+    const paymentPageExpiry = new Date(
+      new Date(transaction.addedon.replace(' ', 'T') + 'Z').getTime() +
+        5 * 60 * 1000,
+    );
+
     paymentCreateQuery = {
-      juspayOrderId: jusPayOrder.id,
-      orderId: jusPayOrder.order_id,
+      easepayid: transaction.easepayid,
+      txnid: transaction.txnid,
+      accessKey: accessKey,
       amount: existingOrder.finalPayableAmount,
       purpose: PaymentPurpose.PRODUCT_PURCHASE,
       referenceId: existingOrder.id,
+      paymentPageExpiry,
       status: 'PENDING',
-      paymentLinkWeb: jusPayOrder.payment_links.web,
-      paymentPageExpiry: new Date(jusPayOrder.payment_links.expiry),
       user: {
         connect: {
           id: existingOrder.userId,
         },
       },
+      responseHash: transaction.hash,
     };
+
+    const {
+      txnid,
+      firstname,
+      email,
+      phone,
+      addedon,
+      easepayid,
+      amount,
+      surl,
+      furl,
+      status,
+    } = transaction;
+
     return {
       paymentCreateQuery,
-      sdk_payload: jusPayOrder.sdk_payload,
+      sdk_payload: {
+        txnid,
+        firstname,
+        email,
+        phone,
+        addedon,
+        easepayid,
+        amount,
+        surl,
+        furl,
+        status,
+      },
       updateVendorWalletQuery,
       updateCustomerWalletQuery,
       walletTransactionCreateQuery,
@@ -142,7 +168,7 @@ export const OrderPaymentUtils = async ({
   const vendorBalance = vendorWallet.balance;
   const vendorLockedBalance = vendorWallet.lockedBalance;
   const vendorPaymentReqForCoins =
-    await paymentService.getPaymentForCoinsByVendor(vendorUserId);
+    await easebuzzService.getPaymentForCoinsByVendor(vendorUserId);
 
   const finalLockedBalance =
     vendorBalance +

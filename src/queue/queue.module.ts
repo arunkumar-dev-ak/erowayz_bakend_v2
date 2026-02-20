@@ -9,9 +9,9 @@ import { ProcessPaymentProcessor } from './consumers/process-payment.processor';
 import { WalletModule } from 'src/wallet/wallet.module';
 import { VendorSubscriptionModule } from 'src/vendor-subscription/vendor-subscription.module';
 import { OrderPaymentModule } from 'src/order-payment/order-payment.module';
-import { PaymentModule } from 'src/payment/payment.module';
 import { VendorShopCloseProcessor } from './consumers/close-shop-processor';
 import { CleanupProcessor } from './consumers/cleanup.processor';
+import { EasebuzzModule } from 'src/easebuzz/easebuzz.module';
 
 @Module({
   imports: [
@@ -71,7 +71,7 @@ import { CleanupProcessor } from './consumers/cleanup.processor';
     WalletModule,
     VendorSubscriptionModule,
     OrderPaymentModule,
-    forwardRef(() => PaymentModule),
+    forwardRef(() => EasebuzzModule),
   ],
   providers: [
     QueueService,

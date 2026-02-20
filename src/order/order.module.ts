@@ -7,9 +7,9 @@ import { VendorServiceOptionModule } from 'src/vendor-service-option/vendor-serv
 import { CartModule } from 'src/cart/cart.module';
 import { VendorModule } from 'src/vendor/vendor.module';
 import { OrderGatewayModule } from 'src/order-gateway/order-gateway.module';
-import { PaymentModule } from 'src/payment/payment.module';
 import { WalletModule } from 'src/wallet/wallet.module';
 import { PlatformFeeModule } from 'src/platform-fee/platform-fee.module';
+import { EasebuzzModule } from 'src/easebuzz/easebuzz.module';
 
 @Module({
   imports: [
@@ -19,10 +19,9 @@ import { PlatformFeeModule } from 'src/platform-fee/platform-fee.module';
     CartModule,
     VendorModule,
     OrderGatewayModule,
-    PaymentModule,
     WalletModule,
-    PaymentModule,
     PlatformFeeModule,
+    EasebuzzModule,
   ],
   controllers: [OrderController],
   providers: [OrderService],
@@ -34,7 +33,6 @@ import { PlatformFeeModule } from 'src/platform-fee/platform-fee.module';
     VendorModule,
     OrderGatewayModule,
     OrderService,
-    PaymentModule,
   ],
 })
 export class OrderModule {}

@@ -20,8 +20,6 @@ import {
   VendorSubscription,
 } from '@prisma/client';
 import { initiateVendorSubscriptionVerification } from './utils/initiate-vendor-sub.utils';
-import { JuspayOrderResponse } from 'src/payment/dto/juspay-webhook.dto';
-import { PaymentJuspayService } from 'src/payment/payment.juspay.service';
 import { ManualRefundService } from 'src/manual-refund/manual-refund.service';
 import {
   calculateEndDate,
@@ -32,7 +30,8 @@ import { GetVendorSubscriptionQueryForAdmin } from './dto/get-vendor-sub.query.d
 import { buildVendorSubWhereFilter } from './utils/get-vendor-sub.utils';
 import { buildQueryParams } from 'src/common/functions/buildQueryParams';
 import { MetadataService } from 'src/metadata/metadata.service';
-import { PaymentError } from 'src/payment/utils/payment-error.utils';
+import { EasebuzzService } from 'src/easebuzz/easebuzz.service';
+import { PaymentError } from 'src/easebuzz/utils/payment-error.utils';
 
 @Injectable()
 export class VendorSubscriptionService {
@@ -40,8 +39,8 @@ export class VendorSubscriptionService {
     private readonly prisma: PrismaService,
     private readonly responseService: ResponseService,
     private readonly subscriptionService: SubscriptionService,
-    @Inject(forwardRef(() => PaymentJuspayService))
-    private readonly paymentJuspayService: PaymentJuspayService,
+    @Inject(forwardRef(() => EasebuzzService))
+    private readonly easebuzzService: EasebuzzService,
     private readonly manualRefundService: ManualRefundService,
     private readonly metaDataService: MetadataService,
   ) {}
@@ -201,35 +200,71 @@ export class VendorSubscriptionService {
         });
       }
 
-      const jusPayOrder: JuspayOrderResponse | undefined =
-        await this.paymentJuspayService.createOrder({
+      const { transaction, accessKey } =
+        await this.easebuzzService.initiatePayment({
           amount: subPlan.discountPrice || subPlan.price,
           user,
           referenceId: subPlan.id,
           paymentPurpose: PaymentPurpose.SUBSCRIPTION_PURCHASE,
         });
 
-      if (!jusPayOrder) {
+      if (!transaction) {
         return;
       }
+      const paymentPageExpiry = new Date(
+        new Date(transaction.addedon.replace(' ', 'T') + 'Z').getTime() +
+          5 * 60 * 1000,
+      );
 
       const payment = await this.prisma.payment.create({
         data: {
-          juspayOrderId: jusPayOrder.id,
-          orderId: jusPayOrder.order_id,
+          easepayid: transaction.easepayid,
+          txnid: transaction.txnid,
           amount: subPlan.discountPrice || subPlan.price,
           purpose: PaymentPurpose.SUBSCRIPTION_PURCHASE,
           referenceId: subPlan.id,
+          paymentPageExpiry,
+          accessKey,
           status: 'PENDING',
-          userId: vendor.userId,
-          paymentLinkWeb: jusPayOrder.payment_links.web,
-          paymentPageExpiry: new Date(jusPayOrder.payment_links.expiry),
+          user: {
+            connect: {
+              id: vendor.userId,
+            },
+          },
+          responseHash: transaction.hash,
         },
       });
 
+      const {
+        txnid,
+        firstname,
+        email,
+        phone,
+        addedon,
+        easepayid,
+        amount,
+        surl,
+        furl,
+        status,
+      } = transaction;
+
       return this.responseService.successResponse({
         initialDate,
-        data: { ...payment, ...jusPayOrder.sdk_payload },
+        data: {
+          ...payment,
+          sdkPayload: {
+            txnid,
+            firstname,
+            email,
+            phone,
+            addedon,
+            easepayid,
+            amount,
+            surl,
+            furl,
+            status,
+          },
+        },
         res,
         message: 'Payment initiated successfully',
         statusCode: 200,

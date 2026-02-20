@@ -26,13 +26,11 @@ import {
   sleep,
 } from 'src/common/functions/isolation-retry-functions';
 import { ConfigService } from '@nestjs/config';
-import { PaymentJuspayService } from 'src/payment/payment.juspay.service';
-import { JuspayOrderResponse } from 'src/payment/dto/juspay-webhook.dto';
-import { PaymentSerice } from 'src/payment/payment.service';
 import { GetWalletTransactionQueryForAdminDto } from './dto/get-wallet-transaction-query.dto';
 import { buildWalletTransactiontWhereFilter } from './utils/get-wallet-transaction.utils';
 import { buildQueryParams } from 'src/common/functions/buildQueryParams';
 import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
+import { EasebuzzService } from 'src/easebuzz/easebuzz.service';
 
 @Injectable()
 export class WalletService {
@@ -45,8 +43,7 @@ export class WalletService {
     private readonly metaDataService: MetadataService,
     private readonly userService: UserService,
     private readonly configService: ConfigService,
-    private readonly paymentJuspayService: PaymentJuspayService,
-    private readonly paymentService: PaymentSerice,
+    private readonly easebuzzService: EasebuzzService,
     private readonly vendorSubscriptionService: VendorSubscriptionService,
   ) {
     this.MAX_RETRIES = parseInt(
@@ -218,35 +215,72 @@ export class WalletService {
               this.maxWalletPaymentInitiationCount,
           });
 
-          const jusPayOrder: JuspayOrderResponse | undefined =
-            await this.paymentJuspayService.createOrder({
+          const { transaction, accessKey } =
+            await this.easebuzzService.initiatePayment({
               amount: body.coinsCount,
               user: wallet.user,
               referenceId: wallet.id,
               paymentPurpose: PaymentPurpose.COIN_PURCHASE,
             });
 
-          if (!jusPayOrder) {
+          if (!transaction) {
             return;
           }
 
+          const paymentPageExpiry = new Date(
+            new Date(transaction.addedon.replace(' ', 'T') + 'Z').getTime() +
+              5 * 60 * 1000,
+          );
+
           const payment = await tx.payment.create({
             data: {
-              juspayOrderId: jusPayOrder.id,
-              orderId: jusPayOrder.order_id,
+              easepayid: transaction.easepayid,
+              txnid: transaction.txnid,
               amount: body.coinsCount,
+              accessKey,
               purpose: PaymentPurpose.COIN_PURCHASE,
               referenceId: wallet.id,
+              paymentPageExpiry,
               status: 'PENDING',
-              userId: userId,
-              paymentLinkWeb: jusPayOrder.payment_links.web,
-              paymentPageExpiry: new Date(jusPayOrder.payment_links.expiry),
+              user: {
+                connect: {
+                  id: userId,
+                },
+              },
+              responseHash: transaction.hash,
             },
           });
 
+          const {
+            txnid,
+            firstname,
+            email,
+            phone,
+            addedon,
+            easepayid,
+            amount,
+            surl,
+            furl,
+            status,
+          } = transaction;
+
           return this.response.successResponse({
             initialDate,
-            data: { ...payment, ...jusPayOrder.sdk_payload },
+            data: {
+              ...payment,
+              sdkPayload: {
+                txnid,
+                firstname,
+                email,
+                phone,
+                addedon,
+                easepayid,
+                amount,
+                surl,
+                furl,
+                status,
+              },
+            },
             res,
             message: 'Payment initiated successfully',
             statusCode: 200,
@@ -311,7 +345,7 @@ export class WalletService {
               data: createTransactionQuery,
             });
 
-            await this.paymentService.changePaymentStatus(
+            await this.easebuzzService.changePaymentStatus(
               payment.id,
               PaymentStatus.CHARGED,
               tx,

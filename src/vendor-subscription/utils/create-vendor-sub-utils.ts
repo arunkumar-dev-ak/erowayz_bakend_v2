@@ -7,7 +7,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SubscriptionService } from 'src/subscription/subscription.service';
 import { VendorSubscriptionService } from '../vendor-subscription.service';
-import { PaymentError } from 'src/payment/utils/payment-error.utils';
+import { PaymentError } from 'src/easebuzz/utils/payment-error.utils';
 
 export async function getSubscriptionPlanOrThrow(
   referenceId: string,

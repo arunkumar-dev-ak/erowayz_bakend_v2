@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OrderPaymentType, Payment, Prisma } from '@prisma/client';
+import { PaymentError } from 'src/easebuzz/utils/payment-error.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { PaymentError } from 'src/payment/utils/payment-error.utils';
 
 @Injectable()
 export class OrderPaymentService {

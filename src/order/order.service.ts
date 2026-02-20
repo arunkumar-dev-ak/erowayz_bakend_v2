@@ -55,7 +55,6 @@ import {
 } from './utils/order-status-change.utils';
 import { lockVendorAndCustomerWallet } from './utils/create-order.utils';
 import { WalletService } from 'src/wallet/wallet.service';
-import { PaymentSerice } from 'src/payment/payment.service';
 import { ConfigService } from '@nestjs/config';
 import {
   isSerializationError,
@@ -65,12 +64,12 @@ import {
 import { OrderPaymentDto } from './dto/order-payment.dto';
 import { OrderPaymentUtils } from './utils/order-payment.utils';
 import { ErrorLogService } from 'src/error-log/error-log.service';
-import { PaymentJuspayService } from 'src/payment/payment.juspay.service';
 import { GetOrderTransactionQueryForAdminDto } from './dto/get-order-transaction-query.dto';
 import { buildOrderTransactiontWhereFilter } from './utils/get-order-transaction.utils';
 import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
 import { getCoinsLimit } from 'src/wallet/utils/vendor-topup.utils';
 import { PlatformFeeService } from 'src/platform-fee/platform-fee.service';
+import { EasebuzzService } from 'src/easebuzz/easebuzz.service';
 
 @Injectable()
 export class OrderService {
@@ -89,10 +88,9 @@ export class OrderService {
     private readonly orderGateway: OrderGateway,
     private readonly firebaseNotificationService: FirebaseNotificationService,
     private readonly walletService: WalletService,
-    private readonly paymentService: PaymentSerice,
+    private readonly easebuzzService: EasebuzzService,
     private readonly configService: ConfigService,
     private readonly errorLogService: ErrorLogService,
-    private readonly paymentJuspayService: PaymentJuspayService,
     private readonly vendorSubscriptionService: VendorSubscriptionService,
     private readonly platformFeeService: PlatformFeeService,
   ) {
@@ -861,7 +859,7 @@ export class OrderService {
                   customerUserId: userId,
                   vendorUserId,
                   walletService: this.walletService,
-                  paymentService: this.paymentService,
+                  easebuzzService: this.easebuzzService,
                   payableAmount: bestPrice,
                   vendorWalletBalanceLimit: vendorCoinsLimit,
                 });
@@ -1094,13 +1092,12 @@ export class OrderService {
             const paymentOps = await OrderPaymentUtils({
               body,
               orderService: this,
-              paymentService: this.paymentService,
               walletService: this.walletService,
               tx,
               userId,
               vendorWalletLimit: 2000,
               errorLogService: this.errorLogService,
-              paymentJuspayService: this.paymentJuspayService,
+              easebuzzService: this.easebuzzService,
               orderMaxInitiationCount: this.ORDER_MAX_INITIATION_COUNT,
             });
 

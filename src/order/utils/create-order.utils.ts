@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PaymentSerice } from 'src/payment/payment.service';
+import { EasebuzzService } from 'src/easebuzz/easebuzz.service';
 import { WalletService } from 'src/wallet/wallet.service';
 
 export const lockVendorAndCustomerWallet = async ({
@@ -8,17 +8,17 @@ export const lockVendorAndCustomerWallet = async ({
   vendorUserId,
   walletService,
   tx,
-  paymentService,
   payableAmount,
   vendorWalletBalanceLimit,
+  easebuzzService,
 }: {
   customerUserId: string;
   vendorUserId: string;
   walletService: WalletService;
-  paymentService: PaymentSerice;
   tx: Prisma.TransactionClient;
   payableAmount: number;
   vendorWalletBalanceLimit: number;
+  easebuzzService: EasebuzzService;
 }) => {
   //check the customer wallet balance
   //check customer wallet is locked
@@ -47,7 +47,7 @@ export const lockVendorAndCustomerWallet = async ({
   const vendorBalance = vendorWallet.balance;
   const vendorLockedBalance = vendorWallet.lockedBalance;
   const vendorPaymentReqForCoins =
-    await paymentService.getPaymentForCoinsByVendor(vendorUserId);
+    await easebuzzService.getPaymentForCoinsByVendor(vendorUserId);
 
   const finalLockedBalance =
     vendorBalance +
