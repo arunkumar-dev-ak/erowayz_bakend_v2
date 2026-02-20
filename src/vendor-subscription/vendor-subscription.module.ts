@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { forwardRef, Global, Module } from '@nestjs/common';
 import { VendorSubscriptionService } from './vendor-subscription.service';
 import { VendorSubscriptionController } from './vendor-subscription.controller';
 import { VendorModule } from 'src/vendor/vendor.module';
@@ -11,9 +11,8 @@ import { EasebuzzModule } from 'src/easebuzz/easebuzz.module';
   imports: [
     VendorModule,
     SubscriptionModule,
-    EasebuzzModule,
     ManualRefundModule,
-    EasebuzzModule,
+    forwardRef(() => EasebuzzModule),
   ],
   controllers: [VendorSubscriptionController],
   providers: [VendorSubscriptionService],

@@ -1,4 +1,10 @@
-import { BadRequestException, Body, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentPurpose, PaymentStatus, Prisma, User } from '@prisma/client';
 import axios from 'axios';
@@ -26,6 +32,7 @@ export class EasebuzzService {
 
   constructor(
     private readonly configService: ConfigService,
+    @Inject(forwardRef(() => QueueService))
     private readonly queueService: QueueService,
     private readonly prisma: PrismaService,
     private readonly response: ResponseService,
