@@ -19,7 +19,7 @@ export class EasebuzzController {
 
   @Get('txn-details')
   async getTxnDetails(
-    @Body() body: GetEaseBuzzPaymentDto,
+    @Query() body: GetEaseBuzzPaymentDto,
     @Res() res: Response,
   ) {
     await this.easebuzzService.getTransactionById({ body, res });
