@@ -61,7 +61,9 @@ export const processWebHookUtils = async ({
       },
       include: { user: { include: { vendor: true } } },
     });
-    await queueService.processPaymentJob(updatedPayment.id);
+    if (updatedPayment.status == PaymentStatus.PROCESSING) {
+      await queueService.processPaymentJob(updatedPayment.id);
+    }
   } else {
     console.log(`Skipping update: Existing Payment not found ${txnid}`);
     return existingPayment;

@@ -101,8 +101,8 @@ export class EasebuzzService {
       amount,
       email: params.user.email,
       phone: params.user.mobile,
-      surl: 'https://admin.erowayz.in/api/v2/easebuzz/success',
-      furl: 'https://admin.erowayz.in/api/v2/easebuzz/failure',
+      surl: `https://admin.erowayz.in/api/v2/easebuzz/success?txnId=${uniqueOrderId}`,
+      furl: `https://admin.erowayz.in/api/v2/easebuzz/failure?txnId=${uniqueOrderId}`,
       unique_id: params.user.id.replaceAll('-', '_'),
       productinfo: 'paymentPage',
       firstname: params.user.name,
@@ -218,7 +218,7 @@ export class EasebuzzService {
       payment?.statusMessage ?? 'Payment declined',
     );
 
-    const deepLink = `easebuzz://payment/failure?txnid=${query.txnId}&message=${message}`;
+    const deepLink = `erowayz://payment/failure?txnid=${query.txnId}&message=${message}`;
 
     return res.redirect(deepLink);
   }

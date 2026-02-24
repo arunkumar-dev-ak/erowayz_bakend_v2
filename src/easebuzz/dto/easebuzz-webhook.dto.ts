@@ -3,9 +3,9 @@ import { PaymentStatus } from '@prisma/client';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export enum EaseBuzzPaymentStatus {
-  success,
-  failure,
-  userCancelled,
+  success = 'success',
+  failure = 'failure',
+  userCancelled = 'userCancelled',
 }
 
 export const paymentStatusMap: Record<EaseBuzzPaymentStatus, PaymentStatus> = {

@@ -17,19 +17,19 @@ export class EasebuzzController {
     await this.easebuzzService.handleCheckPayment({ body, res });
   }
 
-  @Get('success')
+  @Post('success')
   handleSuccessResponse(
     @Query() query: GetEaseBuzzSuccessQueryDto,
     @Res() res: Response,
   ) {
     const { txnId } = query;
 
-    const deepLink = `easebuzz://payment/success?txnid=${txnId}`;
+    const deepLink = `erowayz://payment/success?txnid=${txnId}`;
 
     return res.redirect(deepLink);
   }
 
-  @Get('failure')
+  @Post('failure')
   handleFailureResponse(
     @Query() query: GetEaseBuzzSuccessQueryDto,
     @Res() res: Response,
