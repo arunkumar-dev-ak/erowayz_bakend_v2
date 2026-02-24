@@ -17,6 +17,14 @@ export class EasebuzzController {
     await this.easebuzzService.handleCheckPayment({ body, res });
   }
 
+  @Get('txn-details')
+  async getTxnDetails(
+    @Body() body: GetEaseBuzzPaymentDto,
+    @Res() res: Response,
+  ) {
+    await this.easebuzzService.getTransactionById({ body, res });
+  }
+
   @Post('success')
   handleSuccessResponse(
     @Query() query: GetEaseBuzzSuccessQueryDto,

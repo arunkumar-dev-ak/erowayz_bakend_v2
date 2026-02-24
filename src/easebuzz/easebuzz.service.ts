@@ -241,6 +241,43 @@ export class EasebuzzService {
     return;
   }
 
+  async getTransactionById({
+    body,
+    res,
+  }: {
+    body: GetEaseBuzzPaymentDto;
+    res: Response;
+  }) {
+    const initialDate = new Date();
+
+    const paymentHistory = await this.prisma.payment.findUnique({
+      where: {
+        txnid: body.txnId,
+      },
+      include: {
+        walletTransaction: true,
+        vendorSubscription: {
+          include: {
+            vendor: {
+              include: {
+                vendorType: true,
+              },
+            },
+          },
+        },
+        orderPayment: true,
+      },
+    });
+
+    return this.response.successResponse({
+      res,
+      data: paymentHistory,
+      message: 'Payment retrieved successfully',
+      statusCode: 200,
+      initialDate,
+    });
+  }
+
   /*----- helper func -----*/
   async getPaymentForCoinsByVendor(vendorUserId: string) {
     return await this.prisma.payment.findFirst({
