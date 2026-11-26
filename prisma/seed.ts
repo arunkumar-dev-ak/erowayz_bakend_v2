@@ -59,11 +59,8 @@ async function main() {
       });
     }
 
-    await tx.user.deleteMany({
-      where: { mobile: { in: seedMobiles } },
-    });
-
     await tx.subscriptionPlan.deleteMany({});
+    await tx.serviceOption.deleteMany({});
 
     await tx.vendorType.deleteMany({
       where: {
@@ -76,6 +73,10 @@ async function main() {
           ],
         },
       },
+    });
+
+    await tx.user.deleteMany({
+      where: { mobile: { in: seedMobiles } },
     });
 
     // -------------------------------------------------------------
