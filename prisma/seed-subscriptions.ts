@@ -2,7 +2,6 @@ import {
   BillingPeriod,
   PrismaClient,
   Status,
-  SubscriptionOrigin,
 } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -349,7 +348,6 @@ async function main() {
         startDate: subStartDate,
         endDate: subEndDate,
         isActive: true,
-        origin: SubscriptionOrigin.DIRECT_PURCHASE,
       },
     });
     console.log(
@@ -381,7 +379,6 @@ async function main() {
         startDate: subStartDate,
         endDate: subEndDate,
         isActive: true,
-        origin: SubscriptionOrigin.DIRECT_PURCHASE,
       },
     });
     console.log(
@@ -413,7 +410,6 @@ async function main() {
         startDate: subStartDate,
         endDate: subEndDate,
         isActive: true,
-        origin: SubscriptionOrigin.DIRECT_PURCHASE,
       },
     });
     console.log(

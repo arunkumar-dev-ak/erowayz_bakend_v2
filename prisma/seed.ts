@@ -1,10 +1,10 @@
 import {
   BillingPeriod,
   PaymentMethod,
+  Prisma,
   PrismaClient,
   Role,
   Status,
-  SubscriptionOrigin,
   VendorCategoryType,
 } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
@@ -355,11 +355,17 @@ async function main() {
     const subEndDate = new Date();
     subEndDate.setDate(subEndDate.getDate() + 30);
 
+    const erodeCity = await tx.shopCity.upsert({
+      where: { name: 'Erode' },
+      update: {},
+      create: { name: 'Erode' },
+    });
+
     // -------------------------------------------------------------
     // 5. Create Street Food Vendor + Active VendorSubscription
     // -------------------------------------------------------------
     console.log('Creating Street Food Vendor with Golden Plan Subscription...');
-    const streetFoodUser = await tx.user.create({
+    const streetFoodUser: any = await tx.user.create({
       data: {
         name: 'Street Food Vendor',
         mobile: '9000000002',
@@ -374,7 +380,7 @@ async function main() {
               create: {
                 name: 'Eroways Street Food Stall',
                 address: '12 Gandhi Road, Near Bus Stand',
-                city: 'Erode',
+                shopCityId: erodeCity.id,
                 pincode: '638001',
                 latitude: 11.341,
                 longitude: 77.7172,
@@ -408,7 +414,6 @@ async function main() {
           startDate: subStartDate,
           endDate: subEndDate,
           isActive: true,
-          origin: SubscriptionOrigin.DIRECT_PURCHASE,
         },
       });
     }
@@ -419,7 +424,7 @@ async function main() {
     console.log(
       'Creating Common Shop Vendor with Premium Plan Subscription...',
     );
-    const commonShopUser = await tx.user.create({
+    const commonShopUser: any = await tx.user.create({
       data: {
         name: 'Common Shop Banner Vendor',
         mobile: '9000000004',
@@ -434,7 +439,7 @@ async function main() {
               create: {
                 name: 'City Supermarket & Stores',
                 address: '78 Main Bazaar Street',
-                city: 'Erode',
+                shopCityId: erodeCity.id,
                 pincode: '638003',
                 latitude: 11.345,
                 longitude: 77.721,
@@ -462,7 +467,6 @@ async function main() {
           startDate: subStartDate,
           endDate: subEndDate,
           isActive: true,
-          origin: SubscriptionOrigin.DIRECT_PURCHASE,
         },
       });
     }
@@ -473,7 +477,7 @@ async function main() {
     console.log(
       'Creating Puncture Service Vendor with Standard Plan Subscription...',
     );
-    const punctureServiceUser = await tx.user.create({
+    const punctureServiceUser: any = await tx.user.create({
       data: {
         name: 'Puncture Service Vendor',
         mobile: '9000000003',
@@ -488,7 +492,7 @@ async function main() {
               create: {
                 name: 'Quick Puncture & Tyre Repair',
                 address: '45 State Highway, Bypass Junction',
-                city: 'Erode',
+                shopCityId: erodeCity.id,
                 pincode: '638002',
                 latitude: 11.3425,
                 longitude: 77.719,
@@ -516,7 +520,6 @@ async function main() {
           startDate: subStartDate,
           endDate: subEndDate,
           isActive: true,
-          origin: SubscriptionOrigin.DIRECT_PURCHASE,
         },
       });
     }
