@@ -50,14 +50,14 @@ export class CreateItemDto {
   @IsNotEmpty({ message: 'Name should not be empty' })
   nameTamil?: string;
 
-  @ApiProperty({
-    description: 'Description should not be empty',
-    required: true,
-    example: 'Your description here',
+  @ApiPropertyOptional({
+    description: 'Description of the item (optional)',
+    required: false,
+    example: 'Delicious food item',
   })
   @IsString()
-  @IsNotEmpty({ message: 'Description should not be empty' })
-  description: string;
+  @IsOptional()
+  description?: string;
 
   @ApiProperty({
     description: 'Description Tamil should not be empty',

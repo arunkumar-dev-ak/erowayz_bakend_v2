@@ -54,14 +54,13 @@ export class UpdateItemDto {
   @IsNotEmpty({ message: 'Name should not be empty' })
   nameTamil?: string;
 
-  @ApiProperty({
-    description: 'Description should not be empty, if defined',
+  @ApiPropertyOptional({
+    description: 'Description of the item (optional)',
     required: false,
     example: 'Your description here',
   })
   @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: 'Description should not be empty, if defined' })
   description?: string;
 
   @ApiProperty({

@@ -237,7 +237,7 @@ export class ItemService {
       const item = await this.prisma.item.create({
         data: {
           name: body.name,
-          description: body.description,
+          description: body.description ?? null,
           price: body.price,
           discountPrice: body.discountPrice,
           productUnitId: body.productUnitId,
@@ -338,7 +338,9 @@ export class ItemService {
     const updateQuery = {
       data: {
         ...(body.name && { name: body.name }),
-        ...(body.description && { description: body.description }),
+        ...(body.description !== undefined && {
+          description: body.description === '' ? null : body.description,
+        }),
         ...(body.price && { price: body.price }),
         ...(body.discountPrice && { discountPrice: body.discountPrice }),
         ...(body.productUnitId && { productUnitId: body.productUnitId }),

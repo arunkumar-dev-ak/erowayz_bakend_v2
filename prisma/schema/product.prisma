@@ -42,7 +42,7 @@ model Item {
   id                String        @id @default(uuid())
   name              String
   nameTamil         String?
-  description       String
+  description       String?
   descriptionTamil  String?
   startAvailableTime         String?
   endAvailableTime           String?
