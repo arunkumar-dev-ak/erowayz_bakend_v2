@@ -898,6 +898,10 @@ export class VendorService {
               ...(licenseCategoryId ? { licenseCategoryId } : {}),
               image: uploadedLicenseImg.imageUrl,
               relativeUrl: uploadedLicenseImg.relativePath,
+              isKycConsentAccepted: Boolean(body.isKycConsentAccepted),
+              ...(body.isKycConsentAccepted
+                ? { kycConsentAcceptedAt: new Date() }
+                : {}),
             },
           }
         : undefined;

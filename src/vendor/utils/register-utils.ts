@@ -94,6 +94,7 @@ export class RegisterUtils {
       serviceOptionIds,
       password,
       shopCityId,
+      isKycConsentAccepted,
     } = parsedValue;
 
     const {
@@ -114,6 +115,10 @@ export class RegisterUtils {
               ...(licenseCategoryId ? { licenseCategoryId } : {}),
               image: licenseAbsPath,
               relativeUrl: licenseRelPath,
+              isKycConsentAccepted: Boolean(isKycConsentAccepted),
+              ...(isKycConsentAccepted
+                ? { kycConsentAcceptedAt: new Date() }
+                : {}),
             },
           }
         : undefined;

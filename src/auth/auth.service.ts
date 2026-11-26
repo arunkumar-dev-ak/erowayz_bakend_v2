@@ -329,46 +329,48 @@ export class AuthService {
       throw new BadRequestException('User not found');
     }
 
-    let sessionId: string;
-    let expiresAt: string;
+    //need to alter
 
-    try {
-      const whatsappResponse = await axios.post<WhatsappResponseInterface>(
-        this.WHATSAPP_OTP_REQUEST,
-        {
-          phoneNumber: `${user.countryCode}${user.mobile}`,
-          signatureHash: this.WHATSAPP_SIGNATURE_HASH,
-        },
-        {
-          headers: {
-            'integration-token': `${this.WHATSAPP_INTEGRATION_TOKEN}`,
-          },
-        },
-      );
+    let sessionId: string = "this is my sessionId";
+    let expiresAt: string = "2026-11-28T07:14:03.333Z";
 
-      const data = whatsappResponse.data.data;
+    // try {
+    //   const whatsappResponse = await axios.post<WhatsappResponseInterface>(
+    //     this.WHATSAPP_OTP_REQUEST,
+    //     {
+    //       phoneNumber: `${user.countryCode}${user.mobile}`,
+    //       signatureHash: this.WHATSAPP_SIGNATURE_HASH,
+    //     },
+    //     {
+    //       headers: {
+    //         'integration-token': `${this.WHATSAPP_INTEGRATION_TOKEN}`,
+    //       },
+    //     },
+    //   );
 
-      sessionId = data.sessionId;
-      expiresAt = data.expiresAt;
+    //   const data = whatsappResponse.data.data;
 
-      if (!sessionId || !expiresAt) {
-        throw new Error('Failed to get Otp from whatsapp');
-      }
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError<WhatsappErrorResponse>;
-        const responseData = axiosError.response?.data;
+    //   sessionId = data.sessionId;
+    //   expiresAt = data.expiresAt;
 
-        // 🧠 Look for the nested message
-        const message =
-          responseData?.error?.message ||
-          responseData?.message ||
-          'Failed to send OTP via WhatsApp';
+    //   if (!sessionId || !expiresAt) {
+    //     throw new Error('Failed to get Otp from whatsapp');
+    //   }
+    // } catch (error) {
+    //   if (axios.isAxiosError(error)) {
+    //     const axiosError = error as AxiosError<WhatsappErrorResponse>;
+    //     const responseData = axiosError.response?.data;
 
-        throw new BadRequestException(message);
-      }
-      throw new BadRequestException('Failed to send OTP via WhatsApp');
-    }
+    //     // 🧠 Look for the nested message
+    //     const message =
+    //       responseData?.error?.message ||
+    //       responseData?.message ||
+    //       'Failed to send OTP via WhatsApp';
+
+    //     throw new BadRequestException(message);
+    //   }
+    //   throw new BadRequestException('Failed to send OTP via WhatsApp');
+    // }
 
     const result = await this.prisma.oTP.create({
       data: {
@@ -508,36 +510,38 @@ export class AuthService {
       throw new BadRequestException('user not found');
     }
 
-    // 2. Trigger WhatsApp OTP verification
-    try {
-      const response = await axios.post<VerifyOtpInterface>(
-        this.WHATSAPP_OTP_VERIFY,
-        {
-          otp,
-          sessionId: existingOtp.sessionId,
-          signatureHash: this.WHATSAPP_SIGNATURE_HASH,
-        },
-        {
-          headers: {
-            'integration-token': `${this.WHATSAPP_INTEGRATION_TOKEN}`,
-          },
-        },
-      );
+    //need to unhide
 
-      const isVerified = response.data?.data.verified;
-      if (!isVerified) {
-        throw new UnauthorizedException('Invalid OTP');
-      }
-    } catch (error) {
-      console.log(`error from whatsapp verify otp ${error}`);
-      if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError<WhatsappErrorResponse>;
-        if (axiosError.response?.data.message) {
-          throw new BadRequestException(axiosError.response?.data?.message);
-        }
-      }
-      throw new UnauthorizedException('OTP verification failed');
-    }
+    // 2. Trigger WhatsApp OTP verification
+    // try {
+    //   const response = await axios.post<VerifyOtpInterface>(
+    //     this.WHATSAPP_OTP_VERIFY,
+    //     {
+    //       otp,
+    //       sessionId: existingOtp.sessionId,
+    //       signatureHash: this.WHATSAPP_SIGNATURE_HASH,
+    //     },
+    //     {
+    //       headers: {
+    //         'integration-token': `${this.WHATSAPP_INTEGRATION_TOKEN}`,
+    //       },
+    //     },
+    //   );
+
+    //   const isVerified = response.data?.data.verified;
+    //   if (!isVerified) {
+    //     throw new UnauthorizedException('Invalid OTP');
+    //   }
+    // } catch (error) {
+    //   console.log(`error from whatsapp verify otp ${error}`);
+    //   if (axios.isAxiosError(error)) {
+    //     const axiosError = error as AxiosError<WhatsappErrorResponse>;
+    //     if (axiosError.response?.data.message) {
+    //       throw new BadRequestException(axiosError.response?.data?.message);
+    //     }
+    //   }
+    //   throw new UnauthorizedException('OTP verification failed');
+    // }
 
     // 3. Mark Otp as verified
     const result = await this.prisma.$transaction(async (tx) => {

@@ -1,7 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PaymentMethod } from '@prisma/client';
 import {
+  Equals,
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEmail,
   IsEnum,
@@ -232,4 +234,15 @@ export class TempRegisterVendorDto {
   })
   @IsDateString({}, { message: 'Expiry date must be a valid ISO date string' })
   expiryDate?: string;
+
+  @ApiProperty({
+    description:
+      'Vendor KYC document collection, verification and usage consent',
+    example: true,
+    required: true,
+  })
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean({ message: 'isKycConsentAccepted must be a boolean' })
+  @Equals(true, { message: 'KYC consent must be accepted to register' })
+  isKycConsentAccepted: boolean;
 }
