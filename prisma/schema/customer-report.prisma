@@ -1,0 +1,28 @@
+enum CustomerReportStatus {
+  PENDING
+  VIEWED
+  ACCEPTED
+  DECLINED
+  RESOLVED
+}
+
+model CustomerReport {
+  id         String               @id @default(uuid())
+  userId     String
+  orderId    String?              @unique
+  bookingId  String?              @unique
+  reason     String
+  status     CustomerReportStatus @default(PENDING)
+  reviewedAt DateTime?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order   Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([orderId])
+  @@index([bookingId])
+}

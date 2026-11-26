@@ -1,0 +1,8 @@
+model RetiredReferralCode {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

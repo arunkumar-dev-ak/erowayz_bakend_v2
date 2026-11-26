@@ -1,0 +1,41 @@
+model FoodPreference {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  nameTamil String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subCategories        FoodPreferenceSubCategory[]
+  orderFoodPreferences OrderFoodPreference[]
+
+  @@index([isActive])
+}
+
+model FoodPreferenceSubCategory {
+  id               String   @id @default(uuid())
+  foodPreferenceId String
+  subCategoryId    String
+  createdAt        DateTime @default(now())
+
+  foodPreference FoodPreference @relation(fields: [foodPreferenceId], references: [id], onDelete: Cascade)
+  subCategory    SubCategory    @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([foodPreferenceId, subCategoryId])
+  @@index([foodPreferenceId])
+  @@index([subCategoryId])
+}
+
+model OrderFoodPreference {
+  id               String   @id @default(uuid())
+  orderId          String
+  foodPreferenceId String
+  createdAt        DateTime @default(now())
+
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  foodPreference FoodPreference @relation(fields: [foodPreferenceId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, foodPreferenceId])
+  @@index([orderId])
+  @@index([foodPreferenceId])
+}

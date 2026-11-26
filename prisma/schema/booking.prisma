@@ -19,6 +19,7 @@ model Booking {
   bookedUser     User             @relation("bookedUser", fields: [userId], references: [id])
   serviceBooking ServiceBooking[]
   userReport     UserReport[]
+  customerReport CustomerReport?
 
   @@index([id, userId])
 }

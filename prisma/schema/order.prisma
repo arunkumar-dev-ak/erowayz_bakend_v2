@@ -44,6 +44,8 @@ model Order {
   orderedUser           User               @relation("OrderedUser", fields: [userId], references: [id])
   orderItems            OrderItem[]
   userReport            UserReport[]
+  customerReport        CustomerReport?
+  orderFoodPreferences  OrderFoodPreference[]
   orderPayment          OrderPayment?
 
   // @@index([orderStatus])

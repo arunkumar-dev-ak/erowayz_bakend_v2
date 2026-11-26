@@ -1,0 +1,14 @@
+model BusinessLoadTier {
+  id                    String   @id @default(uuid())
+  name                  String
+  minOrders             Int      @default(0)
+  maxOrders             Int?
+  color                 String   @default("#22C55E")
+  estimatedWaitTimeText String?  @default("10-15 mins")
+  orderIndex            Int      @default(0)
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([isActive, orderIndex])
+}

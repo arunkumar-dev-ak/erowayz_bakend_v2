@@ -1,0 +1,8 @@
+model TrustSetting {
+  id             String   @id @default(uuid())
+  orderThreshold Int      @default(15)
+  description    String?  @default("Target completed orders threshold across Street Food, Common Shops, and Vehicle Services")
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

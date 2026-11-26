@@ -34,6 +34,7 @@ model Vendor {
   referralsMade     VendorReferral[] @relation("VendorReferralsMade")
   referralsReceived VendorReferral[] @relation("VendorReferralsReceived")
   bankDetail          BankDetail?
+  vendorRating        VendorRating[]
 
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
@@ -171,6 +172,7 @@ enum LicenseType {
   UDYAM
   AADHAR
   DRIVING_LICENSE
+  PAN
 }
 
 model License {
@@ -182,6 +184,8 @@ model License {
   licenseCategoryId String
   shopInfoId        String   @unique
   isLicenseApproved Boolean  @default(false)
+  isKycConsentAccepted Boolean @default(false)
+  kycConsentAcceptedAt DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   shopInfo          ShopInfo @relation(fields: [shopInfoId], references: [id], onDelete: Cascade)

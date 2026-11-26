@@ -82,6 +82,15 @@ import { UserReportModule } from './user-report/user-report.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { CoinImageModule } from './coin-image/coin-image.module';
 import { EasebuzzModule } from './easebuzz/easebuzz.module';
+import { UnifiedModule } from './unified/unified.module';
+import { VendorRatingModule } from './vendor-rating/vendor-rating.module';
+import { FoodPreferenceModule } from './food-preference/food-preference.module';
+import { StockAlertModule } from './stock-alert/stock-alert.module';
+import { TrustBadgeModule } from './trust-badge/trust-badge.module';
+import { BusinessLoadModule } from './business-load/business-load.module';
+import { AccountLifecycleModule } from './account-lifecycle/account-lifecycle.module';
+import { CustomerReportModule } from './customer-report/customer-report.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -161,6 +170,15 @@ import { EasebuzzModule } from './easebuzz/easebuzz.module';
     DashboardModule,
     CoinImageModule,
     EasebuzzModule,
+    UnifiedModule,
+    VendorRatingModule,
+    FoodPreferenceModule,
+    StockAlertModule,
+    TrustBadgeModule,
+    BusinessLoadModule,
+    AccountLifecycleModule,
+    CustomerReportModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [

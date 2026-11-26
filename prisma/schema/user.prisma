@@ -10,6 +10,11 @@ model User {
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   status           Boolean            @default(true)
+  accountStatus       AccountStatus      @default(ACTIVE)
+  deletionRequestedAt DateTime?
+  scheduledDeletionAt DateTime?
+  anonymizedAt        DateTime?
+  deletionReason      String?
   salt             String             @default(uuid())
   email            String?            @unique
   password         String?
@@ -34,9 +39,12 @@ model User {
   otp             OTP[]
   manualRefund    ManualRefund[]
   userReport      UserReport[]
+  notification    Notification[]
 
   favouriteCustomerForVendor  FavouriteCustomerForVendor[]
   favouriteVendorForCustomer  FavouriteVendorForCustomer[]
+  vendorRating                VendorRating[]
+  customerReports             CustomerReport[]
 
   // Self relation
   referrerId   String?      // who referred this user
@@ -127,21 +135,47 @@ model BloodDetails {
   User       User        @relation(fields: [userId], references: [id])
 }
 
+enum BloodDocumentType {
+  PATIENT_CASE_SHEET
+  CAMP_LETTERHEAD
+}
+
+enum BloodVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  UNVERIFIED
+}
+
 model BloodRequest {
-  id                  String         @id @default(uuid())
+  id                  String                  @id @default(uuid())
   userId              String
   donorId             String
   patientName         String
   hospitalName        String
   patientMobileNumber String
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
+  documentType        BloodDocumentType?
+  documentUrl         String?
+  documentRelativeUrl String?
+  verificationStatus  BloodVerificationStatus @default(UNVERIFIED)
+  rejectionReason     String?
+  verifiedAt          DateTime?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
 
-  user                User           @relation("requester", fields: [userId], references: [id])
-  donor               User           @relation("donor", fields: [donorId], references: [id])
+  user                User                    @relation("requester", fields: [userId], references: [id])
+  donor               User                    @relation("donor", fields: [donorId], references: [id])
   dynamicFieldData    Json?
 
   @@index([userId, donorId])
+  @@index([verificationStatus])
+}
+
+enum AccountStatus {
+  ACTIVE
+  PENDING_DELETION
+  SUSPENDED
+  DELETED
 }
 
 enum Status {
