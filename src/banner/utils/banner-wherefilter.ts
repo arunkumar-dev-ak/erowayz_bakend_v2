@@ -177,31 +177,73 @@ export async function getBannerVendorsAvgRating({
     }));
   }
 
-  // Get average ratings grouped by vendorId
-  const avgRatings = await prisma.review.groupBy({
+  // Modern VendorRating (5-parameter breakdown overallRating)
+  const vendorRatings = await prisma.vendorRating.groupBy({
     by: ['vendorId'],
     where: {
       vendorId: {
         in: vendorIds,
       },
+      overallRating: {
+        not: null,
+      },
+    },
+    _avg: {
+      overallRating: true,
+    },
+    _count: {
+      _all: true,
+    },
+  });
+
+  // Legacy Review fallback
+  const legacyRatings = await prisma.review.groupBy({
+    by: ['vendorId'],
+    where: {
+      vendorId: {
+        in: vendorIds,
+      },
+      rating: {
+        not: null,
+      },
     },
     _avg: {
       rating: true,
     },
+    _count: {
+      _all: true,
+    },
   });
 
-  // Map ratings by vendorId
-  const vendorRatingsMap: Record<string, number | null> = Object.fromEntries(
-    avgRatings.map((r) => [r.vendorId as string, r._avg.rating || null]),
-  );
+  const vendorRatingsMap: Record<string, number | null> = {};
 
-  // Attach avgRating as vendorAvgRating property to each banner
-  const bannersWithRating = banners.map((banner) => ({
-    ...banner,
-    vendorAvgRating: banner.vendorId
+  for (const r of legacyRatings) {
+    if (r.vendorId) {
+      vendorRatingsMap[r.vendorId] = r._avg.rating
+        ? Number(r._avg.rating.toFixed(1))
+        : null;
+    }
+  }
+
+  for (const vr of vendorRatings) {
+    if (vr.vendorId) {
+      vendorRatingsMap[vr.vendorId] = vr._avg.overallRating
+        ? Number(vr._avg.overallRating.toFixed(1))
+        : null;
+    }
+  }
+
+  // Attach avgRating and overallRating to each banner
+  const bannersWithRating = banners.map((banner) => {
+    const score = banner.vendorId
       ? (vendorRatingsMap[banner.vendorId] ?? null)
-      : null,
-  }));
+      : null;
+    return {
+      ...banner,
+      vendorAvgRating: score,
+      vendorOverallRating: score,
+    };
+  });
 
   return bannersWithRating;
 }

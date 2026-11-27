@@ -16,6 +16,7 @@ import { CartItemWithItem } from 'src/cart/utils/cartItem_raw_types.utils';
 import * as _ from 'lodash';
 import { VendorSubscriptionService } from 'src/vendor-subscription/vendor-subscription.service';
 import { capitalize } from 'src/common/functions/utils';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 export function getTotalAndDiscountForItem(item: Item, totalQty: number) {
   const totalAmount = totalQty * item.price;
@@ -197,4 +198,128 @@ export function groupedItem(cartItems: CartItemWithItem[]) {
   });
 
   return orderItemsData;
+}
+
+export function buildCombinedOrderItemsData({
+  cartItems,
+  cartBanners,
+}: {
+  cartItems: any[];
+  cartBanners: any[];
+}) {
+  const itemMap = new Map<
+    string,
+    {
+      itemId: string;
+      quantity: number;
+      price: number;
+      discountPrice?: number | null;
+      serviceOptionIds: Set<string>;
+    }
+  >();
+
+  for (const ci of cartItems) {
+    const existing = itemMap.get(ci.itemId) || {
+      itemId: ci.itemId,
+      quantity: 0,
+      price: ci.item.price,
+      discountPrice: ci.item.discountPrice,
+      serviceOptionIds: new Set<string>(),
+    };
+    existing.quantity += ci.quantity;
+    if (ci.cartItemVendorServiceOption) {
+      for (const so of ci.cartItemVendorServiceOption) {
+        if (so.vendorServiceOptionId) {
+          existing.serviceOptionIds.add(so.vendorServiceOptionId);
+        }
+      }
+    }
+    itemMap.set(ci.itemId, existing);
+  }
+
+  for (const cb of cartBanners) {
+    if (cb.banner?.bannerItems) {
+      for (const bi of cb.banner.bannerItems) {
+        if (!bi.item) continue;
+        const existing = itemMap.get(bi.itemId) || {
+          itemId: bi.itemId,
+          quantity: 0,
+          price: bi.item.price,
+          discountPrice: bi.item.discountPrice,
+          serviceOptionIds: new Set<string>(),
+        };
+        existing.quantity += cb.quantity * bi.quantity;
+        if (cb.cartBannerVendorServiceOption) {
+          for (const so of cb.cartBannerVendorServiceOption) {
+            if (so.vendorServiceOptionId) {
+              existing.serviceOptionIds.add(so.vendorServiceOptionId);
+            }
+          }
+        }
+        itemMap.set(bi.itemId, existing);
+      }
+    }
+  }
+
+  return Array.from(itemMap.values()).map((item) => ({
+    itemId: item.itemId,
+    quantity: item.quantity,
+    price: item.price,
+    discountPrice: item.discountPrice,
+    orderItemVendorServiceOption: {
+      create: Array.from(item.serviceOptionIds).map((vsoId) => ({
+        vendorServiceOptionId: vsoId,
+      })),
+    },
+  }));
+}
+
+export async function validateOrderFoodPreferences({
+  prisma,
+  foodPreferenceIds,
+  cartItems,
+}: {
+  prisma: PrismaService;
+  foodPreferenceIds?: string[];
+  cartItems: Array<{ subCategoryId?: string; item?: { subCategoryId?: string } }>;
+}): Promise<string[]> {
+  if (!foodPreferenceIds || foodPreferenceIds.length === 0) {
+    return [];
+  }
+
+  const maxAllowed =
+    Number(process.env.MAX_FOOD_PREFERENCES_PER_ORDER) || 5;
+
+  if (foodPreferenceIds.length > maxAllowed) {
+    throw new BadRequestException(
+      `You can select at most ${maxAllowed} food preferences per order`,
+    );
+  }
+
+  const subCategoryIds = [
+    ...new Set(
+      cartItems
+        .map((ci) => ci.subCategoryId ?? ci.item?.subCategoryId)
+        .filter(Boolean) as string[],
+    ),
+  ];
+
+  if (subCategoryIds.length === 0) {
+    return [];
+  }
+
+  const validPreferences = await prisma.foodPreference.findMany({
+    where: {
+      id: { in: foodPreferenceIds },
+      isActive: true,
+      subCategories: {
+        some: {
+          subCategoryId: { in: subCategoryIds },
+        },
+      },
+    },
+    select: { id: true },
+  });
+
+  return validPreferences.map((p) => p.id);
 }

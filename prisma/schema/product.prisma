@@ -1,7 +1,7 @@
 model Category {
   id           String        @id @default(uuid())
   name         String
-  tamilName        String?
+  tamilName    String?
   imageRef     String
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -10,7 +10,7 @@ model Category {
   vendorType   VendorType    @relation(fields: [vendorTypeId], references: [id], onDelete: Cascade)
   item         Item[]
   subCategory  SubCategory[]
-  status            Status             @default(ACTIVE)
+  status       Status        @default(ACTIVE)
 
   @@unique([name, vendorTypeId])
   @@index([name, vendorTypeId, id])
@@ -19,18 +19,18 @@ model Category {
 }
 
 model SubCategory {
-  id          String   @id @default(uuid())
-  name        String
-  tamilName        String?
-  imageRef    String
-  relativeUrl String
-  categoryId  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  status            Status             @default(ACTIVE)
-  item        Item[]
-  foodPreferences   FoodPreferenceSubCategory[]
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  id              String                      @id @default(uuid())
+  name            String
+  tamilName       String?
+  imageRef        String
+  relativeUrl     String
+  categoryId      String
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
+  status          Status                      @default(ACTIVE)
+  item            Item[]
+  foodPreferences FoodPreferenceSubCategory[]
+  category        Category                    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([name, categoryId])
   @@index([name, categoryId, id])
@@ -39,40 +39,41 @@ model SubCategory {
 }
 
 model Item {
-  id                String        @id @default(uuid())
-  name              String
-  nameTamil         String?
-  description       String?
-  descriptionTamil  String?
-  startAvailableTime         String?
-  endAvailableTime           String?
-  price             Float
-  discountPrice     Float?
-  minSellingQty     Float         @default(1)
-  vendorId          String
-  categoryId        String
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  subCategoryId     String
-  productUnitId     String
-  dailyTotalQty     Float
-  remainingQty      Float
-  productstatus     ProductStatus @default(OUT_OF_STOCK)
-  status            Status        @default(ACTIVE)
-  totalQtyEditCount Int           @default(0)
+  id                 String        @id @default(uuid())
+  name               String
+  nameTamil          String?
+  description        String?
+  descriptionTamil   String?
+  startAvailableTime String?
+  endAvailableTime   String?
+  price              Float
+  discountPrice      Float?
+  minSellingQty      Float         @default(1)
+  vendorId           String
+  categoryId         String
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  subCategoryId      String
+  productUnitId      String
+  dailyTotalQty      Float
+  remainingQty       Float
+  productstatus      ProductStatus @default(OUT_OF_STOCK)
+  status             Status        @default(ACTIVE)
+  totalQtyEditCount  Int           @default(0)
 
-  category          Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  subCategory       SubCategory   @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
-  vendor            Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  productUnit       ProductUnit?  @relation(fields: [productUnitId], references: [id], onDelete: Cascade)
+  category    Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subCategory SubCategory  @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+  vendor      Vendor       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  productUnit ProductUnit? @relation(fields: [productUnitId], references: [id], onDelete: Cascade)
 
-  cartItem          CartItem[]
-  itemImage         ItemImage[]
-  orderItems        OrderItem[]
-  vendorFeatureUsage  VendorFeatureUsage[]
-  expiryDate        DateTime?
+  cartItem           CartItem[]
+  itemImage          ItemImage[]
+  orderItems         OrderItem[]
+  bannerItems        BannerItem[]
+  vendorFeatureUsage VendorFeatureUsage[]
+  expiryDate         DateTime?
 
-  @@unique([name,vendorId])
+  @@unique([name, vendorId])
   @@index([vendorId])
   @@index([categoryId])
   @@index([subCategoryId])
@@ -104,5 +105,3 @@ enum ProductStatus {
   AVAILABLE
   OUT_OF_STOCK
 }
-
-

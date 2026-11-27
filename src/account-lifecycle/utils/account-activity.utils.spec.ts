@@ -1,46 +1,55 @@
 import { Prisma } from '@prisma/client';
-import { checkPreservableAccountActivity } from './account-activity.utils';
+import { checkActiveTransactionsForDeletion } from './account-activity.utils';
 
-describe('Account Activity Referral Safety', () => {
-  it('detects historical referral rewards tied to retired codes after a vendor service-type switch', async () => {
-    const tx = {
+describe('Account Activity Deletion Safety', () => {
+  it('detects active orders and locked wallet coins before deletion', async () => {
+    const prisma = {
+      order: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'active-order-1' }),
+      },
+      booking: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
       wallet: {
-        findUnique: jest.fn().mockResolvedValue(null),
+        findUnique: jest.fn().mockResolvedValue({ lockedBalance: 50, locked: false }),
       },
-      retiredReferralCode: {
-        findMany: jest.fn().mockResolvedValue([{ code: 'EROCMO001' }]),
+      payment: {
+        findFirst: jest.fn().mockResolvedValue(null),
       },
-      order: { count: jest.fn().mockResolvedValue(0) },
-      booking: { count: jest.fn().mockResolvedValue(0) },
-      payment: { count: jest.fn().mockResolvedValue(0) },
-      review: { count: jest.fn().mockResolvedValue(0) },
-      vendorRating: { count: jest.fn().mockResolvedValue(0) },
-      bloodRequest: { count: jest.fn().mockResolvedValue(0) },
-      customerReport: { count: jest.fn().mockResolvedValue(0) },
-      preDefinedBanner: { count: jest.fn().mockResolvedValue(0) },
-      vendorType: { count: jest.fn().mockResolvedValue(0) },
-      vendorSubscription: {
-        count: jest.fn(({ where }) => {
-          if (where.referralId?.in?.includes('EROCMO001')) {
-            return Promise.resolve(1);
-          }
-          return Promise.resolve(0);
-        }),
-      },
-      orderItem: { count: jest.fn().mockResolvedValue(0) },
-      orderItemVendorServiceOption: { count: jest.fn().mockResolvedValue(0) },
-      serviceBooking: { count: jest.fn().mockResolvedValue(0) },
-      bannerBooking: { count: jest.fn().mockResolvedValue(0) },
-      adminVendorCredit: { findUnique: jest.fn().mockResolvedValue(null) },
     } as unknown as Prisma.TransactionClient;
 
-    const result = await checkPreservableAccountActivity(tx, {
-      userId: 'vendor-user-1',
-      vendorId: 'vendor-1',
-      referralCode: 'EROSFV005',
+    const result = await checkActiveTransactionsForDeletion(prisma, {
+      userId: 'user-123',
     });
 
-    expect(result.hasActivity).toBe(true);
-    expect(result.reasons).toContain('referral reward records');
+    expect(result.hasActiveTransactions).toBe(true);
+    expect(result.reasons).toContain('active customer orders in progress');
+    expect(result.reasons).toContain(
+      'locked wallet coins associated with ongoing transactions',
+    );
+  });
+
+  it('passes when user has no in-flight transactions or locked coins', async () => {
+    const prisma = {
+      order: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+      booking: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+      wallet: {
+        findUnique: jest.fn().mockResolvedValue({ lockedBalance: 0, locked: false }),
+      },
+      payment: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+    } as unknown as Prisma.TransactionClient;
+
+    const result = await checkActiveTransactionsForDeletion(prisma, {
+      userId: 'user-clean',
+    });
+
+    expect(result.hasActiveTransactions).toBe(false);
+    expect(result.reasons.length).toBe(0);
   });
 });

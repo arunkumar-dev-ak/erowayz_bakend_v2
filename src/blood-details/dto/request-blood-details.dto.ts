@@ -1,5 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { BloodDocumentType } from '@prisma/client';
+import { Transform } from 'class-transformer';
 import {
+  IsEnum,
   IsNotEmpty,
   IsObject,
   IsOptional,
@@ -22,7 +25,6 @@ export class RequestBloodDetailDto {
     example: '9876543210',
   })
   @IsString()
-  @IsString()
   @IsNotEmpty({ message: 'Patient mobile number must not be empty' })
   @Matches(/^\d{10}$/, {
     message: 'Patient mobile number must be exactly 10 digits',
@@ -36,6 +38,18 @@ export class RequestBloodDetailDto {
   @IsString()
   @IsNotEmpty({ message: 'Hospital name must not be empty' })
   hospitalName: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Verification document type (PATIENT_CASE_SHEET or CAMP_LETTERHEAD)',
+    enum: BloodDocumentType,
+  })
+  @IsEnum(BloodDocumentType, {
+    message:
+      'documentType must be either PATIENT_CASE_SHEET or CAMP_LETTERHEAD',
+  })
+  @IsOptional()
+  documentType?: BloodDocumentType;
 
   @ApiProperty({
     description: 'Dynamic field values based on configuration',
@@ -52,6 +66,16 @@ export class RequestBloodDetailDto {
       diseases: ['Malaria', 'Dengue'],
       phoneNumber: '1234567890',
     },
+  })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
   })
   @IsObject({ message: 'Dynamic fields must be an object' })
   @IsOptional()

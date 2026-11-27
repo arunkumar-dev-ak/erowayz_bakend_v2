@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { validateFoodPreferenceCreation } from './utils/create-food-preference.utils';
 import { validateFoodPreferenceUpdate } from './utils/update-food-preference.utils';
@@ -147,6 +147,16 @@ describe('FoodPreference Many-to-Many Implementation', () => {
         },
         select: { id: true },
       });
+    });
+
+    it('throws BadRequestException when selected food preferences exceed the maximum limit', async () => {
+      await expect(
+        validateOrderFoodPreferences({
+          prisma: mockPrisma as unknown as PrismaService,
+          foodPreferenceIds: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'],
+          cartItems: [{ id: 'cart-item-1', subCategoryId: 'sub-biryani' } as any],
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

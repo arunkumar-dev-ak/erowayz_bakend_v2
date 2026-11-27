@@ -7,11 +7,13 @@ import {
   OrderPayment,
   OrderPaymentStatus,
   OrderPaymentType,
+  OrderStatus,
+  PaymentMethod,
+  Prisma,
+  Role,
   Staff,
   User,
   Vendor,
-  Prisma,
-  PaymentMethod,
 } from '@prisma/client';
 
 import { getNotificationContentForOrderStatus } from './order-notification-utils';
@@ -64,6 +66,35 @@ export const OrderStatusChangeUtils = async ({
     newStatus,
     statusFlowMap: orderService.statusFlowMap,
   });
+
+  // Feature 04: Street Food 20-Min Order Timer (COD Cancellation Lock)
+  // When an order is IN_PROGRESS and paid via Cash on Delivery (CASH/COD),
+  // vendor/staff can only cancel the order after 19 minutes and 30 seconds from createdAt.
+  if (
+    currentStatus === OrderStatus.IN_PROGRESS &&
+    newStatus === OrderStatus.CANCELLED &&
+    (currentUser.role === Role.VENDOR || currentUser.role === Role.STAFF) &&
+    existingOrder.preferredPaymentMethod === PaymentMethod.CASH
+  ) {
+    const minCancelMs =
+      Number(process.env.VENDOR_COD_CANCEL_MIN_MS) ||
+      (19 * 60 + 30) * 1000; // 19 minutes 30 seconds = 1,170,000 ms
+
+    const elapsedMs =
+      initialDate.getTime() - new Date(existingOrder.createdAt).getTime();
+
+    if (elapsedMs < minCancelMs) {
+      const remainingSeconds = Math.ceil((minCancelMs - elapsedMs) / 1000);
+      const remainingMinutes = Math.floor(remainingSeconds / 60);
+      const remSec = remainingSeconds % 60;
+      const formattedRemaining =
+        remainingMinutes > 0 ? `${remainingMinutes}m ${remSec}s`: `${remSec}s`;
+
+      throw new BadRequestException(
+        `Cash on Delivery (COD) orders can only be cancelled after 19 minutes and 30 seconds from order creation. Please wait another ${formattedRemaining} before cancelling.`,
+      );
+    }
+  }
 
   const customerUserId = existingOrder.userId;
   const vendorUserId =
@@ -156,22 +187,38 @@ export const DeliveredOrderUtils = async ({
   let updateCustomerWalletQuery: Prisma.WalletUpdateArgs | null = null;
 
   if (!orderPayment || orderPayment === null) {
-    if (!isPaidByCash || TrueOrFalseMap[isPaidByCash] !== true) {
+    if (existingOrder.finalPayableAmount === 0) {
+      orderPaymentCreateQuery = {
+        type:
+          existingOrder.preferredPaymentMethod === PaymentMethod.COINS
+            ? OrderPaymentType.COINS
+            : (existingOrder.preferredPaymentMethod === PaymentMethod.JUSPAY
+                ? OrderPaymentType.JUSPAY
+                : OrderPaymentType.CASH),
+        paidedAmount: 0,
+        status: OrderPaymentStatus.COMPLETED,
+        order: {
+          connect: {
+            id: existingOrder.id,
+          },
+        },
+      };
+    } else if (!isPaidByCash || TrueOrFalseMap[isPaidByCash] !== true) {
       throw new BadRequestException(
         'Payment required via UPI, coins, or confirm cash received from customer.',
       );
-    }
-
-    orderPaymentCreateQuery = {
-      type: OrderPaymentType.CASH,
-      paidedAmount: Math.round(existingOrder.finalPayableAmount),
-      status: OrderPaymentStatus.COMPLETED,
-      order: {
-        connect: {
-          id: existingOrder.id,
+    } else {
+      orderPaymentCreateQuery = {
+        type: OrderPaymentType.CASH,
+        paidedAmount: Math.round(existingOrder.finalPayableAmount),
+        status: OrderPaymentStatus.COMPLETED,
+        order: {
+          connect: {
+            id: existingOrder.id,
+          },
         },
-      },
-    };
+      };
+    }
   }
 
   if (

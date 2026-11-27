@@ -21,88 +21,90 @@ enum OrderPaymentStatus {
 }
 
 model Order {
-  id                          String             @id @default(uuid())
-  preferredPaymentMethod      PaymentMethod      @default(CASH)
-  userId                      String
-  declineType                 DeclineByType?
-  declinedBy                  String?
-  bannerId                    String?
-  bannerOfferType             OfferType?
-  bannerOfferValue            Float?
-  bannerTitle                 String?
-  expiryAt                    DateTime
-  finalPayableAmount           Float
-  totalPrice                  Float
-  orderId                     String              @unique
-  orderStatus                 OrderStatus         @default(PENDING)
-  platformFee                 Int          @default(0)
+  id                     String         @id @default(uuid())
+  preferredPaymentMethod PaymentMethod  @default(CASH)
+  userId                 String
+  declineType            DeclineByType?
+  declinedBy             String?
+  bannerId               String?
+  bannerOfferType        OfferType?
+  bannerOfferValue       Float?
+  bannerTitle            String?
+  expiryAt               DateTime
+  finalPayableAmount     Float
+  totalPrice             Float
+  orderId                String         @unique
+  orderStatus            OrderStatus    @default(PENDING)
+  platformFee            Int            @default(0)
 
-  createdAt                   DateTime           @default(now())
-  updatedAt                   DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  declinedUser          User?              @relation("DeclinedUser", fields: [declinedBy], references: [id])
-  orderedUser           User               @relation("OrderedUser", fields: [userId], references: [id])
-  orderItems            OrderItem[]
-  userReport            UserReport[]
-  customerReport        CustomerReport?
-  orderFoodPreferences  OrderFoodPreference[]
-  orderPayment          OrderPayment?
+  declinedUser         User?                 @relation("DeclinedUser", fields: [declinedBy], references: [id])
+  orderedUser          User                  @relation("OrderedUser", fields: [userId], references: [id])
+  orderItems           OrderItem[]
+  userReport           UserReport[]
+  customerReport       CustomerReport?
+  vendorReport         VendorReport?
+  orderFoodPreferences OrderFoodPreference[]
+  orderBanners         OrderBanner[]
+  orderPayment         OrderPayment?
 
   // @@index([orderStatus])
   // @@index([orderStatus, expiryAt, id])
 }
 
 model OrderPayment {
-  id             String             @id @default(uuid())
-  orderId        String   @unique
-  paymentId      String?  @unique
-  walletTransactionId String? @unique
-  type           OrderPaymentType
-  paidedAmount   Float              @default(0)
-  status         OrderPaymentStatus @default(COMPLETED)
+  id                  String             @id @default(uuid())
+  orderId             String             @unique
+  paymentId           String?            @unique
+  walletTransactionId String?            @unique
+  type                OrderPaymentType
+  paidedAmount        Float              @default(0)
+  status              OrderPaymentStatus @default(COMPLETED)
 
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  order          Order              @relation(fields: [orderId], references: [id])
+  order Order @relation(fields: [orderId], references: [id])
 
   payment           Payment?           @relation(fields: [paymentId], references: [id])
-  walletTransaction WalletTransaction?  @relation(fields: [walletTransactionId], references: [id])
+  walletTransaction WalletTransaction? @relation(fields: [walletTransactionId], references: [id])
 
   @@index([orderId])
 }
 
 model OrderItem {
-  id                    String              @id @default(uuid())
-  orderId               String
-  itemId                String
-  quantity              Float
-  price                 Float
-  discountPrice         Float?
-  review                Review?
+  id            String  @id @default(uuid())
+  orderId       String
+  itemId        String
+  quantity      Float
+  price         Float
+  discountPrice Float?
+  review        Review?
 
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  orderItemVendorServiceOption  OrderItemVendorServiceOption[]
-  item                  Item                @relation(fields: [itemId], references: [id])
-  order                 Order               @relation(fields: [orderId], references: [id])
+  orderItemVendorServiceOption OrderItemVendorServiceOption[]
+  item                         Item                           @relation(fields: [itemId], references: [id])
+  order                        Order                          @relation(fields: [orderId], references: [id])
 
   @@unique([itemId, orderId])
 }
 
 model OrderItemVendorServiceOption {
-  id                    String              @id @default(uuid())
+  id                    String @id @default(uuid())
   cartItemId            String
   vendorServiceOptionId String
 
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  vendorServiceOption   VendorServiceOption @relation(fields: [vendorServiceOptionId], references: [id])
-  orderItem             OrderItem            @relation(fields: [cartItemId], references: [id])
+  vendorServiceOption VendorServiceOption @relation(fields: [vendorServiceOptionId], references: [id])
+  orderItem           OrderItem           @relation(fields: [cartItemId], references: [id])
 
-  @@unique([cartItemId,vendorServiceOptionId])
+  @@unique([cartItemId, vendorServiceOptionId])
 }
 
 enum PaymentMethod {
@@ -116,4 +118,21 @@ enum DeclineByType {
   CUSTOMER
   SYSTEM
   STAFF
+}
+
+model OrderBanner {
+  id              String @id @default(uuid())
+  orderId         String
+  bannerId        String
+  bannerName      String
+  quantity        Int    @default(1)
+  discountApplied Float  @default(0)
+
+  createdAt DateTime @default(now())
+
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  banner Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([bannerId])
 }

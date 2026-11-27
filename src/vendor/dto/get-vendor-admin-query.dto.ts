@@ -38,14 +38,32 @@ export class GetVendorQueryForAdminDto {
   shopName?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter by Shop name',
-    type: String,
+    description: 'Filter by License Approval status',
+    enum: ApprovedOrPendingStatus,
   })
   @IsEnum(ApprovedOrPendingStatus, {
     message: `licenseStatus must be either '${ApprovedOrPendingStatus.APPROVED}' or '${ApprovedOrPendingStatus.PENDING}'`,
   })
   @IsOptional()
   licenseStatus?: ApprovedOrPendingStatus;
+
+  @ApiPropertyOptional({
+    description: 'Filter by Bank Details Verification status',
+    enum: ApprovedOrPendingStatus,
+  })
+  @IsEnum(ApprovedOrPendingStatus, {
+    message: `isBankVerified must be either '${ApprovedOrPendingStatus.APPROVED}' or '${ApprovedOrPendingStatus.PENDING}'`,
+  })
+  @IsOptional()
+  isBankVerified?: ApprovedOrPendingStatus;
+
+  @ApiPropertyOptional({
+    description: 'Sort by criteria: licenseUpdated | bankUpdated | createdAt',
+    type: String,
+  })
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
 
   @ApiPropertyOptional({
     type: Number,

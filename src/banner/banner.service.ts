@@ -1,10 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Response } from 'express';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { MetadataService } from 'src/metadata/metadata.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseService } from 'src/response/response.service';
 import { CreateBannerDto } from './dto/create-banner.dto';
+import { BannerItemInputDto } from './dto/manage-banner-items.dto';
 import {
   MultipleFileUploadInterface,
   VendorService,
@@ -15,6 +16,7 @@ import {
   BannerType,
   Prisma,
   Role,
+  VendorCategoryType,
   VendorSubscription,
 } from '@prisma/client';
 import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
@@ -129,6 +131,11 @@ export class BannerService {
         },
         bannerItemImages: true,
         productUnit: true,
+        bannerItems: {
+          include: {
+            item: true,
+          },
+        },
       },
     });
 
@@ -234,6 +241,11 @@ export class BannerService {
         },
         bannerItemImages: true,
         productUnit: true,
+        bannerItems: {
+          include: {
+            item: true,
+          },
+        },
       },
     });
 
@@ -888,6 +900,103 @@ export class BannerService {
             keyWord: true,
           },
         },
+        bannerItems: {
+          include: {
+            item: true,
+          },
+        },
+      },
+    });
+  }
+
+  async setBannerItems({
+    bannerId,
+    vendorId,
+    items,
+    res,
+  }: {
+    bannerId: string;
+    vendorId: string;
+    items: BannerItemInputDto[];
+    res: Response;
+  }) {
+    const initialDate = new Date();
+
+    const banner = await this.prisma.banner.findFirst({
+      where: {
+        id: bannerId,
+        vendorId,
+      },
+      include: {
+        vendor: {
+          include: {
+            vendorType: true,
+          },
+        },
+      },
+    });
+
+    if (!banner) {
+      throw new NotFoundException(
+        'Banner not found or not associated with vendor',
+      );
+    }
+
+    const isStreetFoodProductVendor =
+      banner.vendor?.vendorType?.type === VendorCategoryType.PRODUCT;
+
+    const maxItemsLimit =
+      Number(process.env.STREET_FOOD_BANNER_MAX_ITEMS) || 10;
+
+    if (isStreetFoodProductVendor && items && items.length > maxItemsLimit) {
+      throw new BadRequestException(
+        `Street food vendors can attach a maximum of ${maxItemsLimit} products under a combo banner.`,
+      );
+    }
+
+    if (items && items.length > 0) {
+      const itemIds = items.map((i) => i.itemId);
+      const vendorItems = await this.prisma.item.findMany({
+        where: {
+          id: { in: itemIds },
+          vendorId,
+        },
+        select: { id: true },
+      });
+
+      if (vendorItems.length !== itemIds.length) {
+        throw new BadRequestException(
+          'One or more items do not belong to this vendor',
+        );
+      }
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.bannerItem.deleteMany({
+        where: { bannerId },
+      });
+
+      if (items && items.length > 0) {
+        await tx.bannerItem.createMany({
+          data: items.map((item) => ({
+            bannerId,
+            itemId: item.itemId,
+            quantity: item.quantity,
+          })),
+        });
+      }
+    });
+
+    const updatedBanner = await this.findBannerById(bannerId);
+
+    return this.response.successResponse({
+      res,
+      initialDate,
+      statusCode: 200,
+      message: 'Banner combo items updated successfully',
+      data: {
+        ...updatedBanner,
+        maxItemsLimit: isStreetFoodProductVendor ? maxItemsLimit : undefined,
       },
     });
   }

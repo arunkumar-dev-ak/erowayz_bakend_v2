@@ -64,16 +64,6 @@ export class CreateOrderDto {
   itemId?: string;
 
   @ApiProperty({
-    description: 'bannerId',
-    required: false,
-    example: 'rehijhnfdjf657585hfhfh',
-  })
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty({ message: 'Banner Id should not be empty if defined' })
-  bannerId?: string;
-
-  @ApiProperty({
     description: 'paymentStatus',
     required: true,
     enum: PaymentMethod,
@@ -113,6 +103,20 @@ export class CreateOrderDto {
     message: 'Each vendorServiceOptionId must be a string',
   })
   vendorServiceOptionIds?: string[];
+
+  @ApiProperty({
+    description: 'Array of selected food preference UUIDs',
+    required: false,
+    example: ['d4dd3724-e58e-4839-b1e5-21b0550ada01'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({
+    each: true,
+    message: 'Each foodPreferenceId must be a string UUID',
+  })
+  foodPreferenceIds?: string[];
 
   // Dummy property to hook in class-level validation
   @Validate(OrderConstraint)

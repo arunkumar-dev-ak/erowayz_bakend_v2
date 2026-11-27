@@ -100,9 +100,18 @@ export function checkFieldsForBanner({
   vendorType: VendorType;
 }) {
   if (bannerType === 'REGULAR') {
-    if (!body.qty || !body.originalPricePerUnit || !body.productUnitId) {
+    if (
+      !body.qty ||
+      !body.originalPricePerUnit ||
+      !body.productUnitId ||
+      body.minApplyValue === undefined ||
+      body.minApplyValue === null ||
+      !body.keyWordIds ||
+      !Array.isArray(body.keyWordIds) ||
+      body.keyWordIds.length === 0
+    ) {
       throw new BadRequestException(
-        `Quantity(qty), Original Price Per Unit(originalPricePerUnit), and Quantity Unit are required when creating a banner for ${vendorType.name}.`,
+        `Quantity(qty), Original Price Per Unit(originalPricePerUnit), Quantity Unit(productUnitId), Minimum Apply Value(minApplyValue), and KeyWords(keyWordIds) are required when creating a banner for ${vendorType.name}.`,
       );
     }
   } else {

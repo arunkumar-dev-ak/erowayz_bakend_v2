@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
 import {
   ArrayMinSize,
   IsArray,
@@ -29,7 +29,7 @@ export class OfferValueConstraint implements ValidatorConstraintInterface {
       return offerValue < 100;
     }
     if (obj.offerType === OfferType.FLAT) {
-      return obj.minApplyValue ? offerValue < obj.minApplyValue : false;
+      return obj.minApplyValue ? offerValue < obj.minApplyValue : true;
     }
     return true;
   }
@@ -221,10 +221,14 @@ export class CreateBannerDto {
   @Validate(OfferValueConstraint)
   offerValue: number;
 
-  @ApiProperty({ description: 'Minimum apply value', required: true })
-  @IsInt()
-  @IsNotEmpty({ message: 'Minimum apply value is required' })
-  minApplyValue: number;
+  @ApiPropertyOptional({
+    description:
+      'Minimum apply value (required for common shop/regular banner, not needed for street food combo banner)',
+    example: 100,
+  })
+  @IsOptional()
+  @IsInt({ message: 'Minimum apply value must be an integer' })
+  minApplyValue?: number;
 
   @ApiProperty({
     description: 'Start date and time of the banner',
@@ -270,17 +274,19 @@ export class CreateBannerDto {
   })
   fgImagePosition?: fgBannerImagePosition;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: 'array',
-    description: 'KeyWord Ids array must have atleast 1 ids',
-    required: true,
+    description:
+      'KeyWord Ids array (required for common shop, omitted for street food combo banner)',
+    required: false,
   })
+  @IsOptional()
   @ArrayMinSize(1, { message: 'At least 1 keyword IDs are required' })
   @IsArray({ message: 'KeyWord must be in an array format' })
   @IsNotEmpty({ message: 'KeyWord are required' })
   @IsString({ each: true, message: 'Each KeyWord ID must be a string' })
   @Validate(IsUniqueArrayConstraint)
-  keyWordIds: string[];
+  keyWordIds?: string[];
 
   @ApiProperty({ type: 'string', format: 'binary', required: false })
   bgImage?: Express.Multer.File;
@@ -288,3 +294,11 @@ export class CreateBannerDto {
   @ApiProperty({ type: 'string', format: 'binary', required: false })
   itemImages?: Express.Multer.File[];
 }
+
+export class CreateStreetFoodBannerDto extends OmitType(CreateBannerDto, [
+  'qty',
+  'productUnitId',
+  'originalPricePerUnit',
+  'minApplyValue',
+  'keyWordIds',
+] as const) {}

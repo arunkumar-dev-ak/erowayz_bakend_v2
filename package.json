@@ -24,7 +24,10 @@
     "db:studio": "prisma studio --schema=./prisma/schema",
     "db:migrate": "prisma migrate dev --schema=./prisma/schema",
     "db:deploy": "prisma migrate deploy --schema=./prisma/schema",
-    "seed:units": "ts-node prisma/seed-product-units.ts"
+    "seed:units": "ts-node prisma/seed-product-units.ts",
+    "seed:licenses": "ts-node prisma/seed-license-categories.ts",
+    "seed:shops": "ts-node prisma/seed-shop-categories.ts",
+    "seed:expired-license": "ts-node prisma/seed-expired-license.ts"
   },
   "dependencies": {
     "@bull-board/api": "^6.9.2",
@@ -109,7 +112,10 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/$1"
+    }
   },
   "prisma": {
     "schema": "./prisma/schema/"

@@ -107,12 +107,14 @@ export async function fetchPaginatedStoreItems({
   vendorId,
   offset,
   limit,
+  categoryId,
   userId,
   prisma,
 }: {
   vendorId: string;
   offset: number;
   limit: number;
+  categoryId?: string;
   userId?: string;
   prisma: PrismaService;
 }) {
@@ -122,6 +124,7 @@ export async function fetchPaginatedStoreItems({
     where: {
       vendorId,
       status: 'ACTIVE',
+      ...(categoryId ? { categoryId } : {}),
     },
     skip: offset,
     take: limit,
@@ -140,15 +143,18 @@ export async function fetchPaginatedStoreItems({
 /*----- utils: fetch total store items count -----*/
 export async function fetchStoreItemsCount({
   vendorId,
+  categoryId,
   prisma,
 }: {
   vendorId: string;
+  categoryId?: string;
   prisma: PrismaService;
 }): Promise<number> {
   return await prisma.item.count({
     where: {
       vendorId,
       status: 'ACTIVE',
+      ...(categoryId ? { categoryId } : {}),
     },
   });
 }

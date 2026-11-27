@@ -20,6 +20,7 @@ model Booking {
   serviceBooking ServiceBooking[]
   userReport     UserReport[]
   customerReport CustomerReport?
+  vendorReport   VendorReport?
 
   @@index([id, userId])
 }

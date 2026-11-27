@@ -1,17 +1,22 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { CartController } from './cart.controller';
-import { CartService } from './cart.service';
 
 describe('CartController', () => {
   let controller: CartController;
+  let cartServiceMock: any;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [CartController],
-      providers: [CartService],
-    }).compile();
+  beforeEach(() => {
+    cartServiceMock = {
+      getAllCartsByUser: jest.fn(),
+      getCartItemByUser: jest.fn(),
+      getCartItemById: jest.fn(),
+      addCartItem: jest.fn(),
+      updateCartItemQty: jest.fn(),
+      updateCartItemService: jest.fn(),
+      deleteCartItemById: jest.fn(),
+      deleteCartById: jest.fn(),
+    };
 
-    controller = module.get<CartController>(CartController);
+    controller = new CartController(cartServiceMock);
   });
 
   it('should be defined', () => {

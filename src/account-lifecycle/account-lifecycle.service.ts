@@ -4,15 +4,15 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { AccountStatus, Prisma, Role } from '@prisma/client';
-import { FileUploadService } from 'src/file-upload/file-upload.service';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { AccountStatus, Role } from '@prisma/client';
+import { FileUploadService } from '../file-upload/file-upload.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
 import {
-  anonymizeAccountInPlace,
   checkActiveTransactionsForDeletion,
-  checkPreservableAccountActivity,
-  hardDeleteCleanAccount,
+  checkHistoricalBusinessActivity,
+  hardDeleteUserAndVendorRecords,
+  permanentSoftDeleteWithPiiScrubbing,
 } from './utils/account-activity.utils';
 
 @Injectable()
@@ -30,10 +30,11 @@ export class AccountLifecycleService {
   }
 
   /**
-   * Customer or Vendor initiates 30-day soft delete.
-   * Immediately disables account, logs out sessions, closes shop, and masks user info.
+   * Common Self-Delete: Customer or Vendor initiates account deactivation.
+   * Checks for in-flight orders, bookings, and pending coins.
+   * If clean, disables account, invalidates sessions, closes vendor shop, and schedules deletion.
    */
-  async requestSelfDeletion({
+  async selfDeleteAccount({
     userId,
     reason,
   }: {
@@ -52,7 +53,7 @@ export class AccountLifecycleService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('User account not found');
     }
 
     if (user.role !== Role.CUSTOMER && user.role !== Role.VENDOR) {
@@ -62,7 +63,9 @@ export class AccountLifecycleService {
     }
 
     if (user.accountStatus === AccountStatus.DELETED) {
-      throw new BadRequestException('Account has already been deleted');
+      throw new BadRequestException(
+        'This account has already been permanently deleted',
+      );
     }
 
     if (user.accountStatus === AccountStatus.PENDING_DELETION) {
@@ -71,6 +74,7 @@ export class AccountLifecycleService {
       );
     }
 
+    // 1. Check for active orders, bookings, pending payments, or locked coins
     const activeCheck = await checkActiveTransactionsForDeletion(this.prisma, {
       userId,
       vendorId: user.vendor?.id,
@@ -87,17 +91,71 @@ export class AccountLifecycleService {
       now.getTime() + this.defaultGraceDays * 24 * 60 * 60 * 1000,
     );
 
+    // 2. Perform soft deactivation and session invalidation
     const updatedUser = await this.prisma.$transaction(async (tx) => {
-      return await this.applySoftDelete(tx, {
-        userId: user.id,
-        vendorId: user.vendor?.id,
-        reason,
-        now,
-        scheduledDeletionAt,
+      const updated = await tx.user.update({
+        where: { id: user.id },
+        data: {
+          status: false,
+          accountStatus: AccountStatus.PENDING_DELETION,
+          deletionRequestedAt: now,
+          scheduledDeletionAt,
+          deletionReason: reason ?? null,
+          salt: uuidv4(),
+        },
       });
+
+      // Clear sessions, FCM push tokens, and cart
+      await Promise.all([
+        tx.refreshToken.deleteMany({ where: { userId: user.id } }),
+        tx.fCMToken.deleteMany({ where: { userId: user.id } }),
+        tx.cart.deleteMany({ where: { userId: user.id } }),
+        tx.bloodDetails.updateMany({
+          where: { userId: user.id },
+          data: { isDonor: false },
+        }),
+      ]);
+
+      // If vendor, close shop and cascade deactivation to staff
+      if (user.vendor?.id) {
+        await Promise.all([
+          tx.cart.deleteMany({ where: { vendorId: user.vendor.id } }),
+          tx.shopInfo.updateMany({
+            where: { vendorId: user.vendor.id },
+            data: { isShopOpen: false },
+          }),
+        ]);
+
+        const staffRows = await tx.staff.findMany({
+          where: { vendorId: user.vendor.id },
+          select: { userId: true },
+        });
+
+        for (const staffRow of staffRows) {
+          await Promise.all([
+            tx.refreshToken.deleteMany({ where: { userId: staffRow.userId } }),
+            tx.fCMToken.deleteMany({ where: { userId: staffRow.userId } }),
+            tx.user.update({
+              where: { id: staffRow.userId },
+              data: {
+                status: false,
+                accountStatus: AccountStatus.PENDING_DELETION,
+                deletionRequestedAt: now,
+                scheduledDeletionAt,
+                salt: uuidv4(),
+              },
+            }),
+          ]);
+        }
+      }
+
+      return updated;
     });
 
     return {
+      success: true,
+      message:
+        'Account has been deactivated and scheduled for deletion. You will be logged out on all devices.',
       userId: updatedUser.id,
       role: updatedUser.role,
       accountStatus: updatedUser.accountStatus,
@@ -108,40 +166,33 @@ export class AccountLifecycleService {
   }
 
   /**
-   * Reactivates a soft-deleted account inside the 30-day grace window.
+   * Reactivates an account inside the grace window.
+   * If the account is a vendor, automatically reactivates all staff accounts that were soft-deleted.
    */
-  async reactivatePendingAccount({
-    userId,
-    tx,
-  }: {
-    userId: string;
-    tx?: Prisma.TransactionClient;
-  }) {
-    const run = async (db: Prisma.TransactionClient) => {
-      const user = await db.user.findUnique({
-        where: { id: userId },
-        include: {
-          vendor: true,
-        },
-      });
+  async reactivatePendingAccount({ userId }: { userId: string }) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { vendor: true },
+    });
 
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-      if (user.accountStatus !== AccountStatus.PENDING_DELETION) {
-        throw new BadRequestException(
-          'Account is not in pending-deletion state',
-        );
-      }
+    if (user.accountStatus !== AccountStatus.PENDING_DELETION) {
+      throw new BadRequestException('Account is not in pending-deletion state');
+    }
 
-      if (user.scheduledDeletionAt && user.scheduledDeletionAt <= new Date()) {
-        throw new BadRequestException(
-          'The 30-day reactivation window has expired',
-        );
-      }
+    if (user.scheduledDeletionAt && user.scheduledDeletionAt <= new Date()) {
+      throw new BadRequestException(
+        'The reactivation window has expired. The account is queued for permanent removal.',
+      );
+    }
 
-      const restoredUser = await db.user.update({
+    let reactivatedStaffCount = 0;
+
+    const restoredUser = await this.prisma.$transaction(async (tx) => {
+      const restored = await tx.user.update({
         where: { id: user.id },
         data: {
           status: true,
@@ -151,84 +202,132 @@ export class AccountLifecycleService {
           deletionReason: null,
           salt: uuidv4(),
         },
-        include: {
-          vendor: {
-            include: {
-              shopInfo: {
-                include: {
-                  license: true,
-                },
-              },
-              vendorServiceOption: {
-                include: {
-                  serviceOption: true,
-                },
-              },
-              vendorType: true,
-            },
-          },
-          staff: {
-            include: {
-              vendor: {
-                include: {
-                  shopInfo: {
-                    include: {
-                      license: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          bloodDetails: true,
-        },
       });
 
+      // If Vendor, also reactivate all staff members who were placed in PENDING_DELETION
       if (user.vendor?.id) {
-        await db.staff
-          .findMany({
-            where: { vendorId: user.vendor.id },
-            select: { userId: true },
-          })
-          .then(async (staffRows) => {
-            const staffIds = staffRows.map((s) => s.userId);
-            if (staffIds.length > 0) {
-              await db.user.updateMany({
-                where: {
-                  id: { in: staffIds },
-                  accountStatus: AccountStatus.PENDING_DELETION,
-                },
-                data: {
-                  status: true,
-                  accountStatus: AccountStatus.ACTIVE,
-                  deletionRequestedAt: null,
-                  scheduledDeletionAt: null,
-                  deletionReason: null,
-                },
-              });
-            }
+        const staffRows = await tx.staff.findMany({
+          where: { vendorId: user.vendor.id },
+          select: { userId: true },
+        });
+
+        const staffUserIds = staffRows.map((s) => s.userId);
+
+        if (staffUserIds.length > 0) {
+          const updateResult = await tx.user.updateMany({
+            where: {
+              id: { in: staffUserIds },
+              accountStatus: AccountStatus.PENDING_DELETION,
+            },
+            data: {
+              status: true,
+              accountStatus: AccountStatus.ACTIVE,
+              deletionRequestedAt: null,
+              scheduledDeletionAt: null,
+              deletionReason: null,
+              salt: uuidv4(),
+            },
           });
+
+          reactivatedStaffCount = updateResult.count;
+        }
       }
 
-      return restoredUser;
+      return restored;
+    });
+
+    return {
+      success: true,
+      message: 'Account reactivated successfully',
+      userId: restoredUser.id,
+      accountStatus: restoredUser.accountStatus,
+      reactivatedStaffCount,
     };
-
-    if (tx) {
-      return await run(tx);
-    }
-
-    return await this.prisma.$transaction(async (innerTx) => run(innerTx));
   }
 
   /**
-   * Cron batch job: processes all accounts whose 30-day grace window has expired.
-   * - Clean accounts (no orders, bookings, payments, subscriptions, referrals, etc.) are permanently deleted.
-   * - Accounts with historical data are anonymized in-place (mobile/email set to null, referralCode & orders/items preserved).
+   * Admin Permanent Delete (Hard Delete).
+   * Checks pending coins and active transactions from both customer and vendor sides.
+   * If wallet coins exist, logs an audit record in AccountDeletionAudit for refund tracking.
+   * Completely purges the account and associated files.
+   */
+  async adminHardDelete({
+    userId,
+    adminId,
+    reason,
+  }: {
+    userId: string;
+    adminId: string;
+    reason?: string;
+  }) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        vendor: {
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User account not found');
+    }
+
+    if (user.role === Role.ADMIN) {
+      throw new BadRequestException('Admin accounts cannot be deleted');
+    }
+
+    // Check for in-flight transactions or pending coins from both sides
+    const activeCheck = await checkActiveTransactionsForDeletion(this.prisma, {
+      userId: user.id,
+      vendorId: user.vendor?.id,
+    });
+
+    if (activeCheck.hasActiveTransactions) {
+      throw new BadRequestException(
+        `Cannot permanently delete account while there are ${activeCheck.reasons.join(', ')}. Please ensure they are completed, cancelled, or settled first.`,
+      );
+    }
+
+    // Execute hard delete within a single transaction
+    const { filesToDelete, auditLogged, walletCoinsLogged } =
+      await this.prisma.$transaction(async (tx) => {
+        return await hardDeleteUserAndVendorRecords(tx, {
+          userId: user.id,
+          adminId,
+          reason,
+          deletionType: 'ADMIN_HARD_DELETE',
+        });
+      });
+
+    // Delete uploaded files asynchronously from disk
+    for (const filePath of filesToDelete) {
+      this.fileUploadService.handleSingleFileDeletion(filePath);
+    }
+
+    return {
+      success: true,
+      message: 'User account permanently deleted successfully',
+      deletedUserId: user.id,
+      name: user.name,
+      role: user.role,
+      auditLogCreated: auditLogged,
+      remainingCoinsLogged: walletCoinsLogged,
+    };
+  }
+
+  /**
+   * Scheduled Cron Job: Executes daily at 2:00 AM IST.
+   * Processes all accounts whose 30-day grace period has expired (scheduledDeletionAt <= now):
+   * - If account has NO historical orders/bookings/payments -> Full Hard Delete.
+   * - If account HAS historical business activity / sensitive data -> Permanent Soft Delete (scrubs PII, preserves audit trail).
+   * - If wallet coins exist in either case -> Logs audit record in AccountDeletionAudit for refunds.
    */
   async processScheduledDeletions(): Promise<{
     processed: number;
     hardDeleted: number;
-    anonymized: number;
+    softDeleted: number;
+    skipped: number;
     failed: number;
   }> {
     const now = new Date();
@@ -244,406 +343,173 @@ export class AccountLifecycleService {
       },
     });
 
+    this.logger.log(
+      `Running scheduled account deletions: found ${dueUsers.length} due accounts.`,
+    );
+
     let hardDeleted = 0;
-    let anonymized = 0;
+    let softDeleted = 0;
+    let skipped = 0;
     let failed = 0;
 
     for (const dueUser of dueUsers) {
       try {
-        const result = await this.prisma.$transaction(async (tx) => {
-          const freshUser = await tx.user.findUnique({
-            where: { id: dueUser.id },
-            include: { vendor: { select: { id: true } } },
-          });
-
-          if (
-            !freshUser ||
-            freshUser.accountStatus !== AccountStatus.PENDING_DELETION
-          ) {
-            return { mode: 'skipped' as const, files: [] as string[] };
-          }
-
-          const activeCheck = await checkActiveTransactionsForDeletion(tx, {
-            userId: freshUser.id,
-            vendorId: freshUser.vendor?.id,
-          });
-
-          if (activeCheck.hasActiveTransactions) {
-            throw new BadRequestException(
-              `Skipped scheduled deletion due to ${activeCheck.reasons.join(', ')}`,
-            );
-          }
-
-          const activity = await checkPreservableAccountActivity(tx, {
-            userId: freshUser.id,
-            vendorId: freshUser.vendor?.id,
-            referralCode: freshUser.referralCode,
-          });
-
-          if (!activity.hasActivity) {
-            const files = await hardDeleteCleanAccount(tx, {
-              userId: freshUser.id,
-              vendorId: freshUser.vendor?.id,
-              referralCode: freshUser.referralCode,
-            });
-            return { mode: 'hardDeleted' as const, files };
-          }
-
-          const files = await anonymizeAccountInPlace(tx, {
-            userId: freshUser.id,
-            role: freshUser.role,
-            vendorId: freshUser.vendor?.id,
-            now,
-          });
-          return { mode: 'anonymized' as const, files };
+        // 1. Check if user still has in-flight transactions or locked coins
+        const activeCheck = await checkActiveTransactionsForDeletion(this.prisma, {
+          userId: dueUser.id,
+          vendorId: dueUser.vendor?.id,
         });
 
-        for (const filePath of result.files) {
-          this.fileUploadService.handleSingleFileDeletion(filePath);
+        if (activeCheck.hasActiveTransactions) {
+          this.logger.warn(
+            `Skipping scheduled deletion for user ${dueUser.id} due to in-flight activity: ${activeCheck.reasons.join(', ')}`,
+          );
+          skipped++;
+          continue;
         }
 
-        if (result.mode === 'hardDeleted') {
+        // 2. Check if user has historical business records (orders, bookings, reviews, payments)
+        const historical = await checkHistoricalBusinessActivity(this.prisma, {
+          userId: dueUser.id,
+          vendorId: dueUser.vendor?.id,
+        });
+
+        let filesToDelete: string[] = [];
+
+        if (!historical.hasHistoricalData) {
+          // Case A: Clean Account -> Full Hard Delete
+          const result = await this.prisma.$transaction(async (tx) => {
+            return await hardDeleteUserAndVendorRecords(tx, {
+              userId: dueUser.id,
+              reason: 'Scheduled permanent hard delete (clean account with zero history)',
+              deletionType: 'SCHEDULED_HARD_DELETE',
+            });
+          });
+          filesToDelete = result.filesToDelete;
           hardDeleted++;
-        } else if (result.mode === 'anonymized') {
-          anonymized++;
+          this.logger.log(`Hard deleted clean account: ${dueUser.id}`);
+        } else {
+          // Case B: Has Historical Data -> Permanent Soft Delete with PII Scrubbing
+          const result = await this.prisma.$transaction(async (tx) => {
+            return await permanentSoftDeleteWithPiiScrubbing(tx, {
+              userId: dueUser.id,
+              reason: `Scheduled permanent soft delete (preserving: ${historical.reasons.join(', ')})`,
+            });
+          });
+          filesToDelete = result.filesToDelete;
+          softDeleted++;
+          this.logger.log(
+            `Permanently soft-deleted account with history: ${dueUser.id} (${historical.reasons.join(', ')})`,
+          );
         }
-      } catch (error: unknown) {
+
+        // 3. Delete files from disk storage
+        for (const filePath of filesToDelete) {
+          this.fileUploadService.handleSingleFileDeletion(filePath);
+        }
+      } catch (err: any) {
         failed++;
-        const msg = error instanceof Error ? error.message : String(error);
         this.logger.error(
-          `Failed processing scheduled deletion for user ${dueUser.id}: ${msg}`,
+          `Failed processing scheduled deletion for user ${dueUser.id}: ${err.message}`,
+          err.stack,
         );
       }
     }
 
     return {
-      processed: hardDeleted + anonymized,
+      processed: hardDeleted + softDeleted,
       hardDeleted,
-      anonymized,
+      softDeleted,
+      skipped,
       failed,
     };
   }
 
   /**
-   * Admin: soft-deletes an account for 30 days.
+   * Admin: Queries deletion audit logs to check remaining coins for refund requests.
    */
-  async adminSoftDeleteAccount({
-    userId,
-    reason,
+  async getDeletionAuditLogs({
+    mobile,
+    email,
+    originalUserId,
+    refundClaimed,
+    offset = 0,
+    limit = 20,
   }: {
-    userId: string;
-    reason?: string;
+    mobile?: string;
+    email?: string;
+    originalUserId?: string;
+    refundClaimed?: boolean;
+    offset?: number;
+    limit?: number;
   }) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { vendor: { select: { id: true } } },
-    });
+    const where: any = {};
 
-    if (!user) {
-      throw new NotFoundException('User not found');
+    if (mobile) {
+      where.mobile = { contains: mobile };
     }
-    if (user.role === Role.ADMIN) {
-      throw new BadRequestException('Admin accounts cannot be deleted');
+    if (email) {
+      where.email = { contains: email, mode: 'insensitive' };
     }
-    if (user.accountStatus === AccountStatus.DELETED) {
-      throw new BadRequestException(
-        'Account is already permanently anonymized',
-      );
+    if (originalUserId) {
+      where.originalUserId = originalUserId;
+    }
+    if (refundClaimed !== undefined) {
+      where.refundClaimed = refundClaimed;
     }
 
-    const activeCheck = await checkActiveTransactionsForDeletion(this.prisma, {
-      userId: user.id,
-      vendorId: user.vendor?.id,
-    });
-    if (activeCheck.hasActiveTransactions) {
-      throw new BadRequestException(
-        `Cannot soft-delete account with ${activeCheck.reasons.join(', ')}.`,
-      );
-    }
-
-    const now = new Date();
-    const scheduledDeletionAt = new Date(
-      now.getTime() + this.defaultGraceDays * 24 * 60 * 60 * 1000,
-    );
-
-    const updatedUser = await this.prisma.$transaction(async (tx) => {
-      return await this.applySoftDelete(tx, {
-        userId: user.id,
-        vendorId: user.vendor?.id,
-        reason,
-        now,
-        scheduledDeletionAt,
-      });
-    });
-
-    return updatedUser;
-  }
-
-  /**
-   * Admin: immediately permanently deletes a clean User/Vendor (no orders, bookings, payments, subscriptions, referrals, etc.).
-   * Rejects if historical records exist and instructs Admin to anonymize instead.
-   */
-  async adminPermanentDeleteUser({ userId }: { userId: string }) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        vendor: {
-          include: {
-            shopInfo: true,
-          },
-        },
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    if (user.role === Role.ADMIN) {
-      throw new BadRequestException('Admin accounts cannot be deleted');
-    }
-
-    const { filesToDelete, deletedSummary } = await this.prisma.$transaction(
-      async (tx) => {
-        const activity = await checkPreservableAccountActivity(tx, {
-          userId: user.id,
-          vendorId: user.vendor?.id,
-          referralCode: user.referralCode,
-        });
-
-        if (activity.hasActivity) {
-          throw new BadRequestException(
-            `Cannot permanently delete account because it has existing ${activity.reasons.join(', ')}. Use anonymization instead to preserve history.`,
-          );
-        }
-
-        const files = await hardDeleteCleanAccount(tx, {
-          userId: user.id,
-          vendorId: user.vendor?.id,
-          referralCode: user.referralCode,
-        });
-
-        return {
-          filesToDelete: files,
-          deletedSummary: {
-            deletedUserId: user.id,
-            deletedVendorId: user.vendor?.id ?? null,
-            role: user.role,
-            retiredReferralCode: user.referralCode ?? null,
-          },
-        };
-      },
-    );
-
-    for (const filePath of filesToDelete) {
-      this.fileUploadService.handleSingleFileDeletion(filePath);
-    }
-
-    return deletedSummary;
-  }
-
-  async adminPermanentDeleteVendor({ vendorId }: { vendorId: string }) {
-    const vendor = await this.prisma.vendor.findUnique({
-      where: { id: vendorId },
-      select: { id: true, userId: true },
-    });
-
-    if (!vendor) {
-      throw new NotFoundException('Vendor not found');
-    }
-
-    return await this.adminPermanentDeleteUser({
-      userId: vendor.userId,
-    });
-  }
-
-  /**
-   * Admin: immediately anonymizes an account with historical records (orders/bookings/referrals preserved, mobile/email freed).
-   */
-  async adminAnonymizeAccount({ userId }: { userId: string }) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { vendor: { include: { shopInfo: true } } },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    if (user.role === Role.ADMIN) {
-      throw new BadRequestException('Admin accounts cannot be anonymized');
-    }
-    if (user.accountStatus === AccountStatus.DELETED) {
-      throw new BadRequestException('Account is already anonymized');
-    }
-
-    const activeCheck = await checkActiveTransactionsForDeletion(this.prisma, {
-      userId: user.id,
-      vendorId: user.vendor?.id,
-    });
-    if (activeCheck.hasActiveTransactions) {
-      throw new BadRequestException(
-        `Cannot anonymize account with ${activeCheck.reasons.join(', ')}.`,
-      );
-    }
-
-    const now = new Date();
-    const filesToDelete = await this.prisma.$transaction(async (tx) => {
-      return await anonymizeAccountInPlace(tx, {
-        userId: user.id,
-        role: user.role,
-        vendorId: user.vendor?.id,
-        now,
-      });
-    });
-
-    for (const filePath of filesToDelete) {
-      this.fileUploadService.handleSingleFileDeletion(filePath);
-    }
+    const [total, audits] = await Promise.all([
+      this.prisma.accountDeletionAudit.count({ where }),
+      this.prisma.accountDeletionAudit.findMany({
+        where,
+        skip: offset,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
 
     return {
-      userId: user.id,
-      vendorId: user.vendor?.id ?? null,
-      accountStatus: AccountStatus.DELETED,
-      anonymizedAt: now,
-      referralCodePreserved: user.referralCode ?? null,
+      total,
+      offset,
+      limit,
+      audits,
     };
   }
 
   /**
-   * Admin: restores a PENDING_DELETION or SUSPENDED account back to ACTIVE.
+   * Admin: Marks a coin refund as claimed.
    */
-  async adminRestoreAccount({ userId }: { userId: string }) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { vendor: { select: { id: true } } },
+  async claimRefund({
+    auditId,
+    notes,
+  }: {
+    auditId: string;
+    notes?: string;
+  }) {
+    const audit = await this.prisma.accountDeletionAudit.findUnique({
+      where: { id: auditId },
     });
 
-    if (!user) {
-      throw new NotFoundException('User not found');
+    if (!audit) {
+      throw new NotFoundException('Audit log not found');
     }
 
-    if (user.accountStatus === AccountStatus.DELETED) {
-      throw new BadRequestException(
-        'Permanently anonymized accounts cannot be restored',
-      );
+    if (audit.refundClaimed) {
+      throw new BadRequestException('Refund has already been marked as claimed');
     }
 
-    if (user.accountStatus === AccountStatus.ACTIVE && user.status === true) {
-      throw new BadRequestException('Account is already active');
-    }
-
-    return await this.prisma.$transaction(async (tx) => {
-      const restored = await tx.user.update({
-        where: { id: user.id },
-        data: {
-          status: true,
-          accountStatus: AccountStatus.ACTIVE,
-          deletionRequestedAt: null,
-          scheduledDeletionAt: null,
-          deletionReason: null,
-          salt: uuidv4(),
-        },
-      });
-
-      if (user.vendor?.id) {
-        const staffRows = await tx.staff.findMany({
-          where: { vendorId: user.vendor.id },
-          select: { userId: true },
-        });
-        const staffUserIds = staffRows.map((s) => s.userId);
-        if (staffUserIds.length > 0) {
-          await tx.user.updateMany({
-            where: {
-              id: { in: staffUserIds },
-              accountStatus: {
-                in: [AccountStatus.PENDING_DELETION, AccountStatus.SUSPENDED],
-              },
-            },
-            data: {
-              status: true,
-              accountStatus: AccountStatus.ACTIVE,
-              deletionRequestedAt: null,
-              scheduledDeletionAt: null,
-              deletionReason: null,
-            },
-          });
-        }
-      }
-
-      return restored;
-    });
-  }
-
-  private async applySoftDelete(
-    tx: Prisma.TransactionClient,
-    {
-      userId,
-      vendorId,
-      reason,
-      now,
-      scheduledDeletionAt,
-    }: {
-      userId: string;
-      vendorId?: string;
-      reason?: string;
-      now: Date;
-      scheduledDeletionAt: Date;
-    },
-  ) {
-    const updatedUser = await tx.user.update({
-      where: { id: userId },
+    const updated = await this.prisma.accountDeletionAudit.update({
+      where: { id: auditId },
       data: {
-        status: false,
-        accountStatus: AccountStatus.PENDING_DELETION,
-        deletionRequestedAt: now,
-        scheduledDeletionAt,
-        deletionReason: reason ?? null,
-        salt: uuidv4(),
+        refundClaimed: true,
+        notes: notes ? `${audit.notes ?? ''} | Claim note: ${notes}` : audit.notes,
       },
     });
 
-    await Promise.all([
-      tx.refreshToken.deleteMany({ where: { userId } }),
-      tx.fCMToken.deleteMany({ where: { userId } }),
-      tx.cart.deleteMany({ where: { userId } }),
-      tx.bloodDetails.updateMany({
-        where: { userId },
-        data: { isDonor: false },
-      }),
-    ]);
-
-    if (vendorId) {
-      await Promise.all([
-        tx.cart.deleteMany({ where: { vendorId } }),
-        tx.shopInfo.updateMany({
-          where: { vendorId },
-          data: { isShopOpen: false },
-        }),
-      ]);
-
-      const staffRows = await tx.staff.findMany({
-        where: { vendorId },
-        select: { userId: true },
-      });
-
-      for (const staffRow of staffRows) {
-        await Promise.all([
-          tx.refreshToken.deleteMany({ where: { userId: staffRow.userId } }),
-          tx.fCMToken.deleteMany({ where: { userId: staffRow.userId } }),
-          tx.user.update({
-            where: { id: staffRow.userId },
-            data: {
-              status: false,
-              accountStatus: AccountStatus.PENDING_DELETION,
-              deletionRequestedAt: now,
-              scheduledDeletionAt,
-              salt: uuidv4(),
-            },
-          }),
-        ]);
-      }
-    }
-
-    return updatedUser;
+    return {
+      success: true,
+      message: 'Refund marked as claimed successfully',
+      audit: updated,
+    };
   }
 }

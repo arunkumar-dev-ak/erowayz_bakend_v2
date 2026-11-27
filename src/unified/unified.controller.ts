@@ -13,19 +13,23 @@ import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { FetchUserGuard } from 'src/common/guards/fetch-user.guard';
 import { extractUserFromRequest } from 'src/common/functions/extractUserId';
 import { UnifiedService } from './unified.service';
-import { GetUnifiedProductInfoQueryDto } from './dto/get-unified-product-info-query.dto';
+import { GetUnifiedStorefrontQueryDto } from './dto/get-unified-storefront-query.dto';
 
 @ApiTags('Unified')
 @Controller('unified')
 export class UnifiedController {
   constructor(private readonly unifiedService: UnifiedService) {}
 
-  @Get('product-info/:vendorId')
+  // =========================================================================
+  // Dynamic Storefront Endpoint (PRODUCT, SERVICE & BANNER)
+  // Dynamically inspects vendor.vendorType.type and returns the tailored storefront.
+  // =========================================================================
+  @Get('storefront/:vendorId')
   @ApiOperation({
     summary:
-      'Retrieve unified product vendor storefront details (Product Info)',
+      'Retrieve unified vendor storefront (Dynamic: PRODUCT, SERVICE, BANNER)',
     description:
-      'Consolidates vendor profile, rating summary, shop timings, available categories, and paginated items in a single call for product info.',
+      'Dynamically resolves the vendor category from vendorType. For PRODUCT vendors, returns active categories, menu items, and last delivered order. For SERVICE vendors, returns active service options, services/sub-services with pricing, and last completed service booking. For BANNER vendors, returns active valid banners and last completed banner booking. All categories receive common profile info, operating timings, Redis-cached rating summary, and customer rating.',
   })
   @ApiParam({
     name: 'vendorId',
@@ -33,14 +37,14 @@ export class UnifiedController {
     description: 'Vendor UUID',
   })
   @UseGuards(FetchUserGuard)
-  async getProductInfo(
+  async getStorefront(
     @Param('vendorId', new ParseUUIDPipe()) vendorId: string,
-    @Query() query: GetUnifiedProductInfoQueryDto,
+    @Query() query: GetUnifiedStorefrontQueryDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {
     const user = extractUserFromRequest(req);
-    return await this.unifiedService.getProductInfo({
+    return await this.unifiedService.getStorefront({
       vendorId,
       query,
       userId: user?.id,

@@ -1,0 +1,28 @@
+enum VendorReportStatus {
+  PENDING
+  VIEWED
+  ACCEPTED
+  DECLINED
+  RESOLVED
+}
+
+model VendorReport {
+  id         String             @id @default(uuid())
+  vendorId   String
+  orderId    String?            @unique
+  bookingId  String?            @unique
+  reason     String
+  status     VendorReportStatus @default(PENDING)
+  reviewedAt DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  vendor  Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  order   Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId, status])
+  @@index([status, createdAt])
+  @@index([orderId])
+  @@index([bookingId])
+}

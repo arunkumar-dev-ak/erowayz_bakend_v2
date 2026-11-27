@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erowayz - Feature Workflows & UI Screen Guide</title>
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-light: #EEF2FF;
+      --customer: #0284C7;
+      --customer-bg: #E0F2FE;
+      --vendor: #D97706;
+      --vendor-bg: #FEF3C7;
+      --admin: #7C3AED;
+      --admin-bg: #F3E8FF;
+      --success: #16A34A;
+      --success-bg: #DCFCE7;
+      --danger: #DC2626;
+      --danger-bg: #FEE2E2;
+      --dark: #0F172A;
+      --gray-50: #F8FAFC;
+      --gray-100: #F1F5F9;
+      --gray-200: #E2E8F0;
+      --gray-600: #475569;
+      --gray-700: #334155;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--gray-50);
+      color: var(--gray-700);
+      line-height: 1.5;
+      padding-bottom: 60px;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #4338CA 100%);
+      color: white;
+      padding: 40px 20px;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      font-size: 1.05rem;
+      opacity: 0.9;
+      max-width: 650px;
+      margin: 0 auto 20px;
+    }
+
+    /* Search & Filter Bar */
+    .controls-container {
+      max-width: 1200px;
+      margin: -25px auto 30px;
+      padding: 0 20px;
+      position: relative;
+      z-index: 101;
+    }
+
+    .controls-card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px 20px;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      border: 1px solid var(--gray-200);
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 260px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 12px 16px 12px 42px;
+      border-radius: 10px;
+      border: 1px solid var(--gray-200);
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.1rem;
+      color: var(--gray-600);
+    }
+
+    .filter-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+      background: white;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+      background: var(--gray-100);
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 24px;
+    }
+
+    /* Feature Card */
+    .card {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid var(--gray-200);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: #CBD5E1;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    .feature-num {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 0.95rem;
+      font-weight: 800;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .card-title-wrap {
+      flex: 1;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .app-badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-customer {
+      background: var(--customer-bg);
+      color: var(--customer);
+    }
+
+    .badge-vendor {
+      background: var(--vendor-bg);
+      color: var(--vendor);
+    }
+
+    .badge-admin {
+      background: var(--admin-bg);
+      color: var(--admin);
+    }
+
+    /* Section Boxes */
+    .section-box {
+      margin-bottom: 14px;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--gray-600);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* UI Location Box */
+    .ui-location {
+      background: #F8FAFC;
+      border-left: 3px solid var(--primary);
+      padding: 10px 12px;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 16px;
+    }
+
+    /* Workflow Steps */
+    .workflow-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+    }
+
+    .step-dot {
+      background: var(--gray-200);
+      color: var(--gray-700);
+      font-weight: 700;
+      font-size: 0.72rem;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .step-item.highlight .step-dot {
+      background: var(--success);
+      color: white;
+    }
+
+    /* Key Business Value / Highlight Box */
+    .value-box {
+      background: #F0FDF4;
+      border: 1px dashed #86EFAC;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      color: #166534;
+      margin-top: auto;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .value-icon {
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    /* Load Indicator Color Scale Table */
+    .scale-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+      text-align: center;
+      margin: 8px 0 12px;
+    }
+
+    .scale-box {
+      padding: 6px 2px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: white;
+    }
+
+    .scale-0 { background: #16A34A; }
+    .scale-1 { background: #84CC16; color: #1E293B; }
+    .scale-2 { background: #EAB308; color: #1E293B; }
+    .scale-3 { background: #F97316; }
+    .scale-4 { background: #EA580C; }
+    .scale-5 { background: #DC2626; }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--gray-600);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      header h1 { font-size: 1.7rem; }
+      .grid { grid-template-columns: 1fr; }
+      .controls-card { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="header-badge">Erowayz Product Specification</div>
+    <h1>Master Features Workflow & UI Guide</h1>
+    <p>A simple, non-technical visual walkthrough of all 19 features: Where they appear on the screens and how they work step-by-step.</p>
+  </header>
+
+  <!-- Search & App Filters -->
+  <div class="controls-container">
+    <div class="controls-card">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search by feature name or keyword (e.g. stock, timer, review)...">
+      </div>
+      <div class="filter-buttons">
+        <button class="filter-btn active" data-filter="all">All Features (19)</button>
+        <button class="filter-btn" data-filter="customer">📱 Customer Section</button>
+        <button class="filter-btn" data-filter="vendor">🏪 Vendor Section</button>
+        <button class="filter-btn" data-filter="admin">💻 Admin Panel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cards Grid Container -->
+  <main class="container">
+    <div class="grid" id="featuresGrid">
+
+      <!-- 01. Customer Trust Badge -->
+      <div class="card" data-apps="vendor admin">
+        <div class="card-header">
+          <div class="feature-num">01</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Customer Trust Badge (Admin-Configured Threshold)</h2>
+            <div class="app-badges">
+              <span class="badge badge-vendor">🏪 Vendor Section (All Vendors)</span>
+              <span class="badge badge-admin">💻 Admin Panel</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            • <strong>Vendor Section (All 3 Categories):</strong> All vendors across Street Food, Common Shops, and Vehicle Services are notified and see the vibrant green <strong>"Trusted Customer"</strong> badge next to the customer name on cash orders.<br>
+            • <strong>Admin Panel:</strong> Trust Settings (Admin sets target order threshold, e.g. 15 orders) & Customer Profiles (displays total cumulative completed orders).
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot" style="background: linear-gradient(135deg, #4F46E5, #9333EA); color: white;">1</div>
+              <div style="width: 100%;">
+                <div style="background: linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 50%, #FDF4FF 100%); border: 1.5px solid #C4B5FD; border-radius: 12px; padding: 12px 14px; margin-top: 2px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.08);">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-weight: 800; font-size: 0.88rem; background: linear-gradient(135deg, #4F46E5, #9333EA); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                      ⚙️ Admin-Configured Order Target (No Expiry)
+                    </span>
+                    <span style="background: #DDD6FE; color: #5B21B6; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 9999px;">
+                      Permanent Trust
+                    </span>
+                  </div>
+                  <p style="font-size: 0.82rem; color: #4338CA; line-height: 1.4; margin-bottom: 8px;">
+                    Admin configures the required order count in the Admin Panel (e.g. <strong>15 completed orders</strong>). There is <strong>no monthly reset and no expiry limit</strong> — orders accumulate continuously!
+                  </p>
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <span style="background: white; border: 1px solid #E0E7FF; padding: 3px 8px; border-radius: 6px; font-size: 0.73rem; font-weight: 600; color: #4F46E5;">
+                      🛠️ Admin Sets Count
+                    </span>
+                    <span style="background: white; border: 1px solid #E0E7FF; padding: 3px 8px; border-radius: 6px; font-size: 0.73rem; font-weight: 600; color: #7C3AED;">
+                      ♾️ No Expiry / No Reset
+                    </span>
+                    <span style="background: #DCFCE7; border: 1px solid #86EFAC; padding: 3px 8px; border-radius: 6px; font-size: 0.73rem; font-weight: 700; color: #15803D;">
+                      ✅ Permanent Badge
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div><strong>Groups Across All 3 Categories:</strong> Verified Cash on Delivery (COD) purchases across <strong>Street Food, Common Shops, and Vehicle Services</strong> all count together towards the Admin-set target.</div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div>
+                <strong>All Vendors Notified:</strong>
+                <br>• When a customer reaches the target count, <strong>all vendors across all 3 categories</strong> see and are notified of the trust status:
+                <div style="margin-top: 6px; margin-bottom: 6px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                  <span style="background: #DCFCE7; border: 1.5px solid #22C55E; color: #15803D; font-size: 0.78rem; font-weight: 800; padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(34, 197, 94, 0.15);">
+                    🛡️ TRUSTED CUSTOMER
+                  </span>
+                  <span style="font-size: 0.78rem; color: #64748B; font-style: italic;">
+                    (If target not yet reached, no negative badge is shown — leaves customer name normal & simple).
+                  </span>
+                </div>
+                • <strong>Admin sees:</strong> The exact total completed order count in the customer's Admin profile.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Groups customer activity across food, shops, and vehicle services to give all vendors a unified, platform-wide trust score against ghost orders.</div>
+        </div>
+      </div>
+
+      <!-- 02. Vendor Automatic Stock Alerts -->
+      <div class="card" data-apps="vendor admin">
+        <div class="card-header">
+          <div class="feature-num">02</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Vendor Automatic Stock Alerts</h2>
+            <div class="app-badges">
+              <span class="badge badge-vendor">🏪 Vendor Section</span>
+              <span class="badge badge-admin">💻 Admin Panel</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            • <strong>Vendor Dashboard:</strong> Top Alert Stack (shows up to 5 stacked low-stock cards).<br>
+            • <strong>Dedicated Alert Log Page:</strong> Tapping the stack opens the full alert log page with all notifications list and restock options.<br>
+            • <strong>Admin Panel:</strong> Stock Alert Settings (Admin customizes threshold counts and alert badge colors).<br>
+            <em>(Note: Completely hidden from customer view).</em>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div><strong>Admin Customization:</strong> Admin configures threshold counts (e.g., 5, 3, 2, 1) and alert colors from the Admin Panel.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div><strong>Dashboard Stack UI:</strong> Alerts appear as a clean <strong>stack of up to 5 alerts</strong> on top of the Vendor Dashboard as stock decreases.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">3</div>
+              <div><strong>Dedicated Notification Log Page:</strong> Clicking the stack opens the dedicated <strong>Stock Alert Log Page</strong> showing the complete list of notifications and low-stock items (e.g., Existing 30 + 10 New = 40).</div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">4</div>
+              <div><strong>Auto Out-of-Stock:</strong> At <strong>0 units</strong>, the system automatically flips the product status to <strong>"OUT OF STOCK"</strong> to prevent over-ordering.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Keeps the vendor dashboard clean with a 5-item stack, provides a dedicated notification log page, and allows Admin color customization.</div>
+        </div>
+      </div>
+
+      <!-- 03. Universal Real-Time Notifications -->
+      <div class="card" data-apps="customer vendor">
+        <div class="card-header">
+          <div class="feature-num">03</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Universal Real-Time Notifications</h2>
+            <div class="app-badges">
+              <span class="badge badge-customer">📱 Customer</span>
+              <span class="badge badge-vendor">🏪 Vendor</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            • Phone Lock Screen / Push Notification Bar.<br>
+            • <strong>Vendor Section:</strong> Dedicated <strong>Notification Log Page</strong> (lists all past incoming order & booking notifications).<br>
+            • In-App Auto Refresh when app is open.
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div><strong>New Order Alert:</strong> Vendor phone rings with a loud sound. Notification shows Customer Name, Items, Amount, and Trust Badge. Tapping it opens the order directly.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div><strong>Customer Updates:</strong> Customer hears default notification sound when order is Accepted or Ready.</div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div><strong>Cancellation Alert:</strong> If an order is Cancelled, a <strong>special customized alert sound</strong> plays to grab immediate attention.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Vendors never miss an order, have a full notification history log, and customers always know the exact live status of their order.</div>
+        </div>
+      </div>
+
+      <!-- 04. Street Food 20-Minute Order Timer -->
+      <div class="card" data-apps="customer vendor">
+        <div class="card-header">
+          <div class="feature-num">04</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Street Food 20-Min Order Timer</h2>
+            <div class="app-badges">
+              <span class="badge badge-customer">📱 Customer</span>
+              <span class="badge badge-vendor">🏪 Vendor</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            • <strong>Vendor Section:</strong> Dedicated <strong>Street Food Order Action Screen</strong> (opened directly by clicking the notification).<br>
+            • <strong>Customer Section:</strong> Active Order Tracking Screen.
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div><strong>Notification Click ➔ Dedicated Page:</strong> Clicking the Street Food order notification opens a dedicated action page exclusively for the vendor to <strong>Accept or Decline</strong>.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div><strong>20-Minute Countdown:</strong> When vendor accepts, a <strong>20:00 countdown timer</strong> starts ticking on the screen for the first 5 active orders.</div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div><strong>Vendor Cancel Button (COD):</strong> If 20 minutes pass and the Cash on Delivery (COD) customer has not collected the food, a <strong>"Cancel Order"</strong> button unlocks on the vendor's dedicated screen so they can safely void it.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Vendor gets a dedicated action page directly from the notification, clear 20-min timing, and a safe cancel option for abandoned COD orders.</div>
+        </div>
+      </div>
+
+      <!-- 05. Common Shop Banner Views & Reactions -->
+      <div class="card" data-apps="customer vendor">
+        <div class="card-header">
+          <div class="feature-num">05</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Banner Views, Likes & Dislikes</h2>
+            <div class="app-badges">
+              <span class="badge badge-customer">📱 Customer</span>
+              <span class="badge badge-vendor">🏪 Vendor</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            Customer Section ➔ Home Promotional Banners.<br>
+            Vendor Section ➔ My Offer Banners.
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div><strong>Customer Side:</strong> Customer sees Like 👍 and Dislike 👎 buttons. <strong>Only the Like count is displayed</strong> (e.g. 👍 82). Dislike count and View count remain hidden from customers.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div><strong>Unique Views Only:</strong> Refreshing or opening the app 10 times only counts as <strong>1 unique view</strong> per customer.</div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div><strong>Vendor Side:</strong> Vendor sees exact analytics: Total Views (👁 450), Total Likes (👍 82), Dislikes (👎 4).</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Vendors can see how effective their promotional banner is in real numbers.</div>
+        </div>
+      </div>
+
+      <!-- 06. Unified Vendor Rating & Reviews -->
+      <div class="card" data-apps="customer vendor">
+        <div class="card-header">
+          <div class="feature-num">06</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">5-Parameter Vendor Rating & Reviews</h2>
+            <div class="app-badges">
+              <span class="badge badge-customer">📱 Customer</span>
+              <span class="badge badge-vendor">🏪 Vendor</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            Customer Section ➔ Order History (Rate Vendor modal).<br>
+            Vendor Profile / Shop Info Page ➔ Overall Star Rating & Count.
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div>Customer can rate <strong>only after completing</strong> an order or booking. <strong>Exactly 1 review per User</strong> (a customer can only review a vendor once, not on every transaction).</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div>
+                <strong>Tailored 5-Parameter Rating (1 to 5 Stars):</strong>
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 0.8rem; line-height: 1.5;">
+                  <div style="margin-bottom: 6px;">
+                    <strong style="color: #D97706;">🍔 1. Street Food Vendors:</strong><br>
+                    1. Hygiene & Cleanliness &nbsp;•&nbsp; 2. Vendor Hospitality &nbsp;•&nbsp; 3. Serving Speed &nbsp;•&nbsp; 4. Food Taste &nbsp;•&nbsp; 5. Value for Money
+                  </div>
+                  <div style="margin-bottom: 6px;">
+                    <strong style="color: #0284C7;">🛍️ 2. Common Shop Vendors:</strong><br>
+                    1. Product Quality &nbsp;•&nbsp; 2. Product Availability &nbsp;•&nbsp; 3. Vendor Behaviour &nbsp;•&nbsp; 4. Price & Value for Money &nbsp;•&nbsp; 5. Customer Service
+                  </div>
+                  <div>
+                    <strong style="color: #7C3AED;">🔧 3. Vehicle & Service Vendors:</strong><br>
+                    1. Service Quality &nbsp;•&nbsp; 2. Service Speed &nbsp;•&nbsp; 3. Technician Behaviour &nbsp;•&nbsp; 4. Pricing & Value for Money &nbsp;•&nbsp; 5. Service Reliability
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div>System averages the 5 scores and shows the final score (e.g. <strong>★ 4.8</strong> from 142 reviews) on the Vendor's public profile.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Genuine, verified reviews build immense customer trust and reward hardworking vendors.</div>
+        </div>
+      </div>
+
+      <!-- 07. Street Food Product Offer Banner -->
+      <div class="card" data-apps="customer vendor">
+        <div class="card-header">
+          <div class="feature-num">07</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Street Food Product Offer Banner</h2>
+            <div class="app-badges">
+              <span class="badge badge-customer">📱 Customer</span>
+              <span class="badge badge-vendor">🏪 Vendor</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            Customer Section ➔ Top of Home screen Carousel.<br>
+            Vendor Section ➔ Create Offer Banner screen.
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div>Vendor uploads a product photo, special offer price, stock quantity, start/end time, and sets a <strong>Max Quantity Limit</strong> (e.g. max 2 or 3 units per customer to prevent hoarding). (Open to all food vendors).</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div>Customer sees the banner, taps it, and books directly or adds to cart. Customer quantity is capped at the <strong>Max Quantity Limit</strong>, and discount applies automatically.</div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div>As customers buy, stock auto-decrements. When stock hits 0, it displays <strong>"OUT OF STOCK"</strong> and disables bookings.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Street food vendors can run flash sales during special lunch/evening hours to clear items fast.</div>
+        </div>
+      </div>
+
+      <!-- 08. Automatic Subscription Expiry Alerts -->
+      <div class="card" data-apps="vendor">
+        <div class="card-header">
+          <div class="feature-num">08</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Subscription Expiry & Renewal Alerts</h2>
+            <div class="app-badges">
+              <span class="badge badge-vendor">🏪 Vendor Section</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            Vendor Phone Notification Bar ➔ Opens Subscription Renewal Page.
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div><strong>1 Day Before:</strong> Vendor gets a notification with sound: <em>"Your Subscription expires tomorrow. Please renew..."</em></div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div><strong>On Expiry Day:</strong> Alert with sound: <em>"Your Subscription has expired. Please renew your plan to continue using Erowayz services."</em></div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div><strong>Tap to Renew:</strong> Tapping the notification directly opens the <strong>Subscription Plans / Renewal screen</strong> in the app. Once renewed, alerts automatically stop.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Guarantees high subscription renewal rates and recurring revenue without manual admin phone calls.</div>
+        </div>
+      </div>
+
+      <!-- 09. Social Media & Review Redirects -->
+      <div class="card" data-apps="customer vendor">
+        <div class="card-header">
+          <div class="feature-num">09</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Social Media & App Rating Redirects</h2>
+            <div class="app-badges">
+              <span class="badge badge-customer">📱 Customer</span>
+              <span class="badge badge-vendor">🏪 Vendor</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            Bottom of Profile / Settings screen in both Customer & Vendor Sections.
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div>A clean row of 5 clickable icons is displayed:
+                <br>• ⭐ Google Business (Review Erowayz)
+                <br>• 📱 Google Play Store (Rate Erowayz App)
+                <br>• 📺 YouTube (Subscribe to channel)
+                <br>• 📸 Instagram (Follow page)
+                <br>• 📘 Facebook (Visit page)
+              </div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">2</div>
+              <div>Tapping any icon directly launches that app on the user's phone (or opens the browser page).</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Effortlessly grows Erowayz social media followers and Play Store 5-star ratings without complex reward points.</div>
+        </div>
+      </div>
+
+      <!-- 10. Blood Connect - Document Upload -->
+      <div class="card" data-apps="customer admin">
+        <div class="card-header">
+          <div class="feature-num">10</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Blood Connect: Document Verification</h2>
+            <div class="app-badges">
+              <span class="badge badge-customer">📱 Customer</span>
+              <span class="badge badge-admin">💻 Admin Panel</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            Customer Section ➔ Blood Request Form.<br>
+            Admin Panel ➔ Blood Requests Management page.
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div>When submitting a Blood Request, the user selects from a dropdown:
+                <br>1. <em>Patient Case Sheet / Hospital Admission Proof</em>
+                <br>2. <em>Blood Donation Camp – Official Letterhead</em>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div>User uploads a photo of the medical document or camp letter.</div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div>Admin opens the request in the Admin Panel, views the document image, and verifies authenticity.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Prevents spam or fake blood emergency requests and ensures donors are connected to verified hospitals.</div>
+        </div>
+      </div>
+
+      <!-- 11. Dynamic Business Load Indicator -->
+      <div class="card" data-apps="customer vendor admin">
+        <div class="card-header">
+          <div class="feature-num">11</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Dynamic Business Load Indicator</h2>
+            <div class="app-badges">
+              <span class="badge badge-customer">📱 Customer</span>
+              <span class="badge badge-vendor">🏪 Vendor</span>
+              <span class="badge badge-admin">💻 Admin Panel</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            • <strong>Customer Section:</strong> Vendor Profile, Shop Listing Card & Checkout Page.<br>
+            • <strong>Vendor Section:</strong> Live Busy Status Badge on Vendor Dashboard.<br>
+            • <strong>Admin Panel:</strong> Subscription Settings (Admin sets threshold limits & vendor customization permissions).
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div><strong>Admin Configuration:</strong> Admin controls the maximum order threshold (e.g. 5 orders = BUSY) and whether vendors are allowed to customize their own lower threshold.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div><strong>Live Workload Counting:</strong> System tracks active accepted orders being cooked. Displays a dynamic color-coded status badge:</div>
+            </div>
+          </div>
+          <div class="scale-grid">
+            <div class="scale-box scale-0">0: Normal</div>
+            <div class="scale-box scale-1">1: Light</div>
+            <div class="scale-box scale-2">2: Moderate</div>
+            <div class="scale-box scale-3">3: Busy</div>
+            <div class="scale-box scale-4">4: Heavy</div>
+            <div class="scale-box scale-5">5+: MAX BUSY</div>
+          </div>
+          <div class="workflow-steps">
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div><strong>Auto Cool-Down:</strong> As orders finish, the color badge automatically cools down back to green (OPEN).</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Admin controls workload limits centrally, while customers see live kitchen rush before ordering to set realistic delivery expectations.</div>
+        </div>
+      </div>
+
+      <!-- 12. Dynamic Subscription Durations -->
+      <div class="card" data-apps="vendor admin">
+        <div class="card-header">
+          <div class="feature-num">12</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">3M, 6M & 1-Year Subscription Plans</h2>
+            <div class="app-badges">
+              <span class="badge badge-vendor">🏪 Vendor</span>
+              <span class="badge badge-admin">💻 Admin Panel</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            Admin Panel ➔ Subscription Management.<br>
+            Vendor Section ➔ Choose Subscription Plan screen.
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div>Admin enables new plan durations: <strong>3 Months</strong>, <strong>6 Months</strong>, or <strong>1 Year</strong>, and sets custom prices for Standard, Premium, or Golden tiers.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div>Vendor opens the app and sees the new duration cards (e.g. <em>"6 Months Plan - ₹2,999"</em>).</div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div>Existing active vendors keep their current plans without interruption.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Enables long-term upfront revenue for Erowayz rather than having vendors renew every single week or month.</div>
+        </div>
+      </div>
+
+      <!-- 13. Vendor KYC Consent Checkbox -->
+      <div class="card" data-apps="vendor">
+        <div class="card-header">
+          <div class="feature-num">13</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Vendor KYC Terms Consent Checkbox</h2>
+            <div class="app-badges">
+              <span class="badge badge-vendor">🏪 Vendor Section</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            Vendor Section ➔ Registration / KYC Document Upload Screen (Bottom).
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div>After uploading Aadhaar, PAN, or Business License, the vendor sees a legal terms agreement.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div>The <strong>"Agree & Continue"</strong> button remains <strong>grayed out (disabled)</strong> until they check:
+                <br><em>☑ "I have read, understood and agreed to the KYC Document Collection, Verification and Usage Terms..."</em>
+              </div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div>Once checked, the button enables, and the system records the exact date and time of acceptance.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Protects Erowayz legally and ensures 100% regulatory compliance for business document collection.</div>
+        </div>
+      </div>
+
+      <!-- 14. Customer Report Resolution -->
+      <div class="card" data-apps="customer admin">
+        <div class="card-header">
+          <div class="feature-num">14</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Customer Report & Resolution Tracking</h2>
+            <div class="app-badges">
+              <span class="badge badge-customer">📱 Customer</span>
+              <span class="badge badge-admin">💻 Admin Panel</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            • <strong>Customer Section:</strong> Directly <strong>below that specific Order, Booking, or Service</strong> screen (Inline Report button & live status — no separate history page).<br>
+            • <strong>Admin Panel:</strong> Customer Concerns Dashboard (with <strong>Accept</strong>, <strong>Decline</strong>, <strong>Mark as Viewed</strong>, and <strong>Resolved</strong> buttons).<br>
+            <em>(Note: Completely excluded from Vendor Section; vendors do not receive or manage reports).</em>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div><strong>Inline Report Submission:</strong> Right below any Order, Shop Booking, or Service screen, customer taps "Report" to submit their concern directly on that transaction.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div><strong>Admin Actions (Accept / Decline / Mark as Viewed / Resolved):</strong> All submitted concerns appear in the Admin Panel with action buttons to <strong>Accept</strong>, <strong>Decline</strong>, <strong>Mark as Viewed</strong>, or mark as <strong>Resolved</strong>.</div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div><strong>Live Status on Order Screen:</strong> When Admin reviews, status updates to <strong>"Marked as Seen by Admin"</strong>. Once resolved, it reflects as <strong>"Resolved by Admin"</strong>.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Simple inline reporting without cluttered extra pages, gives Admin central control, and keeps vendor workflow clean and unaffected.</div>
+        </div>
+      </div>
+
+      <!-- 15. Optional Product Description -->
+      <div class="card" data-apps="vendor">
+        <div class="card-header">
+          <div class="feature-num">15</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Optional Product Description</h2>
+            <div class="app-badges">
+              <span class="badge badge-vendor">🏪 Vendor Section</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            Vendor Section ➔ Add Product / Edit Product Form.
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div>Vendor wants to add a new dish or item (e.g. "Veg Parotta").</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div>The Description field is marked <strong>"(Optional)"</strong>.</div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div>Vendor can leave it blank and publish the item immediately with just Name, Price, and Stock.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Street food and busy shop owners can add their entire menu in minutes without typing long food essays.</div>
+        </div>
+      </div>
+
+      <!-- 16. Customer Preferences at Checkout -->
+      <div class="card" data-apps="customer vendor admin">
+        <div class="card-header">
+          <div class="feature-num">16</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Food Preferences at Checkout</h2>
+            <div class="app-badges">
+              <span class="badge badge-customer">📱 Customer</span>
+              <span class="badge badge-vendor">🏪 Vendor</span>
+              <span class="badge badge-admin">💻 Admin Panel</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            • <strong>Customer Section:</strong> Checkout / Cart Screen (Checkbox preferences & custom text instructions).<br>
+            • <strong>Vendor Section:</strong> Displayed on the <strong>Existing Order History Page</strong> and the <strong>Dedicated Individual Order Details Page</strong>.<br>
+            • <strong>Admin Panel:</strong> Subcategory Settings (Admin configures preference options in Tamil & English).
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div>Admin configures customization tags per subcategory in Tamil & English (e.g. Fast Food: <em>Less Spicy, Less Salt, Less Oil, No Onion, For Kids</em>).</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div>At checkout, customer selects checkboxes for their preferences + types optional special instructions (e.g. <em>"Make it crispy"</em>).</div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div><strong>Vendor Kitchen View:</strong> Vendor clearly sees these selected preferences highlighted on both the <strong>Existing Order History Page</strong> and the <strong>Dedicated Individual Order Page</strong> while cooking.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Eliminates food preparation mistakes and phone calls to ask "How spicy do you want it?".</div>
+        </div>
+      </div>
+
+      <!-- 17. Admin Management & Safe Account Deletion -->
+      <div class="card" data-apps="customer vendor admin">
+        <div class="card-header">
+          <div class="feature-num">17</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Admin Edits & Safe Account Deletion</h2>
+            <div class="app-badges">
+              <span class="badge badge-customer">📱 Customer</span>
+              <span class="badge badge-vendor">🏪 Vendor</span>
+              <span class="badge badge-admin">💻 Admin Panel</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            Customer/Vendor Section ➔ Profile Settings (Delete My Account).<br>
+            Admin Panel ➔ Admin Edit User/Vendor Profile.
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div>A customer, vendor, or Admin can choose to delete an account.</div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">2</div>
+              <div><strong>Referral Safety:</strong> The system anonymizes personal data but <strong>does NOT break referral links or past commission records</strong>.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">3</div>
+              <div>Admin can safely edit phone numbers, names, addresses, and referral codes with a full audit log.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Complies with App Store privacy laws while ensuring your referral reward system never breaks.</div>
+        </div>
+      </div>
+
+      <!-- 18. Universal QR Code -->
+      <div class="card" data-apps="customer vendor admin">
+        <div class="card-header">
+          <div class="feature-num">18</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Universal Shop QR Code</h2>
+            <div class="app-badges">
+              <span class="badge badge-customer">📱 Customer</span>
+              <span class="badge badge-vendor">🏪 Vendor</span>
+              <span class="badge badge-admin">💻 Admin Panel</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            • <strong>Vendor Section & Counter:</strong> Printed Standee at Shop Counter / Vendor Section ➔ "Download My QR Code".<br>
+            • <strong>Scanning Method:</strong> Customer uses their <strong>native Phone Camera or Outside Scanner App</strong> (e.g. Google Lens) — <em>no in-app scanner needed</em>.
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div>Every vendor gets a high-resolution, branded QR code to print and place on their counter/table.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div>Customer walks up and scans the QR code using their regular <strong>Phone Camera or outside scanner app</strong> (no in-app scanner required).</div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div>
+                <strong>Smart Redirection:</strong>
+                <br>• <strong>If App is Installed:</strong> Immediately opens that specific vendor's <strong>Shop Info & Menu Page</strong> directly in the Erowayz app so they can order on the spot.
+                <br>• <strong>If App is NOT Installed:</strong> Automatically directs the customer to the <strong>Google Play Store / App Store</strong> to download the Erowayz app.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Converts physical walk-in street traffic into digital app customers with zero friction.</div>
+        </div>
+      </div>
+
+      <!-- 19. Vendor License Expiry Alert & Update -->
+      <div class="card" data-apps="vendor admin">
+        <div class="card-header">
+          <div class="feature-num">19</div>
+          <div class="card-title-wrap">
+            <h2 class="card-title">Vendor License Expiry Alert & Update</h2>
+            <div class="app-badges">
+              <span class="badge badge-vendor">🏪 Vendor Section</span>
+              <span class="badge badge-admin">💻 Admin Panel</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">📍 Where It Appears in UI</div>
+          <div class="ui-location">
+            • <strong>Vendor Section:</strong> App Launch / Login Screen (Mandatory Alert Modal / Banner) ➔ Opens the <strong>Upload License Screen</strong>.<br>
+            • <strong>Admin Panel:</strong> Vendor Compliance & Document Verification Dashboard.
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">⚡ How It Works (Simple Workflow)</div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-dot">1</div>
+              <div><strong>Login Expiry Check:</strong> When a vendor opens and logs into the app, the system automatically checks the expiry date of their business license (e.g. FSSAI / Trade License).</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot">2</div>
+              <div><strong>Intimation Alert:</strong> If the license is expired, the app immediately displays a prominent alert: <em>"Your Business License has expired. Please update your license document to continue receiving orders."</em></div>
+            </div>
+            <div class="step-item highlight">
+              <div class="step-dot">3</div>
+              <div><strong>Tap to Update & Admin Approval:</strong> Tapping the alert directly opens the <strong>License Update Screen</strong> to upload the renewed document. Admin reviews and approves it in the Admin Panel.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-box">
+          <span class="value-icon">💡</span>
+          <div><strong>Why It Helps:</strong> Keeps all active vendors 100% legally certified and protected without manual phone calls or office tracking.</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>Erowayz Development Reference • Master Workflow & UI Architecture Guide</p>
+    <p style="font-size: 0.8rem; margin-top: 4px; opacity: 0.7;">Ready for review with Product Owner & Stakeholders</p>
+  </footer>
+
+  <!-- Script for Search & App Filters -->
+  <script>
+    const searchInput = document.getElementById('searchInput');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const cards = document.querySelectorAll('.card');
+
+    let currentFilter = 'all';
+
+    // Filter by App button
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.getAttribute('data-filter');
+        filterCards();
+      });
+    });
+
+    // Search input
+    searchInput.addEventListener('input', () => {
+      filterCards();
+    });
+
+    function filterCards() {
+      const query = searchInput.value.toLowerCase().trim();
+
+      cards.forEach(card => {
+        const cardText = card.innerText.toLowerCase();
+        const apps = card.getAttribute('data-apps') || '';
+
+        const matchesSearch = query === '' || cardText.includes(query);
+        const matchesFilter = currentFilter === 'all' || apps.includes(currentFilter);
+
+        if (matchesSearch && matchesFilter) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>

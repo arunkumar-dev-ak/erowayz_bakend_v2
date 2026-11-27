@@ -28,6 +28,8 @@ import { buildQueryParams } from 'src/common/functions/buildQueryParams';
 import { BannerBookingGateway } from './banner-booking.gateway';
 import { FirebaseNotificationService } from 'src/firebase/firebase.notification.service';
 import { getNotificationContentForBannerBookingStatus } from './utils/update-banner-booking-status.utils';
+import { CUSTOMER_REPORT_INLINE_SELECT } from 'src/customer-report/utils/get-customer-report.utils';
+import { VENDOR_REPORT_INLINE_SELECT } from 'src/vendor-report/utils/get-vendor-report.utils';
 import { GetAdminBannnerBookingQueryDto } from './dto/banner-booking-admin.dto';
 import { buildAdminBannerBookingWhereFilter } from './utils/get-admin-banner-booking.utils';
 
@@ -82,6 +84,7 @@ export class BannerBookingService {
         createdAt: 'desc',
       },
       include: {
+        customerReport: CUSTOMER_REPORT_INLINE_SELECT,
         bannerBooking: {
           include: {
             vendor: {
@@ -157,6 +160,7 @@ export class BannerBookingService {
         createdAt: 'desc',
       },
       include: {
+        vendorReport: VENDOR_REPORT_INLINE_SELECT,
         bannerBooking: {
           include: {
             vendor: {
@@ -227,6 +231,8 @@ export class BannerBookingService {
         createdAt: 'asc',
       },
       include: {
+        customerReport: CUSTOMER_REPORT_INLINE_SELECT,
+        vendorReport: VENDOR_REPORT_INLINE_SELECT,
         bannerBooking: {
           include: {
             vendor: {
@@ -326,6 +332,8 @@ export class BannerBookingService {
       where,
       include: {
         bannerBooking: true,
+        ...(userId && { customerReport: CUSTOMER_REPORT_INLINE_SELECT }),
+        ...(vendorId && { vendorReport: VENDOR_REPORT_INLINE_SELECT }),
       },
     });
 

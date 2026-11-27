@@ -90,6 +90,7 @@ import { TrustBadgeModule } from './trust-badge/trust-badge.module';
 import { BusinessLoadModule } from './business-load/business-load.module';
 import { AccountLifecycleModule } from './account-lifecycle/account-lifecycle.module';
 import { CustomerReportModule } from './customer-report/customer-report.module';
+import { VendorReportModule } from './vendor-report/vendor-report.module';
 import { NotificationModule } from './notification/notification.module';
 
 @Module({
@@ -178,6 +179,7 @@ import { NotificationModule } from './notification/notification.module';
     BusinessLoadModule,
     AccountLifecycleModule,
     CustomerReportModule,
+    VendorReportModule,
     NotificationModule,
   ],
   controllers: [AppController],

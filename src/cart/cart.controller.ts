@@ -23,6 +23,8 @@ import {
 } from '@nestjs/swagger';
 import { extractUserIdFromRequest } from 'src/common/functions/extractUserId';
 import { AddCartDto } from './dto/add-cart.dto';
+import { AddCartBannerDto } from './dto/add-cart-banner.dto';
+import { UpdateCartBannerQtyDto } from './dto/update-cart-banner-qty.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
 import { Roles } from 'src/common/roles/roles.docorator';
 import { Role } from '@prisma/client';
@@ -202,6 +204,78 @@ export class CartController {
       userId,
       res,
       cartItemId,
+    });
+  }
+
+  @Roles(Role.CUSTOMER)
+  @UseGuards(AuthGuard, RoleGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Add Combo Banner to the cart',
+  })
+  @Post('banner/add')
+  async addBannerToCart(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body() body: AddCartBannerDto,
+  ) {
+    const userId = extractUserIdFromRequest(req);
+    await this.cartService.addCartBanner({
+      userId,
+      res,
+      body,
+    });
+  }
+
+  @Roles(Role.CUSTOMER)
+  @UseGuards(AuthGuard, RoleGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Update Combo Banner Qty in the cart',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'The ID of the cartBanner',
+  })
+  @Patch('banner/updateQty/:id')
+  async updateBannerQty(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body() body: UpdateCartBannerQtyDto,
+    @Param('id') cartBannerId: string,
+  ) {
+    const userId = extractUserIdFromRequest(req);
+    await this.cartService.updateCartBannerQty({
+      res,
+      userId,
+      cartBannerId,
+      body,
+    });
+  }
+
+  @Roles(Role.CUSTOMER)
+  @UseGuards(AuthGuard, RoleGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Remove Combo Banner from the cart',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'The ID of the cartBanner',
+  })
+  @Delete('banner/:id')
+  async removeBannerFromCart(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Param('id') cartBannerId: string,
+  ) {
+    const userId = extractUserIdFromRequest(req);
+    await this.cartService.removeCartBanner({
+      userId,
+      res,
+      cartBannerId,
     });
   }
 }

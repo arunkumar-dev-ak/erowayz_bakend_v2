@@ -1,5 +1,5 @@
-import { AccountStatus, Prisma, ProductStatus, Status } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { AccountStatus, Prisma, ProductStatus, Role, Status } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
 
 type PrismaClientLike = PrismaService | Prisma.TransactionClient;
@@ -9,11 +9,15 @@ export interface ActiveTransactionCheckResult {
   reasons: string[];
 }
 
-export interface PreservableActivityCheckResult {
-  hasActivity: boolean;
+export interface HistoricalActivityCheckResult {
+  hasHistoricalData: boolean;
   reasons: string[];
 }
 
+/**
+ * Validates whether the user or vendor has active/in-flight transactions or pending coins
+ * that must be completed, cancelled, or settled before account deletion can proceed.
+ */
 export async function checkActiveTransactionsForDeletion(
   prisma: PrismaClientLike,
   {
@@ -34,6 +38,7 @@ export async function checkActiveTransactionsForDeletion(
     pendingPayment,
     activeVendorOrder,
     activeVendorBooking,
+    unpaidVendorSettlement,
   ] = await Promise.all([
     prisma.order.findFirst({
       where: {
@@ -51,7 +56,7 @@ export async function checkActiveTransactionsForDeletion(
     }),
     prisma.wallet.findUnique({
       where: { userId },
-      select: { lockedBalance: true },
+      select: { lockedBalance: true, locked: true },
     }),
     prisma.payment.findFirst({
       where: {
@@ -94,25 +99,37 @@ export async function checkActiveTransactionsForDeletion(
           select: { id: true },
         })
       : Promise.resolve(null),
+    vendorId
+      ? prisma.orderSettlement.findFirst({
+          where: {
+            vendorId,
+            status: 'UNPAID',
+          },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
   ]);
 
   if (activeCustomerOrder) {
-    reasons.push('active customer orders');
+    reasons.push('active customer orders in progress');
   }
   if (activeCustomerBooking) {
-    reasons.push('active customer bookings');
+    reasons.push('active customer service/banner bookings in progress');
   }
   if (activeVendorOrder) {
-    reasons.push('active incoming vendor orders');
+    reasons.push('active incoming vendor orders awaiting fulfillment');
   }
   if (activeVendorBooking) {
-    reasons.push('active incoming vendor bookings');
+    reasons.push('active incoming vendor bookings awaiting fulfillment');
   }
-  if (wallet && wallet.lockedBalance > 0) {
-    reasons.push('locked wallet coins from pending orders');
+  if (wallet && (wallet.lockedBalance > 0 || wallet.locked)) {
+    reasons.push('locked wallet coins associated with ongoing transactions');
   }
   if (pendingPayment) {
-    reasons.push('pending online payment session');
+    reasons.push('an active pending online payment checkout session');
+  }
+  if (unpaidVendorSettlement) {
+    reasons.push('unpaid vendor order settlements awaiting payout');
   }
 
   return {
@@ -121,189 +138,82 @@ export async function checkActiveTransactionsForDeletion(
   };
 }
 
-export async function checkPreservableAccountActivity(
-  tx: Prisma.TransactionClient,
+/**
+ * Checks whether the user or vendor has historical business activity / sensitive transaction data
+ * (orders, bookings, payments, reviews) that must be preserved for financial & audit compliance.
+ */
+export async function checkHistoricalBusinessActivity(
+  prisma: PrismaClientLike,
   {
     userId,
     vendorId,
-    referralCode,
   }: {
     userId: string;
     vendorId?: string;
-    referralCode?: string | null;
   },
-): Promise<PreservableActivityCheckResult> {
+): Promise<HistoricalActivityCheckResult> {
   const reasons: string[] = [];
 
-  const wallet = await tx.wallet.findUnique({
-    where: { userId },
-    select: { id: true, balance: true, lockedBalance: true },
-  });
-
-  const retiredCodes = await tx.retiredReferralCode.findMany({
-    where: { userId },
-    select: { code: true },
-  });
-
-  const referralMatches: string[] = [userId];
-  if (referralCode) {
-    referralMatches.push(referralCode);
-  }
-  for (const retired of retiredCodes) {
-    if (!referralMatches.includes(retired.code)) {
-      referralMatches.push(retired.code);
-    }
-  }
-
   const [
-    userOrdersCount,
-    userBookingsCount,
-    paymentCount,
-    walletTxnCount,
-    reviewCount,
-    vendorRatingCount,
-    bloodRequestCount,
-    customerReportCount,
-    preDefinedBannerCount,
-    vendorTypeCreatedCount,
-    referralUsageCount,
-    vendorOrderItemCount,
-    vendorServiceOptOrderCount,
-    vendorServiceBookingCount,
-    vendorBannerBookingCount,
-    vendorSubscriptionCount,
-    adminCredit,
+    customerOrdersCount,
+    customerBookingsCount,
+    paymentsCount,
+    reviewsCount,
+    bloodRequestsCount,
+    vendorOrderItemsCount,
+    vendorServiceBookingsCount,
+    vendorBannerBookingsCount,
   ] = await Promise.all([
-    tx.order.count({
-      where: {
-        OR: [{ userId }, { declinedBy: userId }],
-      },
+    prisma.order.count({ where: { userId } }),
+    prisma.booking.count({ where: { userId } }),
+    prisma.payment.count({ where: { userId } }),
+    prisma.review.count({
+      where: { OR: [{ userId }, ...(vendorId ? [{ vendorId }] : [])] },
     }),
-    tx.booking.count({
-      where: {
-        OR: [{ userId }, { declinedBy: userId }],
-      },
-    }),
-    tx.payment.count({ where: { userId } }),
-    wallet
-      ? tx.walletTransaction.count({
-          where: {
-            OR: [
-              { senderWalletId: wallet.id },
-              { receiverWalletId: wallet.id },
-            ],
-          },
-        })
-      : Promise.resolve(0),
-    tx.review.count({
-      where: {
-        OR: [{ userId }, ...(vendorId ? [{ vendorId }] : [])],
-      },
-    }),
-    tx.vendorRating.count({
-      where: {
-        OR: [{ userId }, ...(vendorId ? [{ vendorId }] : [])],
-      },
-    }),
-    tx.bloodRequest.count({
-      where: {
-        OR: [{ userId }, { donorId: userId }],
-      },
-    }),
-    tx.customerReport.count({ where: { userId } }),
-    tx.preDefinedBanner.count({ where: { userId } }),
-    tx.vendorType.count({ where: { creatorId: userId } }),
+    prisma.bloodRequest.count({ where: { userId } }),
     vendorId
-      ? tx.vendorSubscription.count({
+      ? prisma.orderItem.count({ where: { item: { vendorId } } })
+      : Promise.resolve(0),
+    vendorId
+      ? prisma.serviceBooking.count({
           where: {
-            referredVendorId: vendorId,
+            vendorSubService: { service: { vendorId } },
           },
         })
       : Promise.resolve(0),
     vendorId
-      ? tx.orderItem.count({ where: { item: { vendorId } } })
+      ? prisma.bannerBooking.count({ where: { vendorId } })
       : Promise.resolve(0),
-    vendorId
-      ? tx.orderItemVendorServiceOption.count({
-          where: { vendorServiceOption: { vendorId } },
-        })
-      : Promise.resolve(0),
-    vendorId
-      ? tx.serviceBooking.count({
-          where: { vendorSubService: { service: { vendorId } } },
-        })
-      : Promise.resolve(0),
-    vendorId
-      ? tx.bannerBooking.count({ where: { vendorId } })
-      : Promise.resolve(0),
-    vendorId
-      ? tx.vendorSubscription.count({ where: { vendorId } })
-      : Promise.resolve(0),
-    vendorId
-      ? tx.adminVendorCredit.findUnique({ where: { vendorId } })
-      : Promise.resolve(null),
   ]);
 
-  if (
-    userOrdersCount > 0 ||
-    vendorOrderItemCount > 0 ||
-    vendorServiceOptOrderCount > 0
-  ) {
-    reasons.push('orders');
-  }
-  if (
-    userBookingsCount > 0 ||
-    vendorServiceBookingCount > 0 ||
-    vendorBannerBookingCount > 0
-  ) {
-    reasons.push('bookings');
-  }
-  if (paymentCount > 0) {
-    reasons.push('payments');
-  }
-  if (
-    walletTxnCount > 0 ||
-    (wallet && (wallet.balance > 0 || wallet.lockedBalance > 0)) ||
-    (adminCredit &&
-      (adminCredit.totalGiven > 0 || adminCredit.totalRefunded > 0))
-  ) {
-    reasons.push('wallet transactions or credit balance');
-  }
-  if (vendorSubscriptionCount > 0) {
-    reasons.push('vendor subscriptions');
-  }
-  if (referralUsageCount > 0) {
-    reasons.push('referral reward records');
-  }
-  if (reviewCount > 0 || vendorRatingCount > 0) {
-    reasons.push('reviews or ratings');
-  }
-  if (bloodRequestCount > 0) {
-    reasons.push('blood requests');
-  }
-  if (customerReportCount > 0) {
-    reasons.push('customer reports');
-  }
-  if (preDefinedBannerCount > 0 || vendorTypeCreatedCount > 0) {
-    reasons.push('admin configuration entities');
-  }
+  if (customerOrdersCount > 0) reasons.push('customer placed orders');
+  if (customerBookingsCount > 0) reasons.push('customer service/banner bookings');
+  if (paymentsCount > 0) reasons.push('financial payment transaction records');
+  if (reviewsCount > 0) reasons.push('customer reviews');
+  if (bloodRequestsCount > 0) reasons.push('blood request audit records');
+  if (vendorOrderItemsCount > 0) reasons.push('fulfilled vendor orders');
+  if (vendorServiceBookingsCount > 0) reasons.push('fulfilled vendor service bookings');
+  if (vendorBannerBookingsCount > 0) reasons.push('fulfilled vendor banner bookings');
 
   return {
-    hasActivity: reasons.length > 0,
+    hasHistoricalData: reasons.length > 0,
     reasons,
   };
 }
 
+/**
+ * Collects relative file paths belonging to the user and vendor to delete from storage.
+ */
 export async function collectUserPiiFilePaths(
   tx: Prisma.TransactionClient,
   {
     userId,
     vendorId,
-    includeCatalogMedia,
+    includeCatalogMedia = true,
   }: {
     userId: string;
     vendorId?: string;
-    includeCatalogMedia: boolean;
+    includeCatalogMedia?: boolean;
   },
 ): Promise<string[]> {
   const paths = new Set<string>();
@@ -390,27 +300,246 @@ export async function collectUserPiiFilePaths(
   return Array.from(paths);
 }
 
-export async function anonymizeAccountInPlace(
+/**
+ * Hard-deletes all database records for a User (and Vendor if applicable).
+ * Only used for clean accounts without historical transaction records.
+ * If wallet coins/balance exist, writes an audit record into AccountDeletionAudit.
+ */
+export async function hardDeleteUserAndVendorRecords(
   tx: Prisma.TransactionClient,
   {
     userId,
-    role,
-    vendorId,
-    now = new Date(),
+    adminId,
+    reason,
+    deletionType,
   }: {
     userId: string;
-    role: string;
-    vendorId?: string;
-    now?: Date;
+    adminId?: string;
+    reason?: string;
+    deletionType?: string;
   },
-): Promise<string[]> {
+): Promise<{
+  filesToDelete: string[];
+  auditLogged: boolean;
+  walletCoinsLogged: number;
+}> {
+  const user = await tx.user.findUnique({
+    where: { id: userId },
+    include: {
+      vendor: {
+        include: {
+          shopInfo: true,
+        },
+      },
+      wallet: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const vendorId = user.vendor?.id;
+  const filesToDelete = await collectUserPiiFilePaths(tx, {
+    userId,
+    vendorId,
+    includeCatalogMedia: true,
+  });
+
+  // 1. Audit Log: If wallet has balance/coins, record in AccountDeletionAudit
+  let auditLogged = false;
+  let walletCoinsLogged = 0;
+
+  if (user.wallet && (user.wallet.balance > 0 || user.wallet.lockedBalance > 0)) {
+    walletCoinsLogged = user.wallet.balance;
+    const walletInfo = {
+      walletId: user.wallet.id,
+      balance: user.wallet.balance,
+      lockedBalance: user.wallet.lockedBalance,
+      isLocked: user.wallet.locked,
+      recordedAt: new Date().toISOString(),
+    };
+
+    const finalDeletionType =
+      deletionType ?? (adminId ? 'ADMIN_HARD_DELETE' : 'SELF_DELETE');
+
+    await tx.accountDeletionAudit.create({
+      data: {
+        originalUserId: user.id,
+        vendorId: vendorId ?? null,
+        name: user.name,
+        mobile: user.mobile,
+        email: user.email,
+        role: user.role,
+        deletionType: finalDeletionType,
+        deletedByAdminId: adminId ?? null,
+        walletInfo,
+        refundClaimed: false,
+        notes: reason ?? (adminId ? 'Permanently hard deleted by admin' : 'Self hard deletion'),
+      },
+    });
+
+    auditLogged = true;
+  }
+
+  // 2. Vendor Cleanup
+  if (vendorId) {
+    await tx.cart.deleteMany({ where: { vendorId } });
+    await tx.bannerVendorItem.deleteMany({ where: { vendorId } });
+    await tx.banner.deleteMany({ where: { vendorId } });
+
+    await tx.service.deleteMany({ where: { vendorId } });
+    await tx.item.deleteMany({ where: { vendorId } });
+    await tx.serviceVendorKeyword.deleteMany({ where: { vendorId } });
+    await tx.vendorServiceOption.deleteMany({ where: { vendorId } });
+
+    await tx.adminVendorCredit.deleteMany({ where: { vendorId } });
+    await tx.bankDetail.deleteMany({ where: { vendorId } });
+    await tx.favouriteCustomerForVendor.deleteMany({ where: { vendorId } });
+    await tx.favouriteVendorForCustomer.deleteMany({ where: { vendorId } });
+    await tx.shopInfo.deleteMany({ where: { vendorId } });
+
+    // Clean up vendor subscription and usage
+    await tx.vendorFeatureUsage.deleteMany({
+      where: { vendorSubscription: { vendorId } },
+    });
+    await tx.vendorSubscription.deleteMany({ where: { vendorId } });
+    await tx.vendorReferral.deleteMany({
+      where: { OR: [{ referrerId: vendorId }, { refereeId: vendorId }] },
+    });
+    await tx.vendorRating.deleteMany({ where: { vendorId } });
+    await tx.orderSettlement.deleteMany({ where: { vendorId } });
+
+    const staffRows = await tx.staff.findMany({
+      where: { vendorId },
+      select: { id: true, userId: true },
+    });
+
+    await tx.staff.deleteMany({ where: { vendorId } });
+
+    for (const staffRow of staffRows) {
+      await Promise.all([
+        tx.refreshToken.deleteMany({ where: { userId: staffRow.userId } }),
+        tx.fCMToken.deleteMany({ where: { userId: staffRow.userId } }),
+        tx.oTP.deleteMany({ where: { userId: staffRow.userId } }),
+        tx.notification.deleteMany({ where: { userId: staffRow.userId } }),
+      ]);
+      await tx.user.delete({ where: { id: staffRow.userId } });
+    }
+
+    await tx.vendor.delete({ where: { id: vendorId } });
+  }
+
+  // 3. User Cleanup
+  if (user.wallet) {
+    await tx.walletTransaction.deleteMany({
+      where: {
+        OR: [
+          { senderWalletId: user.wallet.id },
+          { receiverWalletId: user.wallet.id },
+        ],
+      },
+    });
+  }
+
+  await Promise.all([
+    tx.cart.deleteMany({ where: { userId } }),
+    tx.refreshToken.deleteMany({ where: { userId } }),
+    tx.fCMToken.deleteMany({ where: { userId } }),
+    tx.oTP.deleteMany({ where: { userId } }),
+    tx.notification.deleteMany({ where: { userId } }),
+    tx.bloodDetails.deleteMany({ where: { userId } }),
+    tx.favouriteCustomerForVendor.deleteMany({ where: { userId } }),
+    tx.favouriteVendorForCustomer.deleteMany({ where: { userId } }),
+    tx.wallet.deleteMany({ where: { userId } }),
+  ]);
+
+  await tx.user.delete({ where: { id: userId } });
+
+  return {
+    filesToDelete,
+    auditLogged,
+    walletCoinsLogged,
+  };
+}
+
+/**
+ * Permanent Soft Delete with PII Scrubbing.
+ * Used when accounts have historical business records (orders, bookings, payments, reviews)
+ * that cannot be foreign-key deleted from PostgreSQL.
+ * Scrubs all sensitive personal credentials/data, frees up mobile & email, and marks DELETED.
+ */
+export async function permanentSoftDeleteWithPiiScrubbing(
+  tx: Prisma.TransactionClient,
+  {
+    userId,
+    reason = 'Scheduled permanent soft delete: historical records preserved, sensitive PII scrubbed',
+  }: {
+    userId: string;
+    reason?: string;
+  },
+): Promise<{
+  filesToDelete: string[];
+  auditLogged: boolean;
+  walletCoinsLogged: number;
+}> {
+  const user = await tx.user.findUnique({
+    where: { id: userId },
+    include: {
+      vendor: {
+        include: {
+          shopInfo: true,
+        },
+      },
+      wallet: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const vendorId = user.vendor?.id;
   const filesToDelete = await collectUserPiiFilePaths(tx, {
     userId,
     vendorId,
     includeCatalogMedia: false,
   });
 
-  // 1. Delete transient / PII-only records belonging to user
+  let auditLogged = false;
+  let walletCoinsLogged = 0;
+
+  // 1. Audit wallet coins if balance exists
+  if (user.wallet && (user.wallet.balance > 0 || user.wallet.lockedBalance > 0)) {
+    walletCoinsLogged = user.wallet.balance;
+    const walletInfo = {
+      walletId: user.wallet.id,
+      balance: user.wallet.balance,
+      lockedBalance: user.wallet.lockedBalance,
+      isLocked: user.wallet.locked,
+      recordedAt: new Date().toISOString(),
+    };
+
+    await tx.accountDeletionAudit.create({
+      data: {
+        originalUserId: user.id,
+        vendorId: vendorId ?? null,
+        name: user.name,
+        mobile: user.mobile,
+        email: user.email,
+        role: user.role,
+        deletionType: 'SCHEDULED_SOFT_DELETE',
+        deletedByAdminId: null,
+        walletInfo,
+        refundClaimed: false,
+        notes: reason,
+      },
+    });
+
+    auditLogged = true;
+  }
+
+  // 2. Delete sensitive personal sessions, push tokens, carts, blood details, favourites
   await Promise.all([
     tx.refreshToken.deleteMany({ where: { userId } }),
     tx.fCMToken.deleteMany({ where: { userId } }),
@@ -422,7 +551,7 @@ export async function anonymizeAccountInPlace(
     tx.notification.deleteMany({ where: { userId } }),
   ]);
 
-  // Mask PII in BloodRequest records while preserving audit trail
+  // Anonymize BloodRequest PII
   await tx.bloodRequest.updateMany({
     where: { userId },
     data: {
@@ -434,14 +563,16 @@ export async function anonymizeAccountInPlace(
     },
   });
 
-  // 2. Anonymize User while preserving id & referralCode
+  const now = new Date();
+
+  // 3. Scrub sensitive user credentials & PII while keeping the user ID and original name intact for audit & source of truth
   await tx.user.update({
     where: { id: userId },
     data: {
-      name: role === 'VENDOR' ? 'Deleted Vendor' : 'Deleted Customer',
+      // Keep user.name intact as the source of truth for receipts/invoices
       nameTamil: null,
-      mobile: null,
-      email: null,
+      mobile: null, // Frees up phone number
+      email: null,  // Frees up email
       password: null,
       imageRef: null,
       relativeUrl: null,
@@ -452,12 +583,12 @@ export async function anonymizeAccountInPlace(
     },
   });
 
-  // 3. If Vendor, clean up KYC/PII & deactivate catalog while preserving orders/items/services
+  // 4. If Vendor, close shop, de-link KYC licenses, deactivate catalog & cascade to staff
   if (vendorId) {
     await tx.cart.deleteMany({ where: { vendorId } });
+    await tx.bankDetail.deleteMany({ where: { vendorId } });
     await tx.favouriteCustomerForVendor.deleteMany({ where: { vendorId } });
     await tx.favouriteVendorForCustomer.deleteMany({ where: { vendorId } });
-    await tx.bankDetail.deleteMany({ where: { vendorId } });
 
     const shopInfo = await tx.shopInfo.findUnique({
       where: { vendorId },
@@ -465,10 +596,8 @@ export async function anonymizeAccountInPlace(
     });
 
     if (shopInfo) {
-      // Deleting License frees unique licenseNo and purges KYC document info
       await tx.license.deleteMany({ where: { shopInfoId: shopInfo.id } });
       await tx.shopWorkingHour.deleteMany({ where: { shopId: shopInfo.id } });
-
       await tx.shopInfo.update({
         where: { id: shopInfo.id },
         data: {
@@ -485,14 +614,9 @@ export async function anonymizeAccountInPlace(
           isShopOpen: false,
         },
       });
-
-      await tx.$executeRaw`
-        UPDATE "ShopInfo"
-        SET "location" = NULL
-        WHERE "id" = ${shopInfo.id}
-      `;
     }
 
+    // Deactivate catalog items, services, banners
     await Promise.all([
       tx.item.updateMany({
         where: { vendorId },
@@ -522,22 +646,22 @@ export async function anonymizeAccountInPlace(
       }),
     ]);
 
-    // Deactivate & anonymize vendor's staff accounts
+    // Deactivate and scrub staff accounts
     const staffMembers = await tx.staff.findMany({
       where: { vendorId },
       select: { userId: true },
     });
 
-    for (const staffMember of staffMembers) {
+    for (const staff of staffMembers) {
       await Promise.all([
-        tx.refreshToken.deleteMany({ where: { userId: staffMember.userId } }),
-        tx.fCMToken.deleteMany({ where: { userId: staffMember.userId } }),
-        tx.oTP.deleteMany({ where: { userId: staffMember.userId } }),
-        tx.notification.deleteMany({ where: { userId: staffMember.userId } }),
+        tx.refreshToken.deleteMany({ where: { userId: staff.userId } }),
+        tx.fCMToken.deleteMany({ where: { userId: staff.userId } }),
+        tx.oTP.deleteMany({ where: { userId: staff.userId } }),
+        tx.notification.deleteMany({ where: { userId: staff.userId } }),
       ]);
 
       await tx.user.update({
-        where: { id: staffMember.userId },
+        where: { id: staff.userId },
         data: {
           name: 'Deleted Staff',
           nameTamil: null,
@@ -555,105 +679,9 @@ export async function anonymizeAccountInPlace(
     }
   }
 
-  return filesToDelete;
-}
-
-export async function hardDeleteCleanAccount(
-  tx: Prisma.TransactionClient,
-  {
-    userId,
-    vendorId,
-    referralCode,
-  }: {
-    userId: string;
-    vendorId?: string;
-    referralCode?: string | null;
-  },
-): Promise<string[]> {
-  const filesToDelete = await collectUserPiiFilePaths(tx, {
-    userId,
-    vendorId,
-    includeCatalogMedia: true,
-  });
-
-  if (referralCode) {
-    await tx.retiredReferralCode.upsert({
-      where: { code: referralCode },
-      create: {
-        code: referralCode,
-        userId,
-      },
-      update: {},
-    });
-  }
-
-  if (vendorId) {
-    // Delete carts referencing vendor
-    await tx.cart.deleteMany({ where: { vendorId } });
-
-    // Delete banners & related images/keywords/items
-    await tx.banner.deleteMany({ where: { vendorId } });
-    await tx.bannerVendorItem.deleteMany({ where: { vendorId } });
-
-    // Delete services & items & options & keywords
-    await tx.service.deleteMany({ where: { vendorId } });
-    await tx.item.deleteMany({ where: { vendorId } });
-    await tx.serviceVendorKeyword.deleteMany({ where: { vendorId } });
-    await tx.vendorServiceOption.deleteMany({ where: { vendorId } });
-
-    // Delete vendor credits, bank details, shop info, favourites
-    await tx.adminVendorCredit.deleteMany({ where: { vendorId } });
-    await tx.bankDetail.deleteMany({ where: { vendorId } });
-    await tx.favouriteCustomerForVendor.deleteMany({ where: { vendorId } });
-    await tx.favouriteVendorForCustomer.deleteMany({ where: { vendorId } });
-    await tx.shopInfo.deleteMany({ where: { vendorId } });
-
-    // Handle staff members under this vendor
-    const staffRows = await tx.staff.findMany({
-      where: { vendorId },
-      select: { id: true, userId: true },
-    });
-
-    await tx.staff.deleteMany({ where: { vendorId } });
-
-    for (const staffRow of staffRows) {
-      const staffActivity = await checkPreservableAccountActivity(tx, {
-        userId: staffRow.userId,
-      });
-
-      if (staffActivity.hasActivity) {
-        await anonymizeAccountInPlace(tx, {
-          userId: staffRow.userId,
-          role: 'STAFF',
-        });
-      } else {
-        await Promise.all([
-          tx.refreshToken.deleteMany({ where: { userId: staffRow.userId } }),
-          tx.fCMToken.deleteMany({ where: { userId: staffRow.userId } }),
-          tx.oTP.deleteMany({ where: { userId: staffRow.userId } }),
-          tx.notification.deleteMany({ where: { userId: staffRow.userId } }),
-        ]);
-        await tx.user.delete({ where: { id: staffRow.userId } });
-      }
-    }
-
-    await tx.vendor.delete({ where: { id: vendorId } });
-  }
-
-  // Delete all remaining non-cascading User child records before deleting User
-  await Promise.all([
-    tx.cart.deleteMany({ where: { userId } }),
-    tx.refreshToken.deleteMany({ where: { userId } }),
-    tx.fCMToken.deleteMany({ where: { userId } }),
-    tx.oTP.deleteMany({ where: { userId } }),
-    tx.notification.deleteMany({ where: { userId } }),
-    tx.bloodDetails.deleteMany({ where: { userId } }),
-    tx.favouriteCustomerForVendor.deleteMany({ where: { userId } }),
-    tx.favouriteVendorForCustomer.deleteMany({ where: { userId } }),
-    tx.wallet.deleteMany({ where: { userId } }),
-  ]);
-
-  await tx.user.delete({ where: { id: userId } });
-
-  return filesToDelete;
+  return {
+    filesToDelete,
+    auditLogged,
+    walletCoinsLogged,
+  };
 }

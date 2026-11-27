@@ -8,11 +8,21 @@ import {
 } from '@nestjs/common';
 import { ResponseService } from './response/response.service';
 import { CatchEverythingFilter } from './common/catch_everything_filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const responseService = app.get(ResponseService);
   app.useGlobalFilters(new CatchEverythingFilter(responseService));
+
+  /*----- Global HTTP Request Logging (Controlled via ENV) -----*/
+  const isHttpLoggingEnabled =
+    process.env.ENABLE_HTTP_LOGS === 'true' ||
+    process.env.NODE_ENV !== 'production';
+
+  if (isHttpLoggingEnabled) {
+    app.useGlobalInterceptors(new LoggingInterceptor());
+  }
   /*----- Global pipes -----*/
   app.useGlobalPipes(
     new ValidationPipe({

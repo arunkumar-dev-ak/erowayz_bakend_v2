@@ -1,43 +1,76 @@
 model Cart {
-  id        String     @id @default(uuid())
-  userId    String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  vendorId  String
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vendor    Vendor     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  cartItem  CartItem[]
+  id         String       @id @default(uuid())
+  userId     String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  vendorId   String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendor     Vendor       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  cartItem   CartItem[]
+  cartBanner CartBanner[]
 
   @@unique([userId, vendorId])
   @@index([id, userId])
 }
 
 model CartItem {
-  id                    String              @id @default(uuid())
-  cartId                String
-  itemId                String
-  quantity              Float
+  id       String @id @default(uuid())
+  cartId   String
+  itemId   String
+  quantity Float
 
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   cartItemVendorServiceOption CartItemVendorServiceOption[]
-  cart                  Cart                @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  item                  Item                @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  cart                        Cart                          @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  item                        Item                          @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, itemId])
 }
 
 model CartItemVendorServiceOption {
-  id                    String              @id @default(uuid())
+  id                    String @id @default(uuid())
   cartItemId            String
   vendorServiceOptionId String
 
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  vendorServiceOption   VendorServiceOption @relation(fields: [vendorServiceOptionId], references: [id],onDelete: Cascade)
-  cartItem              CartItem            @relation(fields: [cartItemId], references: [id], onDelete: Cascade)
+  vendorServiceOption VendorServiceOption @relation(fields: [vendorServiceOptionId], references: [id], onDelete: Cascade)
+  cartItem            CartItem            @relation(fields: [cartItemId], references: [id], onDelete: Cascade)
 
-  @@unique([cartItemId,vendorServiceOptionId])
+  @@unique([cartItemId, vendorServiceOptionId])
+}
+
+model CartBanner {
+  id       String @id @default(uuid())
+  cartId   String
+  bannerId String
+  quantity Int    @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart                          Cart                            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  banner                        Banner                          @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  cartBannerVendorServiceOption CartBannerVendorServiceOption[]
+
+  @@unique([cartId, bannerId])
+  @@index([cartId])
+  @@index([bannerId])
+}
+
+model CartBannerVendorServiceOption {
+  id                    String @id @default(uuid())
+  cartBannerId          String
+  vendorServiceOptionId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendorServiceOption VendorServiceOption @relation(fields: [vendorServiceOptionId], references: [id], onDelete: Cascade)
+  cartBanner          CartBanner          @relation(fields: [cartBannerId], references: [id], onDelete: Cascade)
+
+  @@unique([cartBannerId, vendorServiceOptionId])
 }

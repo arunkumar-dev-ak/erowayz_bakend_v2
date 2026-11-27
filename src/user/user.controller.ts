@@ -22,6 +22,7 @@ import { ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorator/currentuser.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { EditUserDto } from './dto/edit-user.dto';
+import { AdminEditUserDto } from './dto/admin-edit-user.dto';
 import { RoleGuard } from 'src/common/guards/role.guard';
 import { GetUserQueryDto } from './dto/get-user-query.dto';
 import { UserStatusChangeDto } from './dto/user-status-change.dto';
@@ -92,6 +93,27 @@ export class UserController {
       res,
       image,
       existingRelativeUrl: existingRelativePath ?? undefined,
+    });
+  }
+
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
+  @UseGuards(AuthGuard, RoleGuard)
+  @Put('admin/update/:userId')
+  @ApiOperation({ summary: 'Admin/SubAdmin Update User Details' })
+  @ApiParam({ name: 'userId', type: String, description: 'User UUID' })
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('image'))
+  async updateUserByAdmin(
+    @Param('userId') userId: string,
+    @Body() body: AdminEditUserDto,
+    @Res() res: Response,
+    @UploadedFile() image?: Express.Multer.File,
+  ) {
+    return await this.userService.updateUserByAdmin({
+      userId,
+      body,
+      res,
+      image,
     });
   }
 

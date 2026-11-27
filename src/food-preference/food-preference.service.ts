@@ -55,6 +55,9 @@ export class FoodPreferenceService {
       cartId: cart?.id,
     });
 
+    const maxSelectionLimit =
+      Number(process.env.MAX_FOOD_PREFERENCES_PER_ORDER) || 5;
+
     if (!cart || uniqueSubCategoryIds.length === 0) {
       const emptyMeta = this.metadataService.createMetaData({
         totalCount: 0,
@@ -66,8 +69,14 @@ export class FoodPreferenceService {
 
       return this.response.successResponse({
         res,
-        data: [],
-        meta: emptyMeta,
+        data: {
+          maxSelectionLimit,
+          preferences: [],
+        },
+        meta: {
+          ...emptyMeta,
+          maxSelectionLimit,
+        },
         message: 'Food preferences retrieved successfully',
         statusCode: 200,
         initialDate,
@@ -92,8 +101,14 @@ export class FoodPreferenceService {
 
     return this.response.successResponse({
       res,
-      data: preferences,
-      meta,
+      data: {
+        maxSelectionLimit,
+        preferences,
+      },
+      meta: {
+        ...meta,
+        maxSelectionLimit,
+      },
       message: 'Food preferences retrieved successfully',
       statusCode: 200,
       initialDate,
@@ -127,6 +142,8 @@ export class FoodPreferenceService {
         include: {
           subCategories: {
             select: {
+              id: true,
+              subCategoryId: true,
               subCategory: {
                 select: {
                   id: true,

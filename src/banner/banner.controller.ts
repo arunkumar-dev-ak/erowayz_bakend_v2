@@ -41,6 +41,7 @@ import { GetBannerForAdminQueryDto } from './dto/get-banner-for-admin.dto';
 import { extractVendorSubFromRequest } from 'src/common/functions/extact-sub';
 import { FetchUserGuard } from 'src/common/guards/fetch-user.guard';
 import { extractUserFromRequest } from 'src/common/functions/extractUserId';
+import { SetBannerItemsDto } from './dto/manage-banner-items.dto';
 
 @ApiTags('banner')
 @Controller('banner')
@@ -140,7 +141,11 @@ export class BannerController {
     return await this.bannerService.getBannerById({ res, bannerId });
   }
 
-  @ApiOperation({ summary: 'Create a new banner' })
+  @ApiOperation({
+    summary: 'Create a new banner (Regular Common Shop or Street Food Combo)',
+    description:
+      'Creates a banner for vendors. For Common Shop (BANNER category), qty, productUnitId, originalPricePerUnit, and minApplyValue are required. For Street Food (PRODUCT category), those fields are omitted/not needed as dishes are packaged via combo items.',
+  })
   @ApiBody({ type: CreateBannerDto })
   @Roles(Role.VENDOR, Role.STAFF)
   @UseGuards(AuthGuard, RoleGuard)
@@ -321,6 +326,31 @@ export class BannerController {
       res,
       bannerId,
       vendorId: extractVendorIdFromRequest(req),
+    });
+  }
+
+  @ApiOperation({ summary: 'Set combo items for a banner' })
+  @ApiBody({ type: SetBannerItemsDto })
+  @Roles(Role.VENDOR, Role.STAFF)
+  @UseGuards(AuthGuard, RoleGuard)
+  @Post(':id/items')
+  @ApiBearerAuth()
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'The ID of the banner',
+  })
+  async setBannerItems(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Param('id') bannerId: string,
+    @Body() body: SetBannerItemsDto,
+  ) {
+    return await this.bannerService.setBannerItems({
+      res,
+      bannerId,
+      vendorId: extractVendorIdFromRequest(req),
+      items: body.items,
     });
   }
 }

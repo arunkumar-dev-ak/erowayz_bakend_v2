@@ -4,7 +4,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseService } from 'src/response/response.service';
 import { MetadataService } from 'src/metadata/metadata.service';
 import { VendorRatingService } from 'src/vendor-rating/vendor-rating.service';
-import { GetUnifiedProductInfoQueryDto } from './dto/get-unified-product-info-query.dto';
+import { VendorCategoryType } from '@prisma/client';
+import { GetUnifiedStorefrontQueryDto } from './dto/get-unified-storefront-query.dto';
 import {
   fetchCustomerExistingRating,
   fetchShopTimings,
@@ -17,6 +18,16 @@ import {
   fetchPaginatedStoreItems,
   fetchStoreItemsCount,
 } from './utils/unified-product.utils';
+import {
+  fetchActiveVendorServiceOptions,
+  fetchLastCompletedBooking,
+  fetchPaginatedStoreServices,
+  fetchStoreServicesCount,
+} from './utils/unified-service.utils';
+import {
+  fetchPaginatedStoreBanners,
+  fetchStoreBannersCount,
+} from './utils/unified-banner.utils';
 
 @Injectable()
 export class UnifiedService {
@@ -28,22 +39,25 @@ export class UnifiedService {
   ) {}
 
   /**
-   * Unified Product Vendor Storefront Details (Product Info)
+   * Dynamic Unified Vendor Storefront (PRODUCT, SERVICE & BANNER)
+   * Resolves categoryType from vendorType and dynamically executes
+   * parallel queries tailored for the specific business model.
    */
-  async getProductInfo({
+  async getStorefront({
     vendorId,
     query,
     userId,
     res,
   }: {
     vendorId: string;
-    query: GetUnifiedProductInfoQueryDto;
+    query: GetUnifiedStorefrontQueryDto;
     userId?: string;
     res: Response;
   }) {
     const initialDate = new Date();
     const offset = Number(query.offset ?? 0);
     const limit = Number(query.limit ?? 10);
+    const filterId = query.filterId;
 
     /*----- DB calling via utils: verify vendor existence & profile -----*/
     const vendor = await fetchUnifiedVendorProfile({
@@ -58,83 +72,196 @@ export class UnifiedService {
 
     const categoryType = vendor.vendorType.type;
 
-    /*----- Parallel execution using product utils -----*/
-    const [
-      shopTiming,
-      categories,
-      items,
-      totalCount,
-      ratingSummary,
-      lastDeliveredOrder,
-      userRating,
-    ] = await Promise.all([
-      // 1. Shop Timings
-      fetchShopTimings({ vendorId, prisma: this.prisma }),
-
-      // 2. Available Categories with active items
-      fetchActiveVendorCategories({ vendorId, prisma: this.prisma }),
-
-      // 3. Paginated Menu Items with ratings
-      fetchPaginatedStoreItems({
-        vendorId,
-        offset,
-        limit,
-        userId,
-        prisma: this.prisma,
-      }),
-
-      // 4. Total item count for pagination
-      fetchStoreItemsCount({ vendorId, prisma: this.prisma }),
-
-      // 5. Vendor rating summary (cached in Redis)
-      this.vendorRatingService.getVendorRatingSummary(vendorId, categoryType),
-
-      // 6. User's last completed/delivered order (if authenticated)
-      userId
-        ? fetchLastDeliveredOrder({
-            prisma: this.prisma,
-            userId,
-            vendorId,
-          })
-        : Promise.resolve(null),
-
-      // 7. User's existing rating (if authenticated)
-      userId
-        ? fetchCustomerExistingRating({
-            prisma: this.prisma,
-            userId,
-            vendorId,
-          })
-        : Promise.resolve(null),
-    ]);
-
-    // Format vendor profile
-    const formattedVendor = formatUnifiedVendorProfile({
-      vendor,
-      ratingSummary,
-      shopTiming,
-      userId,
+    /*----- Common section promises across all categories -----*/
+    const shopTimingPromise = fetchShopTimings({
+      vendorId,
+      prisma: this.prisma,
     });
+    const ratingSummaryPromise =
+      this.vendorRatingService.getVendorRatingSummary(vendorId, categoryType);
+    const userRatingPromise = userId
+      ? fetchCustomerExistingRating({
+          prisma: this.prisma,
+          userId,
+          vendorId,
+        })
+      : Promise.resolve(null);
+
+    let totalCount = 0;
+    let dataPayload: Record<string, any> = {};
+
+    /*----- Dynamic dispatch based on VendorCategoryType -----*/
+    switch (categoryType) {
+      case VendorCategoryType.SERVICE: {
+        const [
+          shopTiming,
+          ratingSummary,
+          userRating,
+          serviceOptions,
+          services,
+          count,
+          lastCompletedBooking,
+        ] = await Promise.all([
+          shopTimingPromise,
+          ratingSummaryPromise,
+          userRatingPromise,
+          fetchActiveVendorServiceOptions({ vendorId, prisma: this.prisma }),
+          fetchPaginatedStoreServices({
+            vendorId,
+            offset,
+            limit,
+            serviceOptionId: filterId,
+            prisma: this.prisma,
+          }),
+          fetchStoreServicesCount({
+            vendorId,
+            serviceOptionId: filterId,
+            prisma: this.prisma,
+          }),
+          userId
+            ? fetchLastCompletedBooking({
+                vendorId,
+                userId,
+                prisma: this.prisma,
+              })
+            : Promise.resolve(null),
+        ]);
+
+        totalCount = count;
+        const formattedVendor = formatUnifiedVendorProfile({
+          vendor,
+          ratingSummary,
+          shopTiming,
+          userId,
+        });
+
+        dataPayload = {
+          categoryType,
+          vendor: formattedVendor,
+          serviceOptions,
+          services,
+          lastCompletedBooking,
+          userRating,
+        };
+        break;
+      }
+
+      case VendorCategoryType.BANNER: {
+        const [
+          shopTiming,
+          ratingSummary,
+          userRating,
+          banners,
+          count,
+          lastCompletedBooking,
+        ] = await Promise.all([
+          shopTimingPromise,
+          ratingSummaryPromise,
+          userRatingPromise,
+          fetchPaginatedStoreBanners({
+            vendorId,
+            offset,
+            limit,
+            prisma: this.prisma,
+          }),
+          fetchStoreBannersCount({ vendorId, prisma: this.prisma }),
+          userId
+            ? fetchLastCompletedBooking({
+                vendorId,
+                userId,
+                prisma: this.prisma,
+              })
+            : Promise.resolve(null),
+        ]);
+
+        totalCount = count;
+        const formattedVendor = formatUnifiedVendorProfile({
+          vendor,
+          ratingSummary,
+          shopTiming,
+          userId,
+        });
+
+        dataPayload = {
+          categoryType,
+          vendor: formattedVendor,
+          banners,
+          lastCompletedBooking,
+          userRating,
+        };
+        break;
+      }
+
+      case VendorCategoryType.PRODUCT:
+      default: {
+        const [
+          shopTiming,
+          ratingSummary,
+          userRating,
+          categories,
+          items,
+          count,
+          lastDeliveredOrder,
+        ] = await Promise.all([
+          shopTimingPromise,
+          ratingSummaryPromise,
+          userRatingPromise,
+          fetchActiveVendorCategories({ vendorId, prisma: this.prisma }),
+          fetchPaginatedStoreItems({
+            vendorId,
+            offset,
+            limit,
+            categoryId: filterId,
+            userId,
+            prisma: this.prisma,
+          }),
+          fetchStoreItemsCount({
+            vendorId,
+            categoryId: filterId,
+            prisma: this.prisma,
+          }),
+          userId
+            ? fetchLastDeliveredOrder({
+                prisma: this.prisma,
+                userId,
+                vendorId,
+              })
+            : Promise.resolve(null),
+        ]);
+
+        totalCount = count;
+        const formattedVendor = formatUnifiedVendorProfile({
+          vendor,
+          ratingSummary,
+          shopTiming,
+          userId,
+        });
+
+        dataPayload = {
+          categoryType,
+          vendor: formattedVendor,
+          categories,
+          items,
+          lastDeliveredOrder,
+          userRating,
+        };
+        break;
+      }
+    }
 
     const meta = this.metadataService.createMetaData({
       totalCount,
       offset,
       limit,
-      path: `unified/product-info/${vendorId}`,
+      path: `unified/storefront/${vendorId}`,
     });
 
     return this.responseService.successResponse({
       res,
       initialDate,
       statusCode: 200,
-      message: 'Unified product info retrieved successfully',
-      data: {
-        vendor: formattedVendor,
-        categories,
-        items,
-        lastDeliveredOrder,
-        userRating,
-      },
+      message: 'Unified storefront retrieved successfully',
+      data: dataPayload,
       meta,
     });
   }

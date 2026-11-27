@@ -2,6 +2,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { Queue } from 'bull';
+import { AccountLifecycleService } from '../account-lifecycle/account-lifecycle.service';
 
 type JobState = 'completed' | 'failed' | 'wait';
 
@@ -14,6 +15,7 @@ export class CronjobsService {
     @InjectQueue('closeVendorShop') private closeVendorShopQueue: Queue,
     @InjectQueue('cleanup') private cleanupQueue: Queue,
     @InjectQueue('processPayment') private processPaymentQueue: Queue,
+    private readonly accountLifecycleService: AccountLifecycleService,
   ) {}
 
   private readonly completedAge = 2 * 24 * 60 * 60 * 1000; // 2 days
@@ -79,6 +81,11 @@ export class CronjobsService {
         },
       },
     );
+  }
+
+  @Cron('0 2 * * *', { timeZone: 'Asia/Kolkata' })
+  async handleScheduledAccountDeletions() {
+    await this.accountLifecycleService.processScheduledDeletions();
   }
 
   @Cron('0 3 * * *', { timeZone: 'Asia/Kolkata' }) // Daily at 2 AM IST

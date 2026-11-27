@@ -11,7 +11,7 @@ export function buildVendorForAdminWhereFilter({
 }) {
   const where: Prisma.VendorWhereInput = {};
 
-  const { vendorName, shopName, licenseStatus, mobile } = query;
+  const { vendorName, shopName, licenseStatus, mobile, isBankVerified } = query;
 
   if (vendorName || mobile) {
     where.User = {
@@ -35,6 +35,12 @@ export function buildVendorForAdminWhereFilter({
     };
   }
 
+  if (isBankVerified) {
+    where.bankDetail = {
+      isVerified: ApprovedOrPendingMap[isBankVerified],
+    };
+  }
+
   return where;
 }
 
@@ -51,6 +57,7 @@ export function getIncludeVendorUtilsForAdmin(): Prisma.VendorInclude {
         name: true,
         nameTamil: true,
         status: true,
+        referralCode: true,
         referees: {
           select: {
             id: true,
@@ -62,6 +69,7 @@ export function getIncludeVendorUtilsForAdmin(): Prisma.VendorInclude {
             name: true,
             nameTamil: true,
             status: true,
+            referralCode: true,
           },
         },
         referrer: {
@@ -75,6 +83,7 @@ export function getIncludeVendorUtilsForAdmin(): Prisma.VendorInclude {
             name: true,
             nameTamil: true,
             status: true,
+            referralCode: true,
           },
         },
       },

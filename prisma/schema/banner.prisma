@@ -39,10 +39,10 @@ enum fgBannerImagePosition {
 }
 
 model Banner {
-  id                   String             @id @default(uuid())
+  id                   String                 @id @default(uuid())
   name                 String
   nameTamil            String?
-  bannerType           BannerType         @default(REGULAR)
+  bannerType           BannerType             @default(REGULAR)
   title                String?
   titleTamil           String?
   subTitle             String?
@@ -64,37 +64,40 @@ model Banner {
   minApplyValue        Int
   offerType            OfferType
   offerValue           Int
-  status               BannerStatus       @default(ACTIVE)
+  status               BannerStatus           @default(ACTIVE)
   originalPricePerUnit Float?
   qty                  Float?
   productUnitId        String?
-  vendor               Vendor             @relation(fields: [vendorId], references: [id])
+  vendor               Vendor                 @relation(fields: [vendorId], references: [id])
   bannerItemImages     BannerItemImages[]
   keyWordBanner        KeywordBanner[]
+  bannerItems          BannerItem[]
+  cartBanners          CartBanner[]
+  orderBanners         OrderBanner[]
 
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productUnit ProductUnit? @relation(fields: [productUnitId], references: [id], onDelete: Cascade)
 
   @@unique([name, vendorId])
   @@index([id, vendorId])
   @@index([id, name, vendorId])
   @@index([name])
-
-  productUnit       ProductUnit?  @relation(fields: [productUnitId], references: [id], onDelete: Cascade)
 }
 
 model KeywordBanner {
-  id                   String             @id @default(uuid())
-  bannerId             String
-  keywordId            String
+  id        String @id @default(uuid())
+  bannerId  String
+  keywordId String
 
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  banner               Banner             @relation(fields: [bannerId], references: [id], onDelete: Cascade)
-  keyWord              keyWord            @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+  banner  Banner  @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  keyWord keyWord @relation(fields: [keywordId], references: [id], onDelete: Cascade)
 
-  @@unique([bannerId,keywordId])
+  @@unique([bannerId, keywordId])
 }
 
 model BannerItemImages {
@@ -107,17 +110,20 @@ model BannerItemImages {
   banner      Banner   @relation(fields: [bannerId], references: [id], onDelete: Cascade)
 }
 
-// model BannerItems {
-//   id        String   @id @default(uuid())
-//   itemId    String
-//   bannerId  String
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-//   banner    Banner   @relation(fields: [bannerId], references: [id], onDelete: Cascade)
-//   item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+model BannerItem {
+  id        String   @id @default(uuid())
+  itemId    String
+  bannerId  String
+  quantity  Float    @default(1.0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  banner    Banner   @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
-//   @@unique([itemId, bannerId])
-// }
+  @@unique([itemId, bannerId])
+  @@index([bannerId])
+  @@index([itemId])
+}
 
 enum BannerType {
   PRODUCT
@@ -135,36 +141,36 @@ enum OfferType {
 }
 
 model BannerVendorItem {
-  id                String   @id @default(uuid())
-  name              String
-  description       String
-  price             Float
-  discountPrice     Float?
-  vendorId          String
-  productUnitId     String?
-  quantity          Int
-  productstatus     ProductStatus @default(OUT_OF_STOCK)
-  status            Status        @default(ACTIVE)
-  bannerVendorItemsImage  BannerVendorItemsImage[]
-  expiryDate        DateTime?
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  vendor            Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  productUnit       ProductUnit?   @relation(fields: [productUnitId], references: [id], onDelete: Cascade)
-  
-  @@unique([vendorId,name])
-}
-
-model BannerVendorItemsImage {
-  id        String   @id @default(uuid())
-  bannerVendorItemId  String
-  absoluteUrl         String
-  relativeUrl         String
+  id                     String                   @id @default(uuid())
+  name                   String
+  description            String
+  price                  Float
+  discountPrice          Float?
+  vendorId               String
+  productUnitId          String?
+  quantity               Int
+  productstatus          ProductStatus            @default(OUT_OF_STOCK)
+  status                 Status                   @default(ACTIVE)
+  bannerVendorItemsImage BannerVendorItemsImage[]
+  expiryDate             DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  bannerVendorItem  BannerVendorItem  @relation(fields: [bannerVendorItemId], references: [id], onDelete: Cascade)
+  vendor      Vendor       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  productUnit ProductUnit? @relation(fields: [productUnitId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorId, name])
+}
+
+model BannerVendorItemsImage {
+  id                 String @id @default(uuid())
+  bannerVendorItemId String
+  absoluteUrl        String
+  relativeUrl        String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bannerVendorItem BannerVendorItem @relation(fields: [bannerVendorItemId], references: [id], onDelete: Cascade)
 }

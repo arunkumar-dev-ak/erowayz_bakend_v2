@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { GetCoinSettlementQueryDto } from '../dto/get-coins-settlement';
-import { getDayRange } from 'src/common/functions/utils';
+import { getDayRange } from '../../common/functions/utils';
 
 export function buildCoinSettlementWhereFilter({
   query,

@@ -99,15 +99,17 @@ export const CreateBannerValidation = async ({
   checkFieldsForBanner({ bannerType, body, vendorType: vendor.vendorType });
 
   //check keyword ids
-  const keywordsCount = await keywordService.checkKeyWordCountForRegistration(
-    body.keyWordIds,
-    vendor.vendorTypeId,
-    KeyWordType.BANNER,
-  );
-  if (keywordsCount !== body.keyWordIds.length) {
-    throw new BadRequestException(
-      `Aplogies for the reason,Some of the Keywords is not associated with ${vendor.vendorType.name}`,
+  if (body.keyWordIds && body.keyWordIds.length > 0) {
+    const keywordsCount = await keywordService.checkKeyWordCountForRegistration(
+      body.keyWordIds,
+      vendor.vendorTypeId,
+      KeyWordType.BANNER,
     );
+    if (keywordsCount !== body.keyWordIds.length) {
+      throw new BadRequestException(
+        `Aplogies for the reason,Some of the Keywords is not associated with ${vendor.vendorType.name}`,
+      );
+    }
   }
 
   return { bannerType, updateVendorUsageQuery };
@@ -177,7 +179,7 @@ export const buildCreateBannerData = ({
     endDateTime,
     offerType,
     offerValue,
-    minApplyValue,
+    minApplyValue: minApplyValue ?? 0,
     status: status ?? 'ACTIVE',
     nameTamil,
     titleTamil,
@@ -207,13 +209,16 @@ export const buildCreateBannerData = ({
     bannerItemImages: bannerProductImage
       ? createBannerItemImages(bannerProductImage)
       : {},
-    keyWordBanner: {
-      createMany: {
-        data: keyWordIds.map((keywordId) => ({
-          keywordId,
-        })),
-      },
-    },
+    ...(keyWordIds &&
+      keyWordIds.length > 0 && {
+        keyWordBanner: {
+          createMany: {
+            data: keyWordIds.map((keywordId) => ({
+              keywordId,
+            })),
+          },
+        },
+      }),
   };
 
   return createData;

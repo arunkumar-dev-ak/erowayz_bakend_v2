@@ -39,7 +39,7 @@ export class FoodPreferenceController {
     summary:
       'Get paginated food preferences for authenticated customer based on cart subcategories',
     description:
-      'Validates cart ownership, extracts unique SubCategory IDs across cart items, and returns paginated English & Tamil preferences.',
+      'Validates cart ownership, extracts unique SubCategory IDs across cart items, and returns maxSelectionLimit (from env MAX_FOOD_PREFERENCES_PER_ORDER) along with active bilingual preferences.',
   })
   @Roles(Role.CUSTOMER)
   @ApiBearerAuth()

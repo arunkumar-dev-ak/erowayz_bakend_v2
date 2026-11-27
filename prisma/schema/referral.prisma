@@ -1,8 +1,19 @@
-model RetiredReferralCode {
-  id        String   @id @default(uuid())
-  code      String   @unique
-  userId    String
-  createdAt DateTime @default(now())
+model AccountDeletionAudit {
+  id               String   @id @default(uuid())
+  originalUserId   String
+  vendorId         String?
+  name             String
+  mobile           String?
+  email            String?
+  role             Role
+  deletionType     String
+  deletedByAdminId String?
+  walletInfo       Json?
+  refundClaimed    Boolean  @default(false)
+  notes            String?
+  createdAt        DateTime @default(now())
 
-  @@index([userId])
+  @@index([mobile])
+  @@index([email])
+  @@index([originalUserId])
 }

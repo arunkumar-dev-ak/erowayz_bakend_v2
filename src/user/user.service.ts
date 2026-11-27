@@ -9,6 +9,7 @@ import { MetadataService } from 'src/metadata/metadata.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseService } from 'src/response/response.service';
 import { EditUserDto, TrueOrFalseMap } from './dto/edit-user.dto';
+import { AdminEditUserDto } from './dto/admin-edit-user.dto';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
 import {
@@ -235,6 +236,109 @@ export class UserService {
     }
   }
 
+  async updateUserByAdmin({
+    userId,
+    body,
+    res,
+    image,
+  }: {
+    userId: string;
+    body: AdminEditUserDto;
+    res: Response;
+    image?: Express.Multer.File;
+  }) {
+    const initialDate = new Date();
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!existingUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (body.email) {
+      await this.checkUserByEmailForAccount(body.email, userId);
+    }
+    if (body.mobile) {
+      await this.checkUserByMobileForAccount(body.mobile, userId);
+    }
+
+    const existingBloodDetails =
+      await this.bloodDetailService.findBloodDetailsByUser(userId);
+
+    const bloodDetailInput = buildBloodDetailsInput({
+      body: body as EditUserDto,
+      userId,
+      existingBloodDetails: !!existingBloodDetails,
+    });
+
+    let imageUrl: string | undefined;
+    let relativePath: string | undefined;
+
+    if (image) {
+      const uploaded = this.uploadService.handleSingleFileUpload({
+        file: image,
+        body: { type: ImageTypeEnum.PROFILE },
+      });
+      imageUrl = uploaded.imageUrl;
+      relativePath = uploaded.relativePath;
+    }
+
+    const userUpdateData: Prisma.UserUpdateInput = {};
+    if (body.name !== undefined) userUpdateData.name = body.name;
+    if (body.nameTamil !== undefined) userUpdateData.nameTamil = body.nameTamil;
+    if (body.email !== undefined) userUpdateData.email = body.email;
+    if (body.mobile !== undefined) userUpdateData.mobile = body.mobile;
+    if (body.status !== undefined)
+      userUpdateData.status = TrueOrFalseMap[body.status];
+    if (imageUrl) userUpdateData.imageRef = imageUrl;
+    if (relativePath) userUpdateData.relativeUrl = relativePath;
+
+    // Strict guarantee: referralCode & referrerId are never modified here!
+
+    try {
+      const userUpdate = await this.prisma.$transaction(async (tx) => {
+        if (bloodDetailInput) {
+          if (bloodDetailInput.mode === 'update') {
+            await tx.bloodDetails.update({
+              where: { userId },
+              data: bloodDetailInput.data,
+            });
+          } else if (bloodDetailInput.mode === 'create') {
+            await tx.bloodDetails.create({
+              data: bloodDetailInput.data,
+            });
+          }
+        }
+
+        return await tx.user.update({
+          where: { id: userId },
+          data: userUpdateData,
+          include: {
+            bloodDetails: true,
+          },
+        });
+      });
+
+      if (imageUrl && existingUser.relativeUrl) {
+        this.uploadService.handleSingleFileDeletion(existingUser.relativeUrl);
+      }
+
+      return this.response.successResponse({
+        initialDate,
+        res,
+        data: userUpdate,
+        message: 'User updated successfully by admin',
+        statusCode: 200,
+      });
+    } catch (err) {
+      if (relativePath) {
+        this.uploadService.handleSingleFileDeletion(relativePath);
+      }
+      throw err;
+    }
+  }
+
   async changeUserStatus({
     res,
     body,
@@ -359,6 +463,28 @@ export class UserService {
       if (user.id !== id) {
         throw new BadRequestException(
           'The provided email is already used by another account. Please use a different email.',
+        );
+      }
+    }
+
+    return user;
+  }
+
+  async checkUserByMobileForAccount(mobile: string, id?: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { mobile },
+    });
+
+    if (user) {
+      if (!id) {
+        throw new BadRequestException(
+          'The provided mobile number is already associated with an account. Please use a different mobile number.',
+        );
+      }
+
+      if (user.id !== id) {
+        throw new BadRequestException(
+          'The provided mobile number is already used by another account. Please use a different mobile number.',
         );
       }
     }

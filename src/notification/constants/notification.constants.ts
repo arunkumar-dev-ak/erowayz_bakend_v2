@@ -18,6 +18,7 @@ export const NotificationIdentifier = {
   LICENSE_EXPIRED: 'LICENSE_EXPIRED',
   LICENSE_VERIFICATION_UPDATE: 'LICENSE_VERIFICATION_UPDATE',
   CUSTOMER_REPORT_STATUS_UPDATE: 'CUSTOMER_REPORT_STATUS_UPDATE',
+  VENDOR_REPORT_STATUS_UPDATE: 'VENDOR_REPORT_STATUS_UPDATE',
   SYSTEM_ALERT: 'SYSTEM_ALERT',
   GENERAL: 'GENERAL',
 } as const;
@@ -102,6 +103,10 @@ export const NOTIFICATION_CONFIG_MAP: Record<string, NotificationNavConfig> = {
   [NotificationIdentifier.CUSTOMER_REPORT_STATUS_UPDATE]: {
     screen: NotificationNavigationScreen.ORDER_DETAILS,
     description: 'Admin updated customer report resolution status',
+  },
+  [NotificationIdentifier.VENDOR_REPORT_STATUS_UPDATE]: {
+    screen: NotificationNavigationScreen.ORDER_DETAILS,
+    description: 'Admin updated vendor report resolution status',
   },
   [NotificationIdentifier.SYSTEM_ALERT]: {
     screen: NotificationNavigationScreen.NOTIFICATION_CENTER,

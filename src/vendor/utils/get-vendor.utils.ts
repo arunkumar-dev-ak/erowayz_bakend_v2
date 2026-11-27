@@ -234,26 +234,88 @@ export async function getVendorAvgRating({
 }) {
   const vendorIds = vendors.map((v) => v.id);
 
-  const avgRatings = await prisma.review.groupBy({
+  if (vendorIds.length === 0) {
+    return [];
+  }
+
+  // Modern VendorRating (5-parameter breakdown overallRating)
+  const vendorRatings = await prisma.vendorRating.groupBy({
     by: ['vendorId'],
     where: {
       vendorId: {
         in: vendorIds,
       },
+      overallRating: {
+        not: null,
+      },
+    },
+    _avg: {
+      overallRating: true,
+    },
+    _count: {
+      _all: true,
+    },
+  });
+
+  // Legacy Review table aggregate as fallback
+  const legacyRatings = await prisma.review.groupBy({
+    by: ['vendorId'],
+    where: {
+      vendorId: {
+        in: vendorIds,
+      },
+      rating: {
+        not: null,
+      },
     },
     _avg: {
       rating: true,
     },
+    _count: {
+      _all: true,
+    },
   });
 
-  const vendorRatingsMap: Record<string, number | null> = Object.fromEntries(
-    avgRatings.map((r) => [r.vendorId as string, r._avg.rating]),
-  );
+  const ratingMap: Record<
+    string,
+    { overallRating: number | null; totalRatings: number }
+  > = {};
 
-  const vendorsWithRating = vendors.map((vendor) => ({
-    ...vendor,
-    avgRating: vendorRatingsMap[vendor.id] ?? null,
-  }));
+  for (const r of legacyRatings) {
+    if (r.vendorId) {
+      ratingMap[r.vendorId] = {
+        overallRating: r._avg.rating
+          ? Number(r._avg.rating.toFixed(1))
+          : null,
+        totalRatings: r._count._all,
+      };
+    }
+  }
+
+  // Modern VendorRating takes precedence
+  for (const vr of vendorRatings) {
+    if (vr.vendorId) {
+      ratingMap[vr.vendorId] = {
+        overallRating: vr._avg.overallRating
+          ? Number(vr._avg.overallRating.toFixed(1))
+          : null,
+        totalRatings: vr._count._all,
+      };
+    }
+  }
+
+  const vendorsWithRating = vendors.map((vendor) => {
+    const ratingInfo = ratingMap[vendor.id];
+    const score = ratingInfo?.overallRating ?? null;
+    const totalCount = ratingInfo?.totalRatings ?? 0;
+
+    return {
+      ...vendor,
+      overallRating: score,
+      avgRating: score,
+      totalRatings: totalCount,
+    };
+  });
 
   return vendorsWithRating;
 }

@@ -5,8 +5,7 @@ import { RedisService } from 'src/redis/redis.service';
 import { ResponseService } from 'src/response/response.service';
 import { MetadataService } from 'src/metadata/metadata.service';
 import { RateVendorDto } from './dto/rate-vendor.dto';
-import { GetVendorRatingQueryDto } from './dto/get-vendor-rating.dto';
-import { GetBookingVendorRatingQueryDto } from './dto/get-booking-vendor-rating.dto';
+import { GetUnifiedVendorRatingQueryDto } from './dto/get-unified-vendor-rating.dto';
 import { VendorCategoryType } from '@prisma/client';
 import { buildQueryParams } from 'src/common/functions/buildQueryParams';
 import {
@@ -36,16 +35,20 @@ export class VendorRatingService {
   ) {}
 
   /**
-   * 1. Get Vendor Ratings & Reviews for Orders (Product Vendors)
+   * Unified Get Vendor Ratings & Reviews (PRODUCT, SERVICE & BANNER)
+   * Returns:
+   * - overallSummary: overallRating, totalRatings, parameterAverages
+   * - myRating, myReview, myLastTransaction (Order or Booking)
+   * - reviews: paginated review list sorted by createdAt: desc with each customer ratings breakdown
    */
-  async getOrderVendorRatings({
+  async getVendorRatings({
     vendorId,
     query,
     userId,
     res,
   }: {
     vendorId: string;
-    query: GetVendorRatingQueryDto;
+    query: GetUnifiedVendorRatingQueryDto;
     userId?: string;
     res: Response;
   }) {
@@ -55,31 +58,32 @@ export class VendorRatingService {
     const isOverallSummaryNeeded = query.isOverallSummaryNeeded ?? true;
     const isMyRatingNeeded = query.isMyRatingNeeded ?? true;
     const isMyReviewNeeded = query.isMyReviewNeeded ?? true;
-    const isMyLastOrderNeeded = query.isMyLastOrderNeeded ?? true;
+    const isMyLastTransactionNeeded =
+      query.isMyLastTransactionNeeded ??
+      query.isMyLastOrderNeeded ??
+      query.isMyLastBookingNeeded ??
+      true;
 
-    /*----- DB calling: verify vendor existence & category type (only if summary needed) -----*/
-    let categoryType: VendorCategoryType = VendorCategoryType.PRODUCT;
-    if (isOverallSummaryNeeded) {
-      const vendor = await this.prisma.vendor.findUnique({
-        where: { id: vendorId },
-        include: {
-          vendorType: {
-            select: { type: true, name: true },
-          },
+    /*----- DB calling: verify vendor existence & category type -----*/
+    const vendor = await this.prisma.vendor.findUnique({
+      where: { id: vendorId },
+      include: {
+        vendorType: {
+          select: { type: true, name: true },
         },
-      });
+      },
+    });
 
-      if (!vendor) {
-        throw new NotFoundException('Vendor not found');
-      }
-
-      categoryType = vendor.vendorType.type;
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
     }
 
+    const categoryType = vendor.vendorType.type;
+
     /*----- Parallel execution using modular utils -----*/
-    const [summaryResult, reviewsResult, myRatingAndReview, myLastOrder] =
+    const [summaryResult, reviewsResult, myRatingAndReview, lastTransaction] =
       await Promise.all([
-        // 1. Overall Summary (if requested)
+        // 1. Overall Summary (if requested) - includes overallRating, totalRatings, parameterAverages
         isOverallSummaryNeeded
           ? fetchVendorRatingSummary({
               vendorId,
@@ -89,7 +93,7 @@ export class VendorRatingService {
             })
           : Promise.resolve(null),
 
-        // 2. Paginated Reviews & Total Count
+        // 2. Paginated Reviews & Total Count (sorted by createdAt: desc, with full ratings breakdown)
         fetchPaginatedVendorReviews({
           vendorId,
           offset,
@@ -98,7 +102,7 @@ export class VendorRatingService {
         }),
 
         // 3. User's previous rating & review (if authenticated)
-        userId
+        userId && (isMyRatingNeeded || isMyReviewNeeded)
           ? fetchMyRatingAndReview({
               vendorId,
               userId,
@@ -108,178 +112,65 @@ export class VendorRatingService {
             })
           : Promise.resolve({ myRating: null, myReview: null }),
 
-        // 4. User's last completed/delivered product order (if authenticated)
-        userId && isMyLastOrderNeeded
-          ? fetchMyLastDeliveredOrder({
-              prisma: this.prisma,
-              userId,
-              vendorId,
-            })
+        // 4. User's last eligible transaction (Order for PRODUCT, Booking for SERVICE/BANNER)
+        userId && isMyLastTransactionNeeded
+          ? categoryType === VendorCategoryType.PRODUCT
+            ? fetchMyLastDeliveredOrder({
+                prisma: this.prisma,
+                userId,
+                vendorId,
+              })
+            : fetchMyLastCompletedBooking({
+                prisma: this.prisma,
+                userId,
+                vendorId,
+              })
           : Promise.resolve(null),
       ]);
 
     const { reviews, totalCount } = reviewsResult;
     const { myRating, myReview } = myRatingAndReview;
 
-    /*----- Pagination metadata using MetadataService (matching banner-booking) -----*/
+    /*----- Clean up cached diagnostic flag and starCounts from overallSummary if present -----*/
+    let cleanSummary = summaryResult;
+    if (cleanSummary) {
+      const { cached, starCounts, ...rest } = cleanSummary as any;
+      cleanSummary = rest as any;
+    }
+
+    /*----- Pagination metadata using MetadataService -----*/
     const queries = buildQueryParams({
       offset: offset.toString(),
       limit: limit.toString(),
       isOverallSummaryNeeded: isOverallSummaryNeeded.toString(),
       isMyRatingNeeded: isMyRatingNeeded.toString(),
       isMyReviewNeeded: isMyReviewNeeded.toString(),
-      isMyLastOrderNeeded: isMyLastOrderNeeded.toString(),
+      isMyLastTransactionNeeded: isMyLastTransactionNeeded.toString(),
     });
 
     const meta = this.metadataService.createMetaData({
       totalCount,
       offset,
       limit,
-      path: `vendor-rating/order/vendor/${vendorId}`,
+      path: `vendor-rating/vendor/${vendorId}`,
       queries,
     });
+
+    const isProduct = categoryType === VendorCategoryType.PRODUCT;
 
     return this.responseService.successResponse({
       initialDate,
       res,
       message: 'Vendor ratings and reviews retrieved successfully',
       data: {
-        overallSummary: summaryResult,
+        categoryType,
+        overallSummary: cleanSummary,
         myRating,
         myReview,
-        myLastOrder,
-        reviews,
-      },
-      meta,
-      statusCode: 200,
-    });
-  }
-
-  /**
-   * Alias for backward compatibility
-   */
-  async getVendorRatings(args: {
-    vendorId: string;
-    query: GetVendorRatingQueryDto;
-    userId?: string;
-    res: Response;
-  }) {
-    return this.getOrderVendorRatings(args);
-  }
-
-  /**
-   * 2. Get Vendor Ratings & Reviews for Bookings (Service & Banner Vendors)
-   */
-  async getBookingVendorRatings({
-    vendorId,
-    query,
-    userId,
-    res,
-  }: {
-    vendorId: string;
-    query: GetBookingVendorRatingQueryDto;
-    userId?: string;
-    res: Response;
-  }) {
-    const initialDate = new Date();
-    const offset = Number(query.offset ?? 0);
-    const limit = Number(query.limit ?? 10);
-    const isOverallSummaryNeeded = query.isOverallSummaryNeeded ?? true;
-    const isMyRatingNeeded = query.isMyRatingNeeded ?? true;
-    const isMyReviewNeeded = query.isMyReviewNeeded ?? true;
-    const isMyLastBookingNeeded = query.isMyLastBookingNeeded ?? true;
-
-    /*----- DB calling: verify vendor existence & category type (only if summary needed) -----*/
-    let categoryType: VendorCategoryType = VendorCategoryType.SERVICE;
-    if (isOverallSummaryNeeded) {
-      const vendor = await this.prisma.vendor.findUnique({
-        where: { id: vendorId },
-        include: {
-          vendorType: {
-            select: { type: true, name: true },
-          },
-        },
-      });
-
-      if (!vendor) {
-        throw new NotFoundException('Vendor not found');
-      }
-
-      categoryType = vendor.vendorType.type;
-    }
-
-    /*----- Parallel execution using modular booking utils -----*/
-    const [summaryResult, reviewsResult, myRatingAndReview, myLastBooking] =
-      await Promise.all([
-        // 1. Overall Summary (if requested)
-        isOverallSummaryNeeded
-          ? fetchVendorRatingSummary({
-              vendorId,
-              categoryType,
-              prisma: this.prisma,
-              redis: this.redisService,
-            })
-          : Promise.resolve(null),
-
-        // 2. Paginated Reviews & Total Count
-        fetchPaginatedVendorReviews({
-          vendorId,
-          offset,
-          limit,
-          prisma: this.prisma,
-        }),
-
-        // 3. User's previous rating & review (if authenticated)
-        userId
-          ? fetchMyRatingAndReview({
-              vendorId,
-              userId,
-              prisma: this.prisma,
-              isMyRatingNeeded,
-              isMyReviewNeeded,
-            })
-          : Promise.resolve({ myRating: null, myReview: null }),
-
-        // 4. User's last completed booking (Service or Banner, if authenticated)
-        userId && isMyLastBookingNeeded
-          ? fetchMyLastCompletedBooking({
-              prisma: this.prisma,
-              userId,
-              vendorId,
-            })
-          : Promise.resolve(null),
-      ]);
-
-    const { reviews, totalCount } = reviewsResult;
-    const { myRating, myReview } = myRatingAndReview;
-
-    /*----- Pagination metadata using MetadataService (matching banner-booking) -----*/
-    const queries = buildQueryParams({
-      offset: offset.toString(),
-      limit: limit.toString(),
-      isOverallSummaryNeeded: isOverallSummaryNeeded.toString(),
-      isMyRatingNeeded: isMyRatingNeeded.toString(),
-      isMyReviewNeeded: isMyReviewNeeded.toString(),
-      isMyLastBookingNeeded: isMyLastBookingNeeded.toString(),
-    });
-
-    const meta = this.metadataService.createMetaData({
-      totalCount,
-      offset,
-      limit,
-      path: `vendor-rating/booking/vendor/${vendorId}`,
-      queries,
-    });
-
-    return this.responseService.successResponse({
-      initialDate,
-      res,
-      message: 'Vendor booking ratings and reviews retrieved successfully',
-      data: {
-        overallSummary: summaryResult,
-        myRating,
-        myReview,
-        myLastBooking,
+        myLastTransaction: lastTransaction,
+        ...(isProduct
+          ? { myLastOrder: lastTransaction }
+          : { myLastBooking: lastTransaction }),
         reviews,
       },
       meta,

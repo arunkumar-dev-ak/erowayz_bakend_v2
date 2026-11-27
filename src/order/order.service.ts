@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -23,15 +24,18 @@ import { MetadataService } from 'src/metadata/metadata.service';
 import { ItemService } from 'src/item/item.service';
 import { BannerService } from 'src/banner/banner.service';
 import { ResponseService } from 'src/response/response.service';
-import { CartService } from 'src/cart/cart.service';
+import { CartService, calculateBannerPrices } from 'src/cart/cart.service';
+import { CUSTOMER_REPORT_INLINE_SELECT } from 'src/customer-report/utils/get-customer-report.utils';
+import { VENDOR_REPORT_INLINE_SELECT } from 'src/vendor-report/utils/get-vendor-report.utils';
 import { CreateOrderDto } from './dto/create-order.dto';
 import {
-  getBestPrice,
+  buildCombinedOrderItemsData,
   getTotalAndDiscountForItem,
   groupedItem,
   handleItemVerification,
   handleVendorForOrder,
   validatePreferredPaymentType,
+  validateOrderFoodPreferences,
 } from './utils/order.utils';
 import { VendorServiceOptionService } from 'src/vendor-service-option/vendor-service-option.service';
 import { ChangeOrderStatusDto } from './dto/change-order-status.dto';
@@ -193,6 +197,7 @@ export class OrderService {
             },
           },
           orderPayment: true,
+          vendorReport: VENDOR_REPORT_INLINE_SELECT,
         },
       }),
     ]);
@@ -296,6 +301,18 @@ export class OrderService {
           },
         },
         orderPayment: true,
+        customerReport: CUSTOMER_REPORT_INLINE_SELECT,
+        orderFoodPreferences: {
+          select: {
+            foodPreference: {
+              select: {
+                id: true,
+                name: true,
+                nameTamil: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -407,6 +424,8 @@ export class OrderService {
           },
         },
         orderPayment: true,
+        customerReport: CUSTOMER_REPORT_INLINE_SELECT,
+        vendorReport: VENDOR_REPORT_INLINE_SELECT,
       },
     });
 
@@ -586,8 +605,8 @@ export class OrderService {
       itemId,
       preferredPaymentMethod,
       totalQty,
-      bannerId,
       vendorServiceOptionIds,
+      foodPreferenceIds,
     } = body;
 
     if (itemId && totalQty && vendorServiceOptionIds) {
@@ -597,7 +616,6 @@ export class OrderService {
       //   itemId,
       //   totalQty,
       //   preferredPaymentMethod,
-      //   bannerId,
       //   vendorServiceOptionIds,
       // });
       throw new BadRequestException('Single Item order is still in processing');
@@ -607,7 +625,7 @@ export class OrderService {
         res,
         cartId,
         preferredPaymentMethod,
-        bannerId,
+        foodPreferenceIds,
       });
     }
   }
@@ -619,7 +637,6 @@ export class OrderService {
     itemId,
     totalQty,
     preferredPaymentMethod,
-    bannerId,
     vendorServiceOptionIds,
   }: {
     userId: string;
@@ -627,7 +644,6 @@ export class OrderService {
     itemId: string;
     totalQty: number;
     preferredPaymentMethod: PaymentMethod;
-    bannerId?: string;
     vendorServiceOptionIds?: string[];
   }) {
     const initialDate = new Date();
@@ -650,29 +666,18 @@ export class OrderService {
       );
     }
 
-    const [banner, vendorServiceOption] = await Promise.all([
-      bannerId
-        ? this.bannerService.checkIsBannerValid({
-            bannerId,
-            totalAmount,
-            vendorId: item.vendorId,
-          })
-        : null,
-      this.vendorSerOptSer.getVendorServiceOptions({
+    const vendorServiceOption =
+      await this.vendorSerOptSer.getVendorServiceOptions({
         vendorId: item.vendorId,
         vendorServicesIds: vendorServiceOptionIds,
-      }),
-    ]);
-
-    if (bannerId && !banner)
-      throw new BadRequestException('Invalid Offer Banner, Try Again later');
+      });
 
     if (vendorServiceOption.length !== vendorServiceOptionIds.length)
       throw new BadRequestException(
         'ServiceOption is not associated with the Vendor',
       );
 
-    const bestPrice = getBestPrice({ totalAmount, discountedAmount, banner });
+    const bestPrice = discountedAmount;
     const expiryMilliseconds = extractMilliSecond(
       process.env.ORDER_EXPIRY_TIME || '2m',
     );
@@ -723,10 +728,10 @@ export class OrderService {
           platformFee: platformFee?.fee ?? 0,
           finalPayableAmount: bestPrice,
           expiryAt,
-          bannerId: banner?.id ?? null,
-          bannerTitle: banner?.name ?? null,
-          bannerOfferValue: banner?.offerValue ?? null,
-          bannerOfferType: banner?.offerType ?? null,
+          bannerId: null,
+          bannerTitle: null,
+          bannerOfferValue: null,
+          bannerOfferType: null,
         },
         select: {
           id: true,
@@ -780,13 +785,13 @@ export class OrderService {
     res,
     cartId,
     preferredPaymentMethod,
-    bannerId,
+    foodPreferenceIds,
   }: {
     userId: string;
     res: Response;
     cartId: string;
     preferredPaymentMethod: PaymentMethod;
-    bannerId?: string;
+    foodPreferenceIds?: string[];
   }) {
     const initialDate = new Date();
 
@@ -808,42 +813,61 @@ export class OrderService {
     const {
       totals,
       cartItems,
-    }: {
-      totals: { total: number; discountTotal: number };
-      cartItems: CartItemWithItem[];
-    } = await this.cartService.getAvailableCartItemsWithPrice({ cartId });
+      cartBanners,
+      aggregatedRequirements,
+    } = await this.cartService.getAvailableCartData({ cartId });
 
-    const banner = bannerId
-      ? await this.bannerService.checkIsBannerValid({
-          bannerId,
-          totalAmount: totals.total,
-          vendorId: cart.vendorId,
-        })
-      : null;
-
-    if (bannerId && !banner)
-      throw new BadRequestException('Invalid Offer Banner, Try Again later');
-
-    const bestPrice = getBestPrice({
-      totalAmount: totals.total,
-      discountedAmount: totals.discountTotal,
-      banner,
-    });
+    const bestPrice = Math.max(0, totals.discountTotal);
 
     const expiryMilliseconds = extractMilliSecond(
       process.env.ORDER_EXPIRY_TIME || '2m',
     );
     const expiryAt = new Date(Date.now() + expiryMilliseconds.milliseconds);
-    const orderItemsData = groupedItem(cartItems);
+
+    const orderItemsData = buildCombinedOrderItemsData({
+      cartItems,
+      cartBanners,
+    });
+
+    const orderBannersData = (cartBanners || []).map((cb) => {
+      const prices = calculateBannerPrices(cb.banner);
+      const discount = Math.max(
+        0,
+        prices.originalPrice - prices.discountedPrice,
+      );
+      return {
+        bannerId: cb.bannerId,
+        bannerName: cb.banner.name,
+        quantity: cb.quantity,
+        discountApplied: discount * cb.quantity,
+      };
+    });
+
     const orderId = await createOrderId(this.prisma);
     const vendorUserId = cart.vendor.User.id;
+
+    const allCartItemsForPreferences = [
+      ...cartItems,
+      ...cartBanners.flatMap((cb) =>
+        (cb.banner.bannerItems || []).map((bi) => ({
+          subCategoryId: bi.item?.subCategoryId,
+          item: bi.item,
+        })),
+      ),
+    ];
+
+    const validFoodPreferenceIds = await validateOrderFoodPreferences({
+      prisma: this.prisma,
+      foodPreferenceIds,
+      cartItems: allCartItemsForPreferences,
+    });
 
     for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
       try {
         const result = await this.prisma.$transaction(
           async (tx) => {
             //lock wallet
-            if (preferredPaymentMethod === 'COINS') {
+            if (preferredPaymentMethod === 'COINS' && bestPrice > 0) {
               const currentSubscription =
                 await this.vendorSubscriptionService.checkCurrentVendorSubscriptionForPlanFeatures(
                   {
@@ -883,7 +907,7 @@ export class OrderService {
 
             //create order
             const platformFee =
-              preferredPaymentMethod === 'JUSPAY'
+              preferredPaymentMethod === 'JUSPAY' && bestPrice > 0
                 ? await this.platformFeeService.getFeesForOrdering({
                     amount: bestPrice,
                   })
@@ -896,14 +920,26 @@ export class OrderService {
                 orderItems: {
                   create: orderItemsData,
                 },
+                ...(orderBannersData.length > 0 && {
+                  orderBanners: {
+                    create: orderBannersData,
+                  },
+                }),
+                ...(validFoodPreferenceIds.length > 0 && {
+                  orderFoodPreferences: {
+                    create: validFoodPreferenceIds.map((id) => ({
+                      foodPreferenceId: id,
+                    })),
+                  },
+                }),
                 platformFee: platformFee?.fee ?? 0,
                 totalPrice: totals.total,
                 finalPayableAmount: bestPrice,
                 expiryAt,
-                bannerId: banner?.id ?? null,
-                bannerTitle: banner?.name ?? null,
-                bannerOfferValue: banner?.offerValue ?? null,
-                bannerOfferType: banner?.offerType ?? null,
+                bannerId: null,
+                bannerTitle: null,
+                bannerOfferValue: null,
+                bannerOfferType: null,
               },
               select: {
                 id: true,
@@ -914,6 +950,26 @@ export class OrderService {
                 orderId: true,
                 bannerId: true,
                 expiryAt: true,
+                orderBanners: {
+                  select: {
+                    id: true,
+                    bannerId: true,
+                    bannerName: true,
+                    quantity: true,
+                    discountApplied: true,
+                  },
+                },
+                orderFoodPreferences: {
+                  select: {
+                    foodPreference: {
+                      select: {
+                        id: true,
+                        name: true,
+                        nameTamil: true,
+                      },
+                    },
+                  },
+                },
                 orderedUser: {
                   select: {
                     name: true,
@@ -923,18 +979,27 @@ export class OrderService {
               },
             });
 
-            //update order
-            const updatingRemaingQty = cartItems.map((cartItem) =>
-              tx.item.update({
-                where: { id: cartItem.itemId },
+            // Atomic conditional decrement: Layer 2 protection against overselling
+            for (const req of aggregatedRequirements) {
+              const updateResult = await tx.item.updateMany({
+                where: {
+                  id: req.itemId,
+                  remainingQty: { gte: req.totalRequiredQty },
+                },
                 data: {
                   remainingQty: {
-                    decrement: cartItem.quantity,
+                    decrement: req.totalRequiredQty,
                   },
                 },
-              }),
-            );
-            await Promise.all(updatingRemaingQty);
+              });
+
+              if (updateResult.count === 0) {
+                throw new ConflictException(
+                  `Apologies, "${req.itemName}" does not have sufficient stock. Required: ${req.totalRequiredQty}. Please adjust your cart.`,
+                );
+              }
+            }
+
             await tx.cart.delete({
               where: {
                 id: cartId,
@@ -1227,6 +1292,24 @@ export class OrderService {
           },
         },
         orderPayment: true,
+        ...(userId && { customerReport: CUSTOMER_REPORT_INLINE_SELECT }),
+        ...(vendorId && { vendorReport: VENDOR_REPORT_INLINE_SELECT }),
+        ...(!userId &&
+          !vendorId && {
+            customerReport: CUSTOMER_REPORT_INLINE_SELECT,
+            vendorReport: VENDOR_REPORT_INLINE_SELECT,
+          }),
+        orderFoodPreferences: {
+          select: {
+            foodPreference: {
+              select: {
+                id: true,
+                name: true,
+                nameTamil: true,
+              },
+            },
+          },
+        },
       },
     });
   }

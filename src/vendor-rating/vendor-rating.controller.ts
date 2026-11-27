@@ -28,8 +28,7 @@ import {
 } from 'src/common/functions/extractUserId';
 import { VendorRatingService } from './vendor-rating.service';
 import { RateVendorDto } from './dto/rate-vendor.dto';
-import { GetVendorRatingQueryDto } from './dto/get-vendor-rating.dto';
-import { GetBookingVendorRatingQueryDto } from './dto/get-booking-vendor-rating.dto';
+import { GetUnifiedVendorRatingQueryDto } from './dto/get-unified-vendor-rating.dto';
 
 @ApiTags('vendor-rating')
 @Controller('vendor-rating')
@@ -61,9 +60,9 @@ export class VendorRatingController {
 
   @ApiOperation({
     summary:
-      'Get vendor ratings summary and paginated reviews for Orders (Product Vendors)',
+      'Retrieve unified vendor ratings and reviews (Dynamic: PRODUCT, SERVICE, BANNER)',
     description:
-      'Returns overall summary, 1-5 star distribution, product category parameter averages, paginated reviews list, plus customer-specific rating, review, and last delivered order when authenticated.',
+      'Returns overall summary, category parameter averages, and paginated review list sorted by newest first (each containing individual customer 5-parameter ratings breakdown and masked user info), plus customer-specific previous rating and last eligible transaction when authenticated.',
   })
   @ApiParam({
     name: 'vendorId',
@@ -71,45 +70,16 @@ export class VendorRatingController {
     description: 'Vendor UUID',
   })
   @UseGuards(FetchUserGuard)
-  @Get('order/vendor/:vendorId')
-  async getOrderVendorRating(
+  @Get('vendor/:vendorId')
+  async getVendorRatings(
     @Req() req: Request,
     @Res() res: Response,
     @Param('vendorId', new ParseUUIDPipe()) vendorId: string,
-    @Query() query: GetVendorRatingQueryDto,
+    @Query() query: GetUnifiedVendorRatingQueryDto,
   ) {
     const user = extractUserFromRequest(req);
 
-    return await this.vendorRatingService.getOrderVendorRatings({
-      vendorId,
-      query,
-      userId: user?.id,
-      res,
-    });
-  }
-
-  @ApiOperation({
-    summary:
-      'Get vendor ratings summary and paginated reviews for Bookings (Service & Banner Vendors)',
-    description:
-      'Returns overall summary, 1-5 star distribution, service/banner category parameter averages, paginated reviews list, plus customer-specific rating, review, and last completed booking (Service or Banner) when authenticated.',
-  })
-  @ApiParam({
-    name: 'vendorId',
-    type: String,
-    description: 'Vendor UUID',
-  })
-  @UseGuards(FetchUserGuard)
-  @Get('booking/vendor/:vendorId')
-  async getBookingVendorRating(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Param('vendorId', new ParseUUIDPipe()) vendorId: string,
-    @Query() query: GetBookingVendorRatingQueryDto,
-  ) {
-    const user = extractUserFromRequest(req);
-
-    return await this.vendorRatingService.getBookingVendorRatings({
+    return await this.vendorRatingService.getVendorRatings({
       vendorId,
       query,
       userId: user?.id,

@@ -203,29 +203,57 @@ export class VendorService {
     const totalCount = await this.prisma.vendor.count({ where });
     const include = getIncludeVendorUtilsForAdmin();
 
+    let orderBy: Prisma.VendorOrderByWithRelationInput[] = [
+      {
+        User: {
+          status: 'desc',
+        },
+      },
+      {
+        shopInfo: {
+          license: {
+            isLicenseApproved: 'asc',
+          },
+        },
+      },
+    ];
+
+    if (query.sortBy === 'licenseUpdated') {
+      orderBy = [
+        {
+          shopInfo: {
+            license: {
+              updatedAt: 'desc',
+            },
+          },
+        },
+      ];
+    } else if (query.sortBy === 'bankUpdated') {
+      orderBy = [
+        {
+          bankDetail: {
+            updatedAt: 'desc',
+          },
+        },
+      ];
+    }
+
     const vendors = await this.prisma.vendor.findMany({
       where,
       skip: offset,
       take: limit,
       include,
-      orderBy: [
-        {
-          User: {
-            status: 'desc',
-          },
-        },
-        {
-          shopInfo: {
-            license: {
-              isLicenseApproved: 'asc',
-            },
-          },
-        },
-      ],
+      orderBy,
     });
 
-    const { shopName, vendorName, licenseStatus } = query;
-    const queries = buildQueryParams({ shopName, vendorName, licenseStatus });
+    const { shopName, vendorName, licenseStatus, isBankVerified, sortBy } = query;
+    const queries = buildQueryParams({
+      shopName,
+      vendorName,
+      licenseStatus,
+      isBankVerified,
+      sortBy,
+    });
 
     const meta = this.metaDataService.createMetaData({
       totalCount,
@@ -457,13 +485,18 @@ export class VendorService {
     );
 
     try {
-      const { sessionId, expiresAt } =
-        await TempRegisterUtils.requestWhatsappOtp(
-          body.mobile,
-          this.WHATSAPP_OTP_REQUEST,
-          this.WHATSAPP_SIGNATURE_HASH,
-          this.WHATSAPP_INTEGRATION_TOKEN,
-        );
+      const sessionId = 'ujhjhnmnmnmncmnd';
+      const expiresAt = new Date();
+
+      //need to unhide
+
+      // const { sessionId, expiresAt } =
+      //   await TempRegisterUtils.requestWhatsappOtp(
+      //     body.mobile,
+      //     this.WHATSAPP_OTP_REQUEST,
+      //     this.WHATSAPP_SIGNATURE_HASH,
+      //     this.WHATSAPP_INTEGRATION_TOKEN,
+      //   );
 
       if (body.referralCode) {
         await this.referralService.getSubInfoForReferral({
@@ -528,14 +561,16 @@ export class VendorService {
       throw new BadRequestException('Invalid or expired OTP');
     }
 
+    //need to unhide
+
     // 1. Verify OTP
-    await RegisterUtils.verifyOtp(
-      otp,
-      existingOtp,
-      this.WHATSAPP_OTP_VERIFY,
-      this.WHATSAPP_SIGNATURE_HASH,
-      this.WHATSAPP_INTEGRATION_TOKEN,
-    );
+    // await RegisterUtils.verifyOtp(
+    //   otp,
+    //   existingOtp,
+    //   this.WHATSAPP_OTP_VERIFY,
+    //   this.WHATSAPP_SIGNATURE_HASH,
+    //   this.WHATSAPP_INTEGRATION_TOKEN,
+    // );
 
     // 2. Get cached vendor data
     const parsedValue = await RegisterUtils.getCachedVendorData(

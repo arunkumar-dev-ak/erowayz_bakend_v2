@@ -2,7 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { IsBoolean, IsInt, IsOptional, Min } from 'class-validator';
 
-export class GetVendorRatingQueryDto {
+export class GetUnifiedVendorRatingQueryDto {
   @ApiPropertyOptional({ default: 0, description: 'Pagination offset' })
   @IsOptional()
   @Type(() => Number)
@@ -50,10 +50,28 @@ export class GetVendorRatingQueryDto {
   @ApiPropertyOptional({
     default: true,
     description:
-      "Whether to include the authenticated customer's last completed/delivered order for this vendor. Returns null if guest or no completed order.",
+      "Whether to include the authenticated customer's last completed transaction (Order for product vendors, Booking for service/banner vendors).",
   })
   @IsOptional()
   @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
-  isMyLastOrderNeeded?: boolean = true;
+  isMyLastTransactionNeeded?: boolean = true;
+
+  @ApiPropertyOptional({
+    required: false,
+    description: 'Backward-compatible alias for isMyLastTransactionNeeded on Product orders',
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  isMyLastOrderNeeded?: boolean;
+
+  @ApiPropertyOptional({
+    required: false,
+    description: 'Backward-compatible alias for isMyLastTransactionNeeded on Service/Banner bookings',
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  isMyLastBookingNeeded?: boolean;
 }

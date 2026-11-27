@@ -200,6 +200,14 @@ export function formatUnifiedVendorProfile({
     serviceOptImageRef: vso.serviceOption?.serviceOptImageRef || null,
   }));
 
+  // Exclude starCounts and cached flag from storefront rating summary
+  const cleanRatingSummary = {
+    overallRating: ratingSummary.overallRating,
+    totalRatings: ratingSummary.totalRatings,
+    categoryType: ratingSummary.categoryType,
+    parameterAverages: ratingSummary.parameterAverages,
+  };
+
   return {
     id: vendor.id,
     name: shopInfo?.name || user?.name || '',
@@ -221,7 +229,7 @@ export function formatUnifiedVendorProfile({
       name: vendor.vendorType.name,
       type: vendor.vendorType.type,
     },
-    ratingSummary,
+    ratingSummary: cleanRatingSummary,
     serviceOptions,
     shopTiming,
   };

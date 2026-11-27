@@ -28,6 +28,8 @@ import { ServiceBookingGateway } from './service-booking.gateway';
 import { createServiceBookingUtils } from './utils/create-service-booking.utils';
 import { VendorServiceService } from 'src/vendor-service/vendor-service.service';
 import { FirebaseNotificationService } from 'src/firebase/firebase.notification.service';
+import { CUSTOMER_REPORT_INLINE_SELECT } from 'src/customer-report/utils/get-customer-report.utils';
+import { VENDOR_REPORT_INLINE_SELECT } from 'src/vendor-report/utils/get-vendor-report.utils';
 import { getNotificationContentForServiceBookingStatus } from './utils/update-service-booking-status.utils';
 import { GetAdminServiceBookingQueryDto } from './dto/service-booking-admin.dto';
 import { buildAdminServiceBookingWhereFilter } from './utils/get-admin-aervice-booking.utils';
@@ -83,6 +85,7 @@ export class ServiceBookingService {
         createdAt: 'desc',
       },
       include: {
+        customerReport: CUSTOMER_REPORT_INLINE_SELECT,
         serviceBooking: {
           orderBy: {
             createdAt: 'asc',
@@ -186,6 +189,7 @@ export class ServiceBookingService {
         createdAt: 'desc',
       },
       include: {
+        vendorReport: VENDOR_REPORT_INLINE_SELECT,
         serviceBooking: {
           orderBy: {
             createdAt: 'asc',
@@ -279,6 +283,10 @@ export class ServiceBookingService {
 
     const existingBooking = await this.prisma.booking.findFirst({
       where,
+      include: {
+        ...(userId && { customerReport: CUSTOMER_REPORT_INLINE_SELECT }),
+        ...(vendorId && { vendorReport: VENDOR_REPORT_INLINE_SELECT }),
+      },
     });
 
     if (!existingBooking) {
@@ -358,6 +366,8 @@ export class ServiceBookingService {
         createdAt: 'asc',
       },
       include: {
+        customerReport: CUSTOMER_REPORT_INLINE_SELECT,
+        vendorReport: VENDOR_REPORT_INLINE_SELECT,
         serviceBooking: {
           orderBy: {
             createdAt: 'asc',

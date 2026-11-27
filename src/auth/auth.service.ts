@@ -16,7 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { TestRegisterDto } from './dto/testregister.dto';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { ImageTypeEnum } from 'src/file-upload/dto/file-upload.dto';
-import { Role, User } from '@prisma/client';
+import { AccountStatus, Role, User } from '@prisma/client';
 import {
   buildBloodDetailsForRegister,
   buildBloodDetailsForTestRegister,
@@ -329,6 +329,24 @@ export class AuthService {
       throw new BadRequestException('User not found');
     }
 
+    if (user.accountStatus === AccountStatus.DELETED) {
+      throw new BadRequestException(
+        'This account has been permanently deleted and cannot be logged into.',
+      );
+    }
+
+    if (user.accountStatus === AccountStatus.PENDING_DELETION) {
+      if (user.scheduledDeletionAt && user.scheduledDeletionAt <= new Date()) {
+        throw new BadRequestException(
+          'The 30-day reactivation grace period has expired. This account is permanently closed.',
+        );
+      }
+    } else if (!user.status) {
+      throw new BadRequestException(
+        'Your account has been deactivated or suspended. Please contact customer support.',
+      );
+    }
+
     //need to alter
 
     let sessionId: string = "this is my sessionId";
@@ -414,6 +432,31 @@ export class AuthService {
       if (!existingOtp || !existingOtp.user.mobile) {
         throw new BadRequestException(
           'Cache data not found. Please try again by Login one more time.',
+        );
+      }
+
+      if (existingOtp.user.accountStatus === AccountStatus.DELETED) {
+        throw new BadRequestException(
+          'This account has been permanently deleted.',
+        );
+      }
+
+      if (
+        existingOtp.user.accountStatus === AccountStatus.PENDING_DELETION &&
+        existingOtp.user.scheduledDeletionAt &&
+        existingOtp.user.scheduledDeletionAt <= new Date()
+      ) {
+        throw new BadRequestException(
+          'The reactivation grace period has expired.',
+        );
+      }
+
+      if (
+        !existingOtp.user.status &&
+        existingOtp.user.accountStatus !== AccountStatus.PENDING_DELETION
+      ) {
+        throw new BadRequestException(
+          'Your account has been deactivated or suspended.',
         );
       }
 
@@ -510,6 +553,24 @@ export class AuthService {
       throw new BadRequestException('user not found');
     }
 
+    if (user.accountStatus === AccountStatus.DELETED) {
+      throw new BadRequestException(
+        'This account has been permanently deleted and cannot be logged into.',
+      );
+    }
+
+    if (user.accountStatus === AccountStatus.PENDING_DELETION) {
+      if (user.scheduledDeletionAt && user.scheduledDeletionAt <= new Date()) {
+        throw new BadRequestException(
+          'The 30-day reactivation grace period has expired. This account is permanently closed.',
+        );
+      }
+    } else if (!user.status) {
+      throw new BadRequestException(
+        'Your account has been deactivated or suspended. Please contact customer support.',
+      );
+    }
+
     //need to unhide
 
     // 2. Trigger WhatsApp OTP verification
@@ -544,11 +605,71 @@ export class AuthService {
     // }
 
     // 3. Mark Otp as verified
+    const wasPendingDeletion =
+      user.accountStatus === AccountStatus.PENDING_DELETION;
+
     const result = await this.prisma.$transaction(async (tx) => {
       await tx.oTP.update({
         where: { id: otpId },
         data: { status: 'VERIFIED' },
       });
+
+      // If user was pending deletion, auto-reactivate on successful login
+      let activeUser = user;
+      if (wasPendingDeletion) {
+        activeUser = await tx.user.update({
+          where: { id: user.id },
+          data: {
+            status: true,
+            accountStatus: AccountStatus.ACTIVE,
+            deletionRequestedAt: null,
+            scheduledDeletionAt: null,
+            deletionReason: null,
+          },
+          include: {
+            vendor: {
+              include: {
+                shopInfo: {
+                  include: {
+                    shopCategory: true,
+                    shopCity: true,
+                  },
+                },
+                vendorServiceOption: {
+                  include: {
+                    serviceOption: true,
+                  },
+                },
+                vendorType: true,
+              },
+            },
+          },
+        });
+
+        // Also reactivate vendor's staff if applicable
+        if (user.vendor?.id) {
+          const staffRows = await tx.staff.findMany({
+            where: { vendorId: user.vendor.id },
+            select: { userId: true },
+          });
+          const staffUserIds = staffRows.map((s) => s.userId);
+          if (staffUserIds.length > 0) {
+            await tx.user.updateMany({
+              where: {
+                id: { in: staffUserIds },
+                accountStatus: AccountStatus.PENDING_DELETION,
+              },
+              data: {
+                status: true,
+                accountStatus: AccountStatus.ACTIVE,
+                deletionRequestedAt: null,
+                scheduledDeletionAt: null,
+                deletionReason: null,
+              },
+            });
+          }
+        }
+      }
 
       const { accessToken, refreshToken } =
         await this.tokenService.generateTokenPair({
@@ -565,16 +686,18 @@ export class AuthService {
         });
       }
 
-      return { accessToken, refreshToken };
+      return { accessToken, refreshToken, activeUser };
     });
 
     // 4. Return final success response
     return this.response.successResponse({
       res,
       statusCode: 200,
-      message: 'OTP verified successfully',
+      message: wasPendingDeletion
+        ? 'Account reactivated and OTP verified successfully'
+        : 'OTP verified successfully',
       data: {
-        user,
+        user: result.activeUser,
         accessToken: result.accessToken,
         refreshToken: result.refreshToken,
       },

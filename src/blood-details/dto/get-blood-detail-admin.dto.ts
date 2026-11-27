@@ -1,10 +1,12 @@
 import {
+  IsEnum,
   IsNotEmpty,
   IsNumberString,
   IsOptional,
   IsString,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { BloodDocumentType, BloodVerificationStatus } from '@prisma/client';
 
 export class GetAdminBloodDetailQueryDto {
   @ApiPropertyOptional({
@@ -34,12 +36,28 @@ export class GetAdminBloodDetailQueryDto {
   requesterName?: string;
 
   @ApiPropertyOptional({
-    description: 'End date in ISO string format (YYYY-MM-DD)',
+    description: 'Filter by donor name',
     type: String,
   })
   @IsString()
   @IsOptional()
   donorName?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by verification status',
+    enum: BloodVerificationStatus,
+  })
+  @IsEnum(BloodVerificationStatus)
+  @IsOptional()
+  verificationStatus?: BloodVerificationStatus;
+
+  @ApiPropertyOptional({
+    description: 'Filter by document type',
+    enum: BloodDocumentType,
+  })
+  @IsEnum(BloodDocumentType)
+  @IsOptional()
+  documentType?: BloodDocumentType;
 
   @ApiPropertyOptional({
     description: 'Pagination offset, defaults to 0',

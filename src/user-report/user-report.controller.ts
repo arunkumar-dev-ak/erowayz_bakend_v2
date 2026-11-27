@@ -13,7 +13,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { ApiOperation, ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { UserReportService } from './user-report.service';
 import { GetUserReportQueryDto } from './dto/get-user-report.dto';
 import { CreateUserReportDto } from './dto/create-user-report.dto';
@@ -23,14 +23,15 @@ import { Roles } from 'src/common/roles/roles.docorator';
 import { Role, Staff, User, Vendor } from '@prisma/client';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RoleGuard } from 'src/common/guards/role.guard';
-import { extractUserIdFromRequest } from 'src/common/functions/extractUserId';
 import { CurrentUser } from 'src/common/decorator/currentuser.decorator';
+import { throwAppUpdateRequired } from 'src/common/functions/app-version.utils';
 
+@ApiTags('user-report (Deprecated)')
 @Controller('user-report')
 export class UserReportController {
   constructor(private readonly userReportService: UserReportService) {}
 
-  @ApiOperation({ summary: 'Get User Reports with filtering & pagination' })
+  @ApiOperation({ summary: 'Get User Reports with filtering & pagination (Deprecated)' })
   @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @UseGuards(AuthGuard, RoleGuard)
   @Get('admin')
@@ -38,18 +39,10 @@ export class UserReportController {
     @Res() res: Response,
     @Query() query: GetUserReportQueryDto,
   ) {
-    const offsetNum = Number(query.offset) || 0;
-    const limitNum = Number(query.limit) || 10;
-
-    return await this.userReportService.getUserReport({
-      res,
-      query,
-      offset: offsetNum,
-      limit: limitNum,
-    });
+    throwAppUpdateRequired({ featureName: 'Customer Concerns & Support' });
   }
 
-  @ApiOperation({ summary: 'Get User Reports with filtering & pagination' })
+  @ApiOperation({ summary: 'Get User Reports with filtering & pagination (Deprecated)' })
   @Roles(Role.VENDOR, Role.STAFF, Role.CUSTOMER)
   @UseGuards(AuthGuard)
   @Get('user')
@@ -58,23 +51,12 @@ export class UserReportController {
     @Res() res: Response,
     @Query() query: GetUserReportQueryDto,
   ) {
-    const offsetNum = Number(query.offset) || 0;
-    const limitNum = Number(query.limit) || 10;
-
-    const userId = extractUserIdFromRequest(req);
-
-    return await this.userReportService.getUserReport({
-      res,
-      query,
-      offset: offsetNum,
-      limit: limitNum,
-      userId,
-    });
+    throwAppUpdateRequired({ featureName: 'Customer Concerns & Support' });
   }
 
-  // 🔹 POST: Create a new User Report (Vendor or Customer)
+  // 🔹 POST: Create a new User Report (Deprecated)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a new User Report' })
+  @ApiOperation({ summary: 'Create a new User Report (Deprecated)' })
   @ApiBody({
     description: 'User Report creation payload',
     type: CreateUserReportDto,
@@ -89,22 +71,12 @@ export class UserReportController {
     @Body() body: CreateUserReportDto,
     @CurrentUser() currentUser: User & { vendor?: Vendor; staff?: Staff[] },
   ) {
-    const userId = extractUserIdFromRequest(req);
-
-    const isVendor =
-      currentUser.vendor || (currentUser.staff && currentUser.staff.length > 0);
-
-    return await this.userReportService.createUserReport({
-      res,
-      body,
-      userId,
-      isVendor: isVendor ? true : false,
-    });
+    throwAppUpdateRequired({ featureName: 'Customer Concerns & Support' });
   }
 
-  // 🔹 PUT: Update an existing User Report (allowed only if Pending & same user)
+  // 🔹 PUT: Update an existing User Report (Deprecated)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update an existing User Report' })
+  @ApiOperation({ summary: 'Update an existing User Report (Deprecated)' })
   @Roles(Role.CUSTOMER, Role.VENDOR, Role.STAFF)
   @UseGuards(AuthGuard, RoleGuard)
   @Put('/update/:userReportId')
@@ -114,20 +86,13 @@ export class UserReportController {
     @Body() body: UpdateUserReportDto,
     @Param('userReportId') userReportId: string,
   ) {
-    const userId = extractUserIdFromRequest(req);
-
-    return await this.userReportService.updateUserReport({
-      res,
-      body,
-      userId,
-      userReportId,
-    });
+    throwAppUpdateRequired({ featureName: 'Customer Concerns & Support' });
   }
 
-  // 🔹 PUT: Update User Report Status (Admin/SubAdmin only)
+  // 🔹 PUT: Update User Report Status (Deprecated)
   @Roles(Role.ADMIN, Role.SUB_ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update User Report Status (Admin Only)' })
+  @ApiOperation({ summary: 'Update User Report Status (Deprecated)' })
   @UseGuards(AuthGuard, RoleGuard)
   @Put('/update-status/:userReportId')
   async updateUserReportStatus(
@@ -135,10 +100,6 @@ export class UserReportController {
     @Body() body: UpdateUserReportStatusDto,
     @Param('userReportId') userReportId: string,
   ) {
-    return await this.userReportService.updateUserReportStatus({
-      res,
-      body,
-      userReportId,
-    });
+    throwAppUpdateRequired({ featureName: 'Customer Concerns & Support' });
   }
 }

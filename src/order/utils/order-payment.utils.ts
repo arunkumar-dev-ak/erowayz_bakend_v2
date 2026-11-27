@@ -66,6 +66,33 @@ export const OrderPaymentUtils = async ({
     null;
   let paymentCreateQuery: Prisma.PaymentCreateInput | null = null;
 
+  /** Check for ₹0 payable amount (free combo / 100% discount): bypass gateway */
+  if (existingOrder.finalPayableAmount + (existingOrder.platformFee || 0) === 0) {
+    await tx.orderPayment.create({
+      data: {
+        orderId: existingOrder.id,
+        type:
+          preferredType === OrderPaymentType.COINS
+            ? OrderPaymentType.COINS
+            : (preferredType === OrderPaymentType.JUSPAY
+                ? OrderPaymentType.JUSPAY
+                : OrderPaymentType.CASH),
+        paidedAmount: 0,
+        status: 'COMPLETED',
+      },
+    });
+
+    return {
+      paymentCreateQuery: null,
+      sdk_payload: null,
+      updateVendorWalletQuery: null,
+      updateCustomerWalletQuery: null,
+      walletTransactionCreateQuery: null,
+      existingOrder,
+      finalPayableAmount: 0,
+    };
+  }
+
   /** 2. Handle payment type cases */
   if (preferredType === OrderPaymentType.CASH) {
     throw new BadRequestException(

@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Patch,
   Post,
   Put,
   Delete,
@@ -9,13 +10,18 @@ import {
   Param,
   Req,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
   ValidationPipe,
   UsePipes,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiTags,
   ApiParam,
@@ -29,6 +35,7 @@ import {
   extractUserIdFromRequest,
 } from 'src/common/functions/extractUserId';
 import { RequestBloodDetailDto } from './dto/request-blood-details.dto';
+import { VerifyBloodRequestDto } from './dto/verify-blood-request.dto';
 import { FetchUserGuard } from 'src/common/guards/fetch-user.guard';
 import { RoleGuard } from 'src/common/guards/role.guard';
 import { Roles } from 'src/common/roles/roles.docorator';
@@ -106,14 +113,17 @@ export class BloodDetailsController {
   @ApiBearerAuth()
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Request blood from a donor' })
+  @ApiConsumes('multipart/form-data', 'application/json')
   @Post('request/:bloodDetailId')
   @ApiParam({ name: 'bloodDetailId', type: String })
-  @UsePipes(new ValidationPipe())
+  @UseInterceptors(FileInterceptor('document'))
+  @UsePipes(new ValidationPipe({ transform: true }))
   async requestBloodDetail(
     @Req() req: Request,
     @Res() res: Response,
     @Param('bloodDetailId') bloodDetailId: string,
     @Body() body: RequestBloodDetailDto,
+    @UploadedFile() document?: Express.Multer.File,
   ) {
     const currentUserId = extractUserIdFromRequest(req);
     await this.bloodDetailsService.requestBloodDetail({
@@ -121,6 +131,29 @@ export class BloodDetailsController {
       body,
       bloodDetailId,
       currentUserId,
+      document,
+    });
+  }
+
+  @ApiBearerAuth()
+  @Roles(Role.ADMIN, Role.SUB_ADMIN)
+  @UseGuards(AuthGuard, RoleGuard)
+  @ApiOperation({
+    summary: 'Verify or reject a blood request document (Admin only)',
+  })
+  @ApiBody({ type: VerifyBloodRequestDto })
+  @ApiParam({ name: 'id', type: String, description: 'BloodRequest ID' })
+  @Patch('blood-request/:id/verify')
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async verifyBloodRequest(
+    @Res() res: Response,
+    @Param('id') bloodRequestId: string,
+    @Body() body: VerifyBloodRequestDto,
+  ) {
+    await this.bloodDetailsService.verifyBloodRequest({
+      res,
+      bloodRequestId,
+      body,
     });
   }
 }

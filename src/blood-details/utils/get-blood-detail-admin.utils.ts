@@ -7,9 +7,24 @@ export const GetBloodDetailAdminUtils = ({
 }: {
   query: GetAdminBloodDetailQueryDto;
 }) => {
-  const { startDate, endDate, requesterName, donorName } = query;
+  const {
+    startDate,
+    endDate,
+    requesterName,
+    donorName,
+    verificationStatus,
+    documentType,
+  } = query;
 
   const where: Prisma.BloodRequestWhereInput = {};
+
+  if (verificationStatus) {
+    where.verificationStatus = verificationStatus;
+  }
+
+  if (documentType) {
+    where.documentType = documentType;
+  }
 
   if (requesterName) {
     where.user = {

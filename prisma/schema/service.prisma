@@ -1,13 +1,16 @@
-/* ----- Services ----- */
+/**
+ * ----- Services -----
+ */
 model VendorServiceOption {
-  id                      String                    @id @default(uuid())
-  vendorId                String
-  serviceOptionId         String
-  status                  Status                    @default(ACTIVE)
-  serviceOption           ServiceOption             @relation(fields: [serviceOptionId], references: [id])
-  vendor                  Vendor                    @relation(fields: [vendorId], references: [id])
+  id                            String                          @id @default(uuid())
+  vendorId                      String
+  serviceOptionId               String
+  status                        Status                          @default(ACTIVE)
+  serviceOption                 ServiceOption                   @relation(fields: [serviceOptionId], references: [id])
+  vendor                        Vendor                          @relation(fields: [vendorId], references: [id])
   cartItemVendorServiceOption   CartItemVendorServiceOption[]
   orderItemVendorServiceOption  OrderItemVendorServiceOption[]
+  cartBannerVendorServiceOption CartBannerVendorServiceOption[]
 
   @@unique([vendorId, serviceOptionId])
   @@index([vendorId])
@@ -15,52 +18,51 @@ model VendorServiceOption {
 }
 
 model Service {
-  id                      String                    @id @default(uuid())
-  name                    String
-  nameTamil               String?
-  description             String?
-  serviceOptionId         String
-  vendorId                String
-  status                  Status
+  id              String  @id @default(uuid())
+  name            String
+  nameTamil       String?
+  description     String?
+  serviceOptionId String
+  vendorId        String
+  status          Status
 
-  serviceImage            ServiceImage[]
-  vendorSubService        VendorSubService[]
+  serviceImage     ServiceImage[]
+  vendorSubService VendorSubService[]
 
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime                  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  serviceOption           ServiceOption @relation(fields: [serviceOptionId], references: [id])
-  vendor                  Vendor        @relation(fields: [vendorId], references: [id])
+  serviceOption ServiceOption @relation(fields: [serviceOptionId], references: [id])
+  vendor        Vendor        @relation(fields: [vendorId], references: [id])
 
-  @@unique([name,vendorId,serviceOptionId])
+  @@unique([name, vendorId, serviceOptionId])
   @@index([name])
-
 }
 
 model VendorSubService {
-  id                      String              @id @default(uuid())
-  name                    String
-  serviceId               String
-  price                   Float               @default(0)
-  serviceBooking          ServiceBooking[]
+  id             String           @id @default(uuid())
+  name           String
+  serviceId      String
+  price          Float            @default(0)
+  serviceBooking ServiceBooking[]
 
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime                  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  service                 Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
-  @@unique([name,serviceId])
+  @@unique([name, serviceId])
   @@index([serviceId])
 }
 
 model ServiceImage {
-  id                      String                    @id @default(uuid())
-  serviceId               String
-  relativeUrl             String      @unique
-  absoluteUrl             String      @unique
+  id          String @id @default(uuid())
+  serviceId   String
+  relativeUrl String @unique
+  absoluteUrl String @unique
 
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime                  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  service                 Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
